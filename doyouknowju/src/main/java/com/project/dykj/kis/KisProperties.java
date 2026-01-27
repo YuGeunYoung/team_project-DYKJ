@@ -19,6 +19,7 @@ public class KisProperties {
 	private VolumeRank volumeRank = new VolumeRank();
 	private Fid fid = new Fid();
 	private StockInfo stockInfo = new StockInfo();
+	private DailyChart dailyChart = new DailyChart();
 
 	@Data
 	public static class VolumeRank {
@@ -47,5 +48,19 @@ public class KisProperties {
 		private String path;
 		private String trId;
 		private String prdtTypeCd;
+	}
+
+	@Data
+	public static class DailyChart {
+		private String path;
+		private String trId;
+		/**
+		 * D: 일, W: 주, M: 월
+		 */
+		private String periodDivCode = "D";
+		/**
+		 * 0: 수정주가 반영, 1: 수정주가 미반영 (KIS 문서 기준)
+		 */
+		private String orgAdjPrc = "0";
 	}
 }

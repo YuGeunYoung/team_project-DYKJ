@@ -1,33 +1,35 @@
-<?xml version="1.0" encoding="UTF-8" ?>
+﻿<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper
   PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
   "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
 
 <mapper namespace="TradeMapper">
-    <!-- 자신의 거래 내역 조회 -->
+    <!-- 나의 거래 내역 조회 -->
     <select id="selectMyTrades" parameterType="String" resultType="MyTradesRes">
-        SELECT STOCK_ID
-              ,STOCK_NAME
-              ,TRADE_CATEGORY
-              ,TOTAL_TRADE_PRICE
-              ,TRADE_COUNT
-              ,STOCK_PRICE
-              ,AFTER_BALANCE
-              ,TRADE_DATE
+        SELECT STOCK_ID,
+               STOCK_NAME,
+               TRADE_CATEGORY,
+               TOTAL_TRADE_PRICE,
+               TRADE_COUNT,
+               STOCK_PRICE,
+               AFTER_BALANCE,
+               TRADE_DATE
         FROM TRADE_HISTORIES
         JOIN STOCKS ON TRADE_HISTORIES.STOCK_ID = STOCKS.STOCK_ID
-        WHERE USER_ID = #{userId}
+        WHERE USER_ID = #{value}
+        ORDER BY TRADE_DATE DESC
     </select>
-    
-    <!-- 특정 종목의 거래 내역 조회 -->
+
+    <!-- 종목별 거래 내역 조회 -->
     <select id="selectTradesByStockId" parameterType="String" resultType="TradesByStockIdRes">
-        SELECT TRADE_CATEGORY
-              ,TOTAL_TRADE_PRICE
-              ,TRADE_COUNT
-              ,STOCK_PRICE
-              ,TRADE_DATE
+        SELECT TRADE_CATEGORY,
+               TOTAL_TRADE_PRICE,
+               TRADE_COUNT,
+               STOCK_PRICE,
+               TRADE_DATE
         FROM TRADE_HISTORIES
-        WHERE STOCK_ID = #{stockId}
+        WHERE STOCK_ID = #{value}
+        ORDER BY TRADE_DATE DESC
     </select>
 </mapper>
-    
+

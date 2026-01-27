@@ -1,11 +1,8 @@
-package com.project.dykj.domain.chat.repository;
+﻿package com.project.dykj.domain.chat.repository;
 
-import org.apache.ibatis.annotations.Mapper;
-
-@Mapper // 꼭 추가해주세요!
-public interface ChatRepository { // class -> interface
-	
-	
-	
-	
+/**
+ * (미사용) XML namespace 기반(SqlSessionTemplate) 접근으로 전환하면서
+ * @Mapper 인터페이스 방식은 사용하지 않습니다.
+ */
+public interface ChatRepository {
 }

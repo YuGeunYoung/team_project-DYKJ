@@ -1,0 +1,47 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="replyMapper">
+
+  <insert id="insertReply">
+    <selectKey keyProperty="replyId" resultType="int" order="AFTER">
+      SELECT SEQ_REPLY.CURRVAL FROM DUAL
+    </selectKey>
+    INSERT INTO REPLY (
+      REPLY_ID, REPLY_CONTENT, CREATE_DATE, BOARD_ID, USER_ID, DELETE_DATE, MODIFY_DATE
+    ) VALUES (
+      SEQ_REPLY.NEXTVAL,
+      #{replyContent},
+      SYSDATE,
+      #{boardId},
+      #{userId},
+      NULL,
+      NULL
+    )
+  </insert>
+
+  <select id="selectReplies" resultType="Reply">
+    SELECT
+      REPLY_ID      AS replyId,
+      REPLY_CONTENT AS replyContent,
+      CREATE_DATE   AS createDate,
+      BOARD_ID      AS boardId,
+      USER_ID       AS userId,
+      DELETE_DATE   AS deleteDate,
+      MODIFY_DATE   AS modifyDate
+    FROM REPLY
+    WHERE BOARD_ID = #{postId}
+      AND DELETE_DATE IS NULL
+    ORDER BY CREATE_DATE ASC
+  </select>
+
+  <update id="softDeleteReply">
+    UPDATE REPLY
+       SET DELETE_DATE = SYSDATE,
+           MODIFY_DATE = SYSDATE
+     WHERE REPLY_ID = #{replyId}
+       AND DELETE_DATE IS NULL
+  </update>
+
+</mapper>
