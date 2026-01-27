@@ -1,4 +1,4 @@
-package com.project.dykj.kis.service;
+﻿package com.project.dykj.kis.service;
 
 import java.time.Duration;
 import java.util.Comparator;
@@ -19,6 +19,7 @@ import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import com.project.dykj.kis.KisProperties;
+import com.project.dykj.kis.model.vo.KisDailyChartResponse;
 import com.project.dykj.kis.model.vo.KisStockInfoResponse;
 import com.project.dykj.kis.model.vo.KisVolumeRankResponse;
 import com.project.dykj.kis.model.vo.VolumeRankItem;
@@ -48,7 +49,7 @@ public class KisService {
 	}
 
 	/**
-	 * KIS access_token 발급/갱신 (client_credentials)
+	 * KIS access_token issue/refresh (client_credentials)
 	 */
 	public synchronized void refreshAccessToken() {
 		requireBasicConfig();
@@ -72,7 +73,7 @@ public class KisService {
 	}
 
 	/**
-	 * 토큰이 없으면 자동 발급 후 반환
+	 * Issue token automatically if missing
 	 */
 	public String getValidAccessToken() {
 		String token = this.accessToken;
@@ -89,7 +90,7 @@ public class KisService {
 	}
 
 	/**
-	 * 거래량 순위(Top10) 조회 결과를 프론트용 VO로 변환
+	 * Map volume rank (Top10) response to VO
 	 */
 	public List<VolumeRankItem> getVolumeTop10() {
 		KisVolumeRankResponse response = fetchVolumeRank();
@@ -111,7 +112,7 @@ public class KisService {
 	}
 
 	/**
-	 * KIS 거래량 순위 원본 응답 조회(필요 시 확장용)
+	 * Fetch raw volume rank response (extend as needed)
 	 */
 	public KisVolumeRankResponse fetchVolumeRank() {
 		requireBasicConfig();
@@ -161,7 +162,7 @@ public class KisService {
 	}
 
 	/**
-	 * 실시간 현재가 조회(inquire-price) - 반환은 Map 형태(추후 VO로 교체 가능)
+	 * Get current price (inquire-price) - returns Map (can be modeled as VO later)
 	 */
 	public Map<?, ?> getStockPrice(String stockCode) {
 		requireBasicConfig();
@@ -190,7 +191,7 @@ public class KisService {
 	}
 
 	/**
-	 * 종목 상세 정보 조회(search-stock-info)
+	 * Fetch stock detail info (search-stock-info)
 	 */
 	public KisStockInfoResponse fetchStockInfo(String prdtTypeCd, String pdno) {
 		requireBasicConfig();
@@ -239,6 +240,59 @@ public class KisService {
 		return response;
 	}
 
+	/**
+	 * Daily/weekly/monthly chart data (for graph)
+	 * - start/end: YYYYMMDD
+	 */
+	public KisDailyChartResponse fetchDailyChart(String stockId, String start, String end, String periodDivCode) {
+		requireBasicConfig();
+		requireDailyChartConfig();
+
+		if (stockId == null || stockId.isBlank()) {
+			throw new IllegalArgumentException("stockId is required");
+		}
+
+		String token = getValidAccessToken();
+		if (token == null || token.isBlank()) {
+			throw new IllegalStateException("KIS access token is missing");
+		}
+
+		String safePeriod = (periodDivCode == null || periodDivCode.isBlank())
+				? properties.getDailyChart().getPeriodDivCode()
+				: periodDivCode;
+
+		String uri = UriComponentsBuilder.fromPath(properties.getDailyChart().getPath())
+				.queryParam("FID_COND_MRKT_DIV_CODE", properties.getFid().getCondMrktDivCode())
+				.queryParam("FID_INPUT_ISCD", stockId)
+				.queryParam("FID_INPUT_DATE_1", start == null ? "" : start)
+				.queryParam("FID_INPUT_DATE_2", end == null ? "" : end)
+				.queryParam("FID_PERIOD_DIV_CODE", safePeriod)
+				.queryParam("FID_ORG_ADJ_PRC", properties.getDailyChart().getOrgAdjPrc())
+				.build(true)
+				.toUriString();
+
+		KisDailyChartResponse response = webClient.get()
+				.uri(uri)
+				.accept(MediaType.APPLICATION_JSON)
+				.header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
+				.header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
+				.header("appkey", properties.getAppkey())
+				.header("appsecret", properties.getAppsecret())
+				.header("tr_id", properties.getDailyChart().getTrId())
+				.header("custtype", properties.getCusttype())
+				.retrieve()
+				.bodyToMono(KisDailyChartResponse.class)
+				.block(Duration.ofSeconds(5));
+
+		if (response == null) {
+			throw new IllegalStateException("Empty response from KIS daily chart API");
+		}
+		if (!"0".equals(response.getRtCd())) {
+			throw new IllegalStateException("KIS error: " + response.getMsgCd() + " - " + response.getMsg1());
+		}
+		return response;
+	}
+
 	private void requireBasicConfig() {
 		if (properties.getBaseUrl() == null || properties.getBaseUrl().isBlank()) {
 			throw new IllegalStateException("kis.base-url is required");
@@ -275,6 +329,18 @@ public class KisService {
 		}
 	}
 
+	private void requireDailyChartConfig() {
+		if (properties.getDailyChart() == null) {
+			throw new IllegalStateException("kis.daily-chart is required");
+		}
+		if (properties.getDailyChart().getPath() == null || properties.getDailyChart().getPath().isBlank()) {
+			throw new IllegalStateException("kis.daily-chart.path is required");
+		}
+		if (properties.getDailyChart().getTrId() == null || properties.getDailyChart().getTrId().isBlank()) {
+			throw new IllegalStateException("kis.daily-chart.tr-id is required");
+		}
+	}
+
 	private Duration timeout() {
 		Duration t = properties.getVolumeRank().getTimeout();
 		return t == null ? Duration.ofSeconds(5) : t;
@@ -288,3 +354,4 @@ public class KisService {
 		}
 	}
 }
+

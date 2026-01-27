@@ -1,26 +1,29 @@
-package com.project.dykj.kis.service;
+﻿package com.project.dykj.kis.service;
 
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.Charset;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.regex.Pattern;
 
+import org.mybatis.spring.SqlSessionTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.project.dykj.kis.model.vo.KisDailyChartResponse;
 import com.project.dykj.kis.model.vo.KisStockInfoResponse;
 import com.project.dykj.kis.model.vo.StockSuggestItem;
 import com.project.dykj.kis.model.vo.StockUpsertRequest;
-import com.project.dykj.kis.mapper.StockMapper;
 
 @Service
 public class StockService {
 
 	/**
-	 * MST 적재 결과(간단 통계)
+	 * MST import result (simple summary)
 	 */
 	public record MstImportResult(
 			int totalLines,
@@ -32,16 +35,45 @@ public class StockService {
 
 	private static final Pattern STOCK_CODE_PATTERN = Pattern.compile("^(?:A)?\\d{6}$");
 
-	private final StockMapper stockMapper;
+	private static final String NS_STOCK = "stockMapper.";
+
+	private final SqlSessionTemplate sqlSession;
 	private final KisService kisService;
 
-	public StockService(StockMapper stockMapper, KisService kisService) {
-		this.stockMapper = stockMapper;
+	public StockService(SqlSessionTemplate sqlSession, KisService kisService) {
+		this.sqlSession = sqlSession;
 		this.kisService = kisService;
 	}
 
+	@Transactional(readOnly = true)
+	public StockUpsertRequest findById(String stockId) {
+		String id = stockId == null ? "" : stockId.trim();
+		if (id.isEmpty()) {
+			throw new IllegalArgumentException("stockId is required");
+		}
+		return sqlSession.selectOne(NS_STOCK + "selectById", Map.of("stockId", id));
+	}
+
+	@Transactional(readOnly = true)
+	public Map<?, ?> getCurrentPrice(String stockId) {
+		String id = stockId == null ? "" : stockId.trim();
+		if (id.isEmpty()) {
+			throw new IllegalArgumentException("stockId is required");
+		}
+		return kisService.getStockPrice(id);
+	}
+
+	@Transactional(readOnly = true)
+	public KisDailyChartResponse getDailyChart(String stockId, String start, String end, String periodDivCode) {
+		String id = stockId == null ? "" : stockId.trim();
+		if (id.isEmpty()) {
+			throw new IllegalArgumentException("stockId is required");
+		}
+		return kisService.fetchDailyChart(id, start, end, periodDivCode);
+	}
+
 	/**
-	 * STOCKS에 직접 upsert(관리/초기 데이터 적재 등)
+	 * Upsert into STOCKS (admin/manual import)
 	 */
 	@Transactional
 	public void upsertStocks(List<StockUpsertRequest> items) {
@@ -50,12 +82,12 @@ public class StockService {
 		}
 		for (StockUpsertRequest req : items) {
 			validateUpsert(req);
-			stockMapper.mergeStock(req);
+			sqlSession.update(NS_STOCK + "mergeStock", Map.of("req", req));
 		}
 	}
 
 	/**
-	 * 종목 자동완성(주식명/종목코드 prefix 검색)
+	 * Stock autocomplete (prefix search by name/code)
 	 */
 	@Transactional(readOnly = true)
 	public List<StockSuggestItem> suggest(String q, int limit) {
@@ -64,13 +96,16 @@ public class StockService {
 			return List.of();
 		}
 		int safeLimit = Math.min(20, Math.max(1, limit));
-		return stockMapper.suggest(query, safeLimit);
+		Map<String, Object> params = new HashMap<>();
+		params.put("q", query);
+		params.put("limit", safeLimit);
+		return sqlSession.selectList(NS_STOCK + "suggest", params);
 	}
 
 	/**
-	 * KIS 종목정보(search-stock-info)로 조회한 값을 STOCKS에 반영(upsert)
-	 * - stockIds: 종목코드 리스트(PDNO)
-	 * - prdtTypeCd: 상품유형코드(PRDT_TYPE_CD)
+	 * Sync STOCKS from KIS "search-stock-info" API
+	 * - stockIds: stock codes list (PDNO)
+	 * - prdtTypeCd: product type code (PRDT_TYPE_CD)
 	 */
 	@Transactional
 	public void syncFromKis(List<String> stockIds, String prdtTypeCd) {
@@ -98,14 +133,14 @@ public class StockService {
 					isActive
 			);
 			validateUpsert(req);
-			stockMapper.mergeStock(req);
+			sqlSession.update(NS_STOCK + "mergeStock", Map.of("req", req));
 		}
 	}
 
 	/**
-	 * KOSPI 코드 MST 파일을 읽어서 STOCKS에 초기 적재(upsert)
-	 * - MST는 고정폭(fixed-width) 형식이므로 필요한 구간만 substring으로 파싱
-	 * - 현재는 (종목코드/종목명) 중심으로 적재하고, 나머지는 추후 확장 가능
+	 * Import KOSPI code MST file into STOCKS (upsert)
+	 * - MST format: fixed-width. Parse required fields by substring.
+	 * - Currently imports (stockId / stockName) only.
 	 */
 	@Transactional
 	public MstImportResult importKospiCodeMst(InputStream inputStream, Charset charset, boolean onlyStocks) {
@@ -168,7 +203,7 @@ public class StockService {
 						"Y"
 				);
 				validateUpsert(req);
-				stockMapper.mergeStock(req);
+				sqlSession.update(NS_STOCK + "mergeStock", Map.of("req", req));
 				imported++;
 			}
 		} catch (IOException e) {
@@ -238,3 +273,4 @@ public class StockService {
 		return c;
 	}
 }
+
