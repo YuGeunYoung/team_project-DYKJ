@@ -8,10 +8,10 @@
 		<version>3.5.9</version>
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
-	<groupId>com.kh</groupId>
-	<artifactId>spring</artifactId>
+	<groupId>com.example</groupId>
+	<artifactId>doyouknowju</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
-	<name>restfulProject</name>
+	<name>doyouknowju</name>
 	<description>Demo project for Spring Boot</description>
 	<url/>
 	<licenses>
