@@ -2,10 +2,15 @@ package com.project.dykj.domain.chat.repository;
 
 import org.apache.ibatis.annotations.Mapper;
 
-@Mapper // 꼭 추가해주세요!
-public interface ChatRepository { // class -> interface
+import com.project.dykj.domain.chat.dto.ChatMessageVO;
+
+	@Mapper
+	public interface ChatRepository {
+	    // 메시지 저장 (성공 시 1 리턴)
+	    int insertMessage(ChatMessageVO chatMessage);
+	}
 	
 	
 	
 	
-}
+
