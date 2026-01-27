@@ -1,0 +1,61 @@
+﻿<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Mock Invest - Main</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; margin: 24px; }
+    h1 { margin: 0 0 12px; }
+    table { border-collapse: collapse; width: 100%; max-width: 720px; }
+    th, td { border-bottom: 1px solid #e5e7eb; padding: 10px 8px; text-align: left; }
+    th { background: #f9fafb; font-weight: 600; }
+    .muted { color: #6b7280; font-size: 13px; margin: 6px 0 16px; }
+  </style>
+</head>
+<body>
+  <h1>거래량 TOP 10</h1>
+  <div class="muted">API: <code id="apiPath"></code></div>
+  <table>
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>종목명</th>
+        <th>현재가</th>
+        <th>등락율</th>
+        <th>거래량</th>
+      </tr>
+    </thead>
+    <tbody id="rows"></tbody>
+  </table>
+
+  <script>
+    const api = './api/rankings/volume/top10';
+    document.getElementById('apiPath').textContent = api;
+
+    const format = (n) => new Intl.NumberFormat('ko-KR').format(n);
+
+    fetch(api)
+      .then((r) => r.ok ? r.json() : Promise.reject(r))
+      .then((items) => {
+        const tbody = document.getElementById('rows');
+        tbody.innerHTML = '';
+        items.forEach((it, idx) => {
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td>${idx + 1}</td>
+            <td>${it.hts_kor_isnm ?? ''}</td>
+            <td>${format(Number(it.stck_prpr ?? 0))}원</td>
+            <td>${it.prdy_ctrt ?? ''}%</td>
+            <td>${format(Number(it.acml_vol ?? 0))}</td>
+          `;
+          tbody.appendChild(tr);
+        });
+      })
+      .catch(() => {
+        const tbody = document.getElementById('rows');
+        tbody.innerHTML = '<tr><td colspan="5">API 호출 실패</td></tr>';
+      });
+  </script>
+</body>
+</html>

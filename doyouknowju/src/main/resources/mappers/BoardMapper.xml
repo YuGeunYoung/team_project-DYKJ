@@ -1,0 +1,90 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.project.dykj.board.mapper.BoardMapper">
+
+  <select id="nextPostId" resultType="long">
+    SELECT SEQ_BOARD.NEXTVAL FROM DUAL
+  </select>
+
+  <insert id="insertPost">
+    INSERT INTO BOARD (
+      BOARD_ID, BOARD_TYPE, STOCK_ID, USER_ID, BOARD_TITLE, BOARD_CONTENT, VIEW_COUNT, CREATE_DATE, MODIFY_DATE, DELETE_DATE
+    ) VALUES (
+      #{postId},
+      #{req.boardType},
+      #{req.stockId},
+      #{req.userId},
+      #{req.title},
+      #{req.content},
+      0,
+      SYSDATE,
+      NULL,
+      NULL
+    )
+  </insert>
+
+  <update id="incrementViewCnt">
+    UPDATE BOARD
+       SET VIEW_COUNT = VIEW_COUNT + 1
+     WHERE BOARD_ID = #{postId}
+       AND DELETE_DATE IS NULL
+  </update>
+
+  <select id="selectPostDetail" resultType="com.project.dykj.board.model.vo.BoardPostDetail">
+    SELECT
+      BOARD_ID   AS postId,
+      BOARD_TYPE AS boardType,
+      STOCK_ID   AS stockId,
+      USER_ID    AS userId,
+      BOARD_TITLE AS title,
+      BOARD_CONTENT AS content,
+      VIEW_COUNT AS viewCnt,
+      CAST(CREATE_DATE AS TIMESTAMP) AS createdAt,
+      CAST(NVL(MODIFY_DATE, CREATE_DATE) AS TIMESTAMP) AS updatedAt
+    FROM BOARD
+    WHERE BOARD_ID = #{postId}
+      AND DELETE_DATE IS NULL
+  </select>
+
+  <select id="selectPostList" resultType="com.project.dykj.board.model.vo.BoardPostListItem">
+    SELECT
+      BOARD_ID   AS postId,
+      BOARD_TYPE AS boardType,
+      STOCK_ID   AS stockId,
+      USER_ID    AS userId,
+      BOARD_TITLE AS title,
+      VIEW_COUNT AS viewCnt,
+      CAST(CREATE_DATE AS TIMESTAMP) AS createdAt
+    FROM BOARD
+    WHERE DELETE_DATE IS NULL
+      <if test="boardType != null and boardType != ''">
+        AND BOARD_TYPE = #{boardType}
+      </if>
+      <if test="stockId != null and stockId != ''">
+        AND STOCK_ID = #{stockId}
+      </if>
+    ORDER BY CREATE_DATE DESC
+    OFFSET #{offset} ROWS FETCH NEXT #{size} ROWS ONLY
+  </select>
+
+  <update id="updatePost">
+    UPDATE BOARD
+       SET STOCK_ID = #{req.stockId},
+           BOARD_TITLE = #{req.title},
+           BOARD_CONTENT = #{req.content},
+           MODIFY_DATE = SYSDATE
+     WHERE BOARD_ID = #{postId}
+       AND DELETE_DATE IS NULL
+  </update>
+
+  <update id="softDeletePost">
+    UPDATE BOARD
+       SET DELETE_DATE = SYSDATE,
+           MODIFY_DATE = SYSDATE
+     WHERE BOARD_ID = #{postId}
+       AND DELETE_DATE IS NULL
+  </update>
+
+</mapper>
