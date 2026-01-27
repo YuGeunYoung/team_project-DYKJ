@@ -1,8 +1,11 @@
 package com.project.dykj.domain.member.service;
 
-import org.springframework.stereotype.Service;
+import com.project.dykj.domain.member.dto.MemberVO;
 
-@Service
-public class MemberService {
+public interface MemberService {
+	
+	int checkId(String userId);
+	
+	void signup(MemberVO vo);
 
 }
