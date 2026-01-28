@@ -15,5 +15,16 @@
             SYSDATE
         )
     </insert>
+    
+    
+    <select id="selectChatList" resultType="com.project.dykj.domain.chat.dto.ChatMessageVO">
+    SELECT 
+        CHAT_ID,
+        USER_ID,
+        CHAT_CONTENT,
+        SEND_TIME
+    FROM CHAT_MESSAGES
+    ORDER BY SEND_TIME ASC
+</select>
 
 </mapper>
