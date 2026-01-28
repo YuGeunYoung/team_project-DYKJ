@@ -1,26 +1,29 @@
 package com.project.dykj.domain.member.entity;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
-import lombok.AccessLevel;
+import java.sql.Date;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 
-@Entity
 @Getter
-@NoArgsConstructor(access=AccessLevel.PROTECTED)
+@Setter
+@NoArgsConstructor
 @AllArgsConstructor
 @Builder
-@Table(name="MEMBERS")
 public class Member {
-	
-	@Id
 	private String userId;
-	
 	private String userPwd;
 	private String phone;
+	private long points; 
+	private String status;
+	private String userRole;
+	private Date enrollDate;
+	private int consecDays;
 	private String isReceiveNotification;
+	private Date banLimitDate;
+	private int experience;
+	private int userLevel;
 }
