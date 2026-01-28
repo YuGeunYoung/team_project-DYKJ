@@ -147,6 +147,20 @@
 		    <version>0.11.5</version>
 		    <scope>runtime</scope>
 		</dependency>
+		
+		<!-- Entity 어노테이션 사용 -->
+		<!-- Source: https://mvnrepository.com/artifact/jakarta.persistence/jakarta.persistence-api -->
+		<dependency>
+		    <groupId>jakarta.persistence</groupId>
+		    <artifactId>jakarta.persistence-api</artifactId>
+		    <scope>compile</scope>
+		</dependency>
+		
+		<!-- jpaRepository -->
+		<dependency>
+		    <groupId>org.springframework.boot</groupId>
+		    <artifactId>spring-boot-starter-data-jpa</artifactId>
+		</dependency>
 	</dependencies>
 
 	<build>
