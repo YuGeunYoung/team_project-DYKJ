@@ -1,4 +1,4 @@
-package com.project.dykj.domain.stock.dto;
+package com.project.dykj.domain.stock.dto.res;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;

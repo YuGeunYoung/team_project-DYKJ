@@ -11,11 +11,14 @@ import io.netty.handler.timeout.ReadTimeoutHandler;
 import io.netty.handler.timeout.WriteTimeoutHandler;
 import reactor.netty.http.client.HttpClient;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.client.reactive.ReactorClientHttpConnector;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.web.reactive.function.client.WebClientResponseException;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import com.project.dykj.kis.KisProperties;
@@ -26,6 +29,8 @@ import com.project.dykj.kis.model.vo.VolumeRankItem;
 
 @Service
 public class KisService {
+
+	private static final Logger log = LoggerFactory.getLogger(KisService.class);
 
 	private final KisProperties properties;
 	private final WebClient webClient;
@@ -139,18 +144,24 @@ public class KisService {
 				.build(true)
 				.toUriString();
 
-		KisVolumeRankResponse response = webClient.get()
-				.uri(uri)
-				.accept(MediaType.APPLICATION_JSON)
-				.header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
-				.header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
-				.header("appkey", properties.getAppkey())
-				.header("appsecret", properties.getAppsecret())
-				.header("tr_id", properties.getVolumeRank().getTrId())
-				.header("custtype", properties.getCusttype())
-				.retrieve()
-				.bodyToMono(KisVolumeRankResponse.class)
-				.block(timeout());
+		KisVolumeRankResponse response;
+		try {
+			response = webClient.get()
+					.uri(uri)
+					.accept(MediaType.APPLICATION_JSON)
+					.header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
+					.header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
+					.header("appkey", properties.getAppkey())
+					.header("appsecret", properties.getAppsecret())
+					.header("tr_id", properties.getVolumeRank().getTrId())
+					.header("custtype", properties.getCusttype())
+					.retrieve()
+					.bodyToMono(KisVolumeRankResponse.class)
+					.block(timeout());
+		} catch (WebClientResponseException e) {
+			logKisError("volume-rank", uri, properties.getVolumeRank().getTrId(), e);
+			throw e;
+		}
 
 		if (response == null) {
 			throw new IllegalStateException("Empty response from KIS volume rank API");
@@ -172,7 +183,8 @@ public class KisService {
 			throw new IllegalStateException("KIS access token is missing");
 		}
 
-		return webClient.get()
+		try {
+			return webClient.get()
 				.uri(uriBuilder -> uriBuilder
 						.path("/uapi/domestic-stock/v1/quotations/inquire-price")
 						.queryParam("fid_cond_mrkt_div_code", "J")
@@ -188,6 +200,10 @@ public class KisService {
 				.retrieve()
 				.bodyToMono(Map.class)
 				.block();
+		} catch (WebClientResponseException e) {
+			logKisError("inquire-price", "/uapi/domestic-stock/v1/quotations/inquire-price", "FHKST01010100", e);
+			throw e;
+		}
 	}
 
 	/**
@@ -218,18 +234,24 @@ public class KisService {
 				.build(true)
 				.toUriString();
 
-		KisStockInfoResponse response = webClient.get()
-				.uri(uri)
-				.accept(MediaType.APPLICATION_JSON)
-				.header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
-				.header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
-				.header("appkey", properties.getAppkey())
-				.header("appsecret", properties.getAppsecret())
-				.header("tr_id", properties.getStockInfo().getTrId())
-				.header("custtype", properties.getCusttype())
-				.retrieve()
-				.bodyToMono(KisStockInfoResponse.class)
-				.block(Duration.ofSeconds(5));
+		KisStockInfoResponse response;
+		try {
+			response = webClient.get()
+					.uri(uri)
+					.accept(MediaType.APPLICATION_JSON)
+					.header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
+					.header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
+					.header("appkey", properties.getAppkey())
+					.header("appsecret", properties.getAppsecret())
+					.header("tr_id", properties.getStockInfo().getTrId())
+					.header("custtype", properties.getCusttype())
+					.retrieve()
+					.bodyToMono(KisStockInfoResponse.class)
+					.block(Duration.ofSeconds(5));
+		} catch (WebClientResponseException e) {
+			logKisError("search-stock-info", uri, properties.getStockInfo().getTrId(), e);
+			throw e;
+		}
 
 		if (response == null) {
 			throw new IllegalStateException("Empty response from KIS stock info API");
@@ -271,18 +293,24 @@ public class KisService {
 				.build(true)
 				.toUriString();
 
-		KisDailyChartResponse response = webClient.get()
-				.uri(uri)
-				.accept(MediaType.APPLICATION_JSON)
-				.header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
-				.header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
-				.header("appkey", properties.getAppkey())
-				.header("appsecret", properties.getAppsecret())
-				.header("tr_id", properties.getDailyChart().getTrId())
-				.header("custtype", properties.getCusttype())
-				.retrieve()
-				.bodyToMono(KisDailyChartResponse.class)
-				.block(Duration.ofSeconds(5));
+		KisDailyChartResponse response;
+		try {
+			response = webClient.get()
+					.uri(uri)
+					.accept(MediaType.APPLICATION_JSON)
+					.header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
+					.header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
+					.header("appkey", properties.getAppkey())
+					.header("appsecret", properties.getAppsecret())
+					.header("tr_id", properties.getDailyChart().getTrId())
+					.header("custtype", properties.getCusttype())
+					.retrieve()
+					.bodyToMono(KisDailyChartResponse.class)
+					.block(Duration.ofSeconds(5));
+		} catch (WebClientResponseException e) {
+			logKisError("daily-chart", uri, properties.getDailyChart().getTrId(), e);
+			throw e;
+		}
 
 		if (response == null) {
 			throw new IllegalStateException("Empty response from KIS daily chart API");
@@ -291,6 +319,66 @@ public class KisService {
 			throw new IllegalStateException("KIS error: " + response.getMsgCd() + " - " + response.getMsg1());
 		}
 		return response;
+	}
+
+	/**
+	 * Multiple stock prices (KIS intstock-multprice)
+	 * - joins codes as: 005930|000660|035720 (KIS docs: up to 50)
+	 */
+	public Map<?, ?> fetchMultiplePrices(List<String> stockIds) {
+		requireBasicConfig();
+		requireMultiPriceConfig();
+
+		if (stockIds == null || stockIds.isEmpty()) {
+			throw new IllegalArgumentException("stockIds are required");
+		}
+
+		String token = getValidAccessToken();
+		if (token == null || token.isBlank()) {
+			throw new IllegalStateException("KIS access token is missing");
+		}
+
+		String joinedCodes = String.join("|", stockIds);
+
+		String uri = UriComponentsBuilder.fromPath(properties.getMultiPrice().getPath())
+				.queryParam("fid_cond_mrkt_div_code", properties.getFid().getCondMrktDivCode())
+				.queryParam("fid_input_iscd", joinedCodes)
+				.build()
+				.encode()
+				.toUriString();
+
+		try {
+			return webClient.get()
+					.uri(uri)
+					.accept(MediaType.APPLICATION_JSON)
+					.header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
+					.header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
+					.header("appkey", properties.getAppkey())
+					.header("appsecret", properties.getAppsecret())
+					.header("tr_id", properties.getMultiPrice().getTrId())
+					.header("custtype", properties.getCusttype())
+					.retrieve()
+					.bodyToMono(Map.class)
+					.block(Duration.ofSeconds(5));
+		} catch (WebClientResponseException e) {
+			logKisError("intstock-multprice", uri, properties.getMultiPrice().getTrId(), e);
+			throw e;
+		}
+	}
+
+	private void logKisError(String apiName, String uri, String trId, WebClientResponseException e) {
+		String body = e.getResponseBodyAsString();
+		if (body != null && body.length() > 2000) {
+			body = body.substring(0, 2000) + "...(truncated)";
+		}
+		log.warn(
+				"KIS API call failed: api={} status={} uri={} tr_id={} body={}",
+				apiName,
+				e.getRawStatusCode(),
+				uri,
+				trId,
+				body
+		);
 	}
 
 	private void requireBasicConfig() {
@@ -338,6 +426,18 @@ public class KisService {
 		}
 		if (properties.getDailyChart().getTrId() == null || properties.getDailyChart().getTrId().isBlank()) {
 			throw new IllegalStateException("kis.daily-chart.tr-id is required");
+		}
+	}
+
+	private void requireMultiPriceConfig() {
+		if (properties.getMultiPrice() == null) {
+			throw new IllegalStateException("kis.multi-price is required");
+		}
+		if (properties.getMultiPrice().getPath() == null || properties.getMultiPrice().getPath().isBlank()) {
+			throw new IllegalStateException("kis.multi-price.path is required");
+		}
+		if (properties.getMultiPrice().getTrId() == null || properties.getMultiPrice().getTrId().isBlank()) {
+			throw new IllegalStateException("kis.multi-price.tr-id is required");
 		}
 	}
 

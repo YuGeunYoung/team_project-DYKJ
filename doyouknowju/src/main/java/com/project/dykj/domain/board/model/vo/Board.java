@@ -1,4 +1,4 @@
-package com.project.dykj.board.model.vo;
+package com.project.dykj.domain.board.model.vo;
 
 import java.sql.Date;
 
@@ -23,3 +23,4 @@ public class Board {
     private String boardType;
     private String userId;
 }
+

@@ -1,4 +1,4 @@
-package com.project.dykj.board.dao;
+package com.project.dykj.domain.board.dao;
 
 import java.util.HashMap;
 import java.util.List;
@@ -7,8 +7,8 @@ import java.util.Map;
 import org.mybatis.spring.SqlSessionTemplate;
 import org.springframework.stereotype.Repository;
 
-import com.project.dykj.board.model.vo.Board;
-import com.project.dykj.board.model.vo.Reply;
+import com.project.dykj.domain.board.model.vo.Board;
+import com.project.dykj.domain.board.model.vo.Reply;
 
 @Repository
 public class BoardDao {
@@ -63,3 +63,4 @@ public class BoardDao {
         return sqlSession.update(NS_REPLY + "softDeleteReply", Map.of("replyId", replyId));
     }
 }
+

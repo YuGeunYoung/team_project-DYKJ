@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.project.dykj.kis.model.vo.KisDailyChartResponse;
+import com.project.dykj.kis.model.vo.StockSearchItem;
 import com.project.dykj.kis.model.vo.StockSyncRequest;
 import com.project.dykj.kis.model.vo.StockSuggestItem;
 import com.project.dykj.kis.model.vo.StockUpsertRequest;
@@ -53,6 +54,51 @@ public class StockController {
             @RequestParam(defaultValue = "10") int limit
     ) {
         return stockService.suggest(q, limit);
+    }
+
+    /**
+     * Stock search result page (contains match)
+     */
+    @GetMapping("/search")
+    public List<StockSearchItem> search(
+            @RequestParam String q,
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "20") int size
+    ) {
+        return stockService.search(q, page, size);
+    }
+
+    /**
+     * Multiple prices for list pages (max 20)
+     */
+    @PostMapping("/prices")
+    public Map<String, Object> getMultiplePrices(@RequestBody(required = false) Object body) {
+        List<String> ids = extractStockIds(body);
+        return stockService.getMultiplePrices(ids);
+    }
+
+    @SuppressWarnings("unchecked")
+    private static List<String> extractStockIds(Object body) {
+        if (body == null) {
+            return List.of();
+        }
+        Object rawIds = null;
+        if (body instanceof Map<?, ?> map) {
+            rawIds = map.get("stockIds");
+            if (rawIds == null) {
+                rawIds = map.get("stock_ids");
+            }
+        } else if (body instanceof List<?> list) {
+            rawIds = list;
+        }
+
+        if (!(rawIds instanceof List<?> list)) {
+            return List.of();
+        }
+        return list.stream()
+                .filter(v -> v != null && !String.valueOf(v).trim().isEmpty())
+                .map(v -> String.valueOf(v).trim())
+                .toList();
     }
 
     /**

@@ -8,6 +8,7 @@ import java.nio.charset.Charset;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.regex.Pattern;
 
 import org.mybatis.spring.SqlSessionTemplate;
@@ -16,6 +17,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.project.dykj.kis.model.vo.KisDailyChartResponse;
 import com.project.dykj.kis.model.vo.KisStockInfoResponse;
+import com.project.dykj.kis.model.vo.StockSearchItem;
 import com.project.dykj.kis.model.vo.StockSuggestItem;
 import com.project.dykj.kis.model.vo.StockUpsertRequest;
 
@@ -73,6 +75,90 @@ public class StockService {
 	}
 
 	/**
+	 * Multiple prices for list pages (max 20 codes)
+	 */
+	@Transactional(readOnly = true)
+	public Map<String, Object> getMultiplePrices(List<String> stockIds) {
+		if (stockIds == null || stockIds.isEmpty()) {
+			return Map.of();
+		}
+		List<String> codes = stockIds.stream()
+				.filter(v -> v != null && !v.trim().isEmpty())
+				.map(String::trim)
+				.distinct()
+				.limit(20)
+				.toList();
+		if (codes.isEmpty()) {
+			return Map.of();
+		}
+
+		Map<?, ?> raw = kisService.fetchMultiplePrices(codes);
+		return normalizeMultiplePricesResponse(raw);
+	}
+
+	private Map<String, Object> normalizeMultiplePricesResponse(Map<?, ?> raw) {
+		if (raw == null) {
+			return Map.of();
+		}
+
+		Object rtCd = raw.get("rt_cd");
+		if (rtCd != null && !"0".equals(String.valueOf(rtCd))) {
+			String msgCd = Objects.toString(raw.get("msg_cd"), "");
+			String msg1 = Objects.toString(raw.get("msg1"), "");
+			throw new IllegalStateException("KIS error: " + msgCd + " - " + msg1);
+		}
+
+		Object outputObj = raw.get("output");
+		if (!(outputObj instanceof List<?> outputList)) {
+			return Map.of();
+		}
+
+		Map<String, Object> byId = new HashMap<>();
+		for (Object itemObj : outputList) {
+			if (!(itemObj instanceof Map<?, ?> item)) {
+				continue;
+			}
+
+			String stockId = firstNonBlank(
+					item.get("stck_shrn_iscd"),
+					item.get("mksc_shrn_iscd"),
+					item.get("pdno"),
+					item.get("STOCK_ID"),
+					item.get("stockId"),
+					item.get("stock_id")
+			);
+			stockId = normalizeStockId(stockId);
+			if (stockId == null || stockId.isBlank()) {
+				continue;
+			}
+
+			Map<String, Object> priceInfo = new HashMap<>();
+			priceInfo.put("stck_prpr", item.get("stck_prpr"));
+			priceInfo.put("prdy_vrss", item.get("prdy_vrss"));
+			priceInfo.put("prdy_ctrt", item.get("prdy_ctrt"));
+			priceInfo.put("prdy_vrss_sign", item.get("prdy_vrss_sign"));
+			byId.put(stockId, priceInfo);
+		}
+		return byId;
+	}
+
+	private static String firstNonBlank(Object... candidates) {
+		if (candidates == null) {
+			return null;
+		}
+		for (Object c : candidates) {
+			if (c == null) {
+				continue;
+			}
+			String s = String.valueOf(c).trim();
+			if (!s.isEmpty()) {
+				return s;
+			}
+		}
+		return null;
+	}
+
+	/**
 	 * Upsert into STOCKS (admin/manual import)
 	 */
 	@Transactional
@@ -100,6 +186,26 @@ public class StockService {
 		params.put("q", query);
 		params.put("limit", safeLimit);
 		return sqlSession.selectList(NS_STOCK + "suggest", params);
+	}
+
+	/**
+	 * Stock search (contains match by name/code) for search result page
+	 */
+	@Transactional(readOnly = true)
+	public List<StockSearchItem> search(String q, int page, int size) {
+		String query = q == null ? "" : q.trim();
+		if (query.isEmpty()) {
+			return List.of();
+		}
+		int safePage = Math.max(1, page);
+		int safeSize = Math.min(50, Math.max(1, size));
+		int offset = (safePage - 1) * safeSize;
+
+		Map<String, Object> params = new HashMap<>();
+		params.put("q", query);
+		params.put("offset", offset);
+		params.put("size", safeSize);
+		return sqlSession.selectList(NS_STOCK + "search", params);
 	}
 
 	/**
