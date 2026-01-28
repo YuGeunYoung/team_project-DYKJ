@@ -54,4 +54,26 @@
     WHERE STOCK_ID = #{stockId}
   </select>
 
+  <select id="search" resultType="StockSearchItem">
+    SELECT
+      STOCK_ID AS stockId,
+      STOCK_NAME AS stockName,
+      STOCK_SECTOR AS stockSector,
+      IS_ACTIVE AS isActive
+    FROM STOCKS
+    WHERE IS_ACTIVE = 'Y'
+      AND (
+        UPPER(STOCK_NAME) LIKE '%' || UPPER(#{q}) || '%' OR
+        STOCK_ID LIKE '%' || #{q} || '%'
+      )
+    ORDER BY
+      CASE
+        WHEN UPPER(STOCK_NAME) LIKE UPPER(#{q}) || '%' THEN 0
+        WHEN STOCK_ID LIKE #{q} || '%' THEN 1
+        ELSE 2
+      END,
+      STOCK_NAME
+    OFFSET #{offset} ROWS FETCH NEXT #{size} ROWS ONLY
+  </select>
+
 </mapper>

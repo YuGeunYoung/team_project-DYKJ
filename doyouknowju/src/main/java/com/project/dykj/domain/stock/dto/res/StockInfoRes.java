@@ -1,5 +1,8 @@
 package com.project.dykj.domain.stock.dto.res;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -9,13 +12,11 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @Data
 @Builder
-public class MyTradesRes {
+@JsonIgnoreProperties(ignoreUnknown = true)
+public class StockInfoRes {
+    @JsonProperty("srtnCd")
     private String stockId;
+
+    @JsonProperty("itmsNm")
     private String stockName;
-    private String tradeCategory;
-    private long totalTradePrice;
-    private long tradeCount;
-    private long stockPrice;
-    private long afterBalance;
-    private String tradeDate;
 }
