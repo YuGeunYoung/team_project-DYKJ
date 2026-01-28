@@ -1,5 +1,9 @@
 package com.project.dykj.domain.chat.util;
 
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+
 import org.springframework.stereotype.Component;
 import org.springframework.web.socket.CloseStatus;
 import org.springframework.web.socket.TextMessage;
@@ -13,8 +17,6 @@ import com.project.dykj.domain.chat.service.ChatService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
-import java.util.ArrayList;
-import java.util.List;
 
 @Slf4j
 @Component
@@ -37,19 +39,23 @@ public class ChatHandler extends TextWebSocketHandler {
     // 2. 메시지를 보냈을 때 (가장 중요!)
     @Override
     protected void handleTextMessage(WebSocketSession session, TextMessage message) throws Exception {
-        // 2-1. React에서 보낸 JSON 문자열 받기
+        // 1. React에서 보낸 데이터(아이디, 내용) 받기
         String payload = message.getPayload();
-        log.info("받은 메시지: " + payload);
-
-        // 2-2. JSON -> Java 객체(VO)로 변환
         ChatMessageVO chatMessage = objectMapper.readValue(payload, ChatMessageVO.class);
         
-        // 2-3. DB에 저장
+        // 2. [핵심] 서버의 현재 시간을 Java 객체에 직접 넣어줍니다.
+        // 이렇게 해야 실시간 메시지에도 시간 정보가 포함됩니다.
+        chatMessage.setSendTime(new Date()); 
+        
+        // 3. DB 저장 (기존과 동일)
         chatService.saveMessage(chatMessage);
 
-        // 2-4. 접속한 모든 사람에게 다시 뿌려주기 (Broadcasting)
+        // 4. [수정] 시간이 포함된 Java 객체를 다시 JSON 문자열로 바꿉니다.
+        String updatedPayload = objectMapper.writeValueAsString(chatMessage);
+
+        // 5. 접속한 모든 사람에게 '시간이 포함된' 메시지를 뿌려줍니다.
         for (WebSocketSession sess : sessionList) {
-            sess.sendMessage(new TextMessage(payload));
+            sess.sendMessage(new TextMessage(updatedPayload));
         }
     }
 
