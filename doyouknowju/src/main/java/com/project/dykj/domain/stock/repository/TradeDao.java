@@ -5,9 +5,9 @@ import java.util.List;
 import org.mybatis.spring.SqlSessionTemplate;
 import org.springframework.stereotype.Repository;
 
-import com.project.dykj.domain.stock.dto.BuyReq;
-import com.project.dykj.domain.stock.dto.MyTradesRes;
-import com.project.dykj.domain.stock.dto.TradesByStockIdRes;
+import com.project.dykj.domain.stock.dto.req.TradeReq;
+import com.project.dykj.domain.stock.dto.res.MyTradesRes;
+import com.project.dykj.domain.stock.dto.res.TradesByStockIdRes;
 
 @Repository
 public class TradeDao {
@@ -21,23 +21,23 @@ public class TradeDao {
         return sqlSession.selectList("TradeMapper.selectTradesByStockId", stockId);
     }
 
-    public int insertTrade(SqlSessionTemplate sqlSession, BuyReq buyReq) {
+    public int insertTrade(SqlSessionTemplate sqlSession, TradeReq buyReq) {
         return sqlSession.insert("TradeMapper.insertTrade", buyReq);
     }
 
-    public int selectHoldingCount(SqlSessionTemplate sqlSession, BuyReq buyReq) {
+    public int selectHoldingCount(SqlSessionTemplate sqlSession, TradeReq buyReq) {
         return sqlSession.selectOne("TradeMapper.selectHoldingCount", buyReq);
     }
 
-    public int insertHolding(SqlSessionTemplate sqlSession, BuyReq buyReq) {
+    public int insertHolding(SqlSessionTemplate sqlSession, TradeReq buyReq) {
         return sqlSession.insert("TradeMapper.insertHolding", buyReq);
     }
 
-    public int updateHolding(SqlSessionTemplate sqlSession, BuyReq buyReq) {
+    public int updateHolding(SqlSessionTemplate sqlSession, TradeReq buyReq) {
         return sqlSession.update("TradeMapper.updateHolding", buyReq);
     }
 
-    public int updateBalance(SqlSessionTemplate sqlSession, BuyReq buyReq) {
+    public int updateBalance(SqlSessionTemplate sqlSession, TradeReq buyReq) {
         return sqlSession.update("TradeMapper.updateBalance", buyReq);
     }
 }
