@@ -33,7 +33,7 @@
     </select>
 
     <!-- (아이디, 종목코드) 쌍 찾기 -->
-    <select id="selectHoldingCount" parameterType="BuyReq" resultType="int">
+    <select id="selectHoldingCount" parameterType="TradeReq" resultType="int">
         SELECT COUNT(*)
         FROM HOLDINGS
         WHERE USER_ID = #{userId}
@@ -41,7 +41,7 @@
     </select>
 
     <!-- 거래 내역 추가 -->
-    <insert id="insertTrade" parameterType="BuyReq">
+    <insert id="insertTrade" parameterType="TradeReq">
         INSERT INTO TRADE_HISTORIES (
             TRADE_ID,
             USER_ID,
