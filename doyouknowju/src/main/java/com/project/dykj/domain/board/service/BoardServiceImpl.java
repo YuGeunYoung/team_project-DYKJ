@@ -1,4 +1,4 @@
-package com.project.dykj.board.service;
+package com.project.dykj.domain.board.service;
 
 import java.util.List;
 
@@ -7,9 +7,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.project.dykj.board.dao.BoardDao;
-import com.project.dykj.board.model.vo.Board;
-import com.project.dykj.board.model.vo.Reply;
+import com.project.dykj.domain.board.dao.BoardDao;
+import com.project.dykj.domain.board.model.vo.Board;
+import com.project.dykj.domain.board.model.vo.Reply;
 
 @Service
 public class BoardServiceImpl implements BoardService {
@@ -110,19 +110,23 @@ public class BoardServiceImpl implements BoardService {
         }
     }
 
-	private void validateCreate(Board board) {
-		if (board == null) {
-			throw new IllegalArgumentException("body is required");
-		}
-		if (isBlank(board.getBoardType()) || isBlank(board.getUserId()) || isBlank(board.getBoardTitle()) || isBlank(board.getBoardContent())) {
-			throw new IllegalArgumentException("boardType/userId/title/content are required");
-		}
-		if ("STOCK".equalsIgnoreCase(board.getBoardType()) && isBlank(board.getStockId())) {
-			throw new IllegalArgumentException("stockId is required for STOCK board");
-		}
-	}
+    private void validateCreate(Board board) {
+        if (board == null) {
+            throw new IllegalArgumentException("body is required");
+        }
+        if (isBlank(board.getBoardType())
+                || isBlank(board.getUserId())
+                || isBlank(board.getBoardTitle())
+                || isBlank(board.getBoardContent())) {
+            throw new IllegalArgumentException("boardType/userId/title/content are required");
+        }
+        if ("STOCK".equalsIgnoreCase(board.getBoardType()) && isBlank(board.getStockId())) {
+            throw new IllegalArgumentException("stockId is required for STOCK board");
+        }
+    }
 
     private static boolean isBlank(String v) {
         return v == null || v.trim().isEmpty();
     }
 }
+

@@ -1,4 +1,4 @@
-package com.project.dykj.board.controller;
+package com.project.dykj.domain.board.controller;
 
 import java.net.URI;
 import java.util.List;
@@ -15,9 +15,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.project.dykj.board.model.vo.Board;
-import com.project.dykj.board.model.vo.Reply;
-import com.project.dykj.board.service.BoardService;
+import com.project.dykj.domain.board.model.vo.Board;
+import com.project.dykj.domain.board.model.vo.Reply;
+import com.project.dykj.domain.board.service.BoardService;
 
 @RestController
 @RequestMapping("/api/boards")
@@ -29,9 +29,7 @@ public class BoardController {
         this.boardService = boardService;
     }
 
-    /**
-     * 게시글 생성 (STOCK/FREE)
-     */
+    /** 게시글 생성 (STOCK/FREE) */
     @PostMapping("/posts")
     public ResponseEntity<Map<String, Object>> createPost(@RequestBody Board board) {
         long postId = boardService.createPost(board);
@@ -39,9 +37,7 @@ public class BoardController {
                 .body(Map.of("postId", postId));
     }
 
-    /**
-     * 게시글 목록 조회 (페이지네이션)
-     */
+    /** 게시글 목록 조회 (페이지네이션) */
     @GetMapping("/posts")
     public List<Board> listPosts(
             @RequestParam(required = false) String boardType,
@@ -52,9 +48,7 @@ public class BoardController {
         return boardService.listPosts(boardType, stockId, page, size);
     }
 
-    /**
-     * 게시글 상세 조회 (view=true면 조회수 증가)
-     */
+    /** 게시글 상세 조회 (view=true면 조회수 증가) */
     @GetMapping("/posts/{postId}")
     public Board getPost(
             @PathVariable long postId,
@@ -63,27 +57,21 @@ public class BoardController {
         return boardService.getPost(postId, view);
     }
 
-    /**
-     * 게시글 수정
-     */
+    /** 게시글 수정 */
     @PutMapping("/posts/{postId}")
     public ResponseEntity<Void> updatePost(@PathVariable long postId, @RequestBody Board board) {
         boardService.updatePost(postId, board);
         return ResponseEntity.noContent().build();
     }
 
-    /**
-     * 게시글 삭제(소프트 삭제)
-     */
+    /** 게시글 삭제(소프트 삭제) */
     @DeleteMapping("/posts/{postId}")
     public ResponseEntity<Void> deletePost(@PathVariable long postId) {
         boardService.deletePost(postId);
         return ResponseEntity.noContent().build();
     }
 
-    /**
-     * 댓글 작성
-     */
+    /** 댓글 작성 */
     @PostMapping("/posts/{postId}/comments")
     public ResponseEntity<Map<String, Object>> addComment(
             @PathVariable long postId,
@@ -94,20 +82,17 @@ public class BoardController {
                 .body(Map.of("replyId", replyId));
     }
 
-    /**
-     * 댓글 목록 조회
-     */
+    /** 댓글 목록 조회 */
     @GetMapping("/posts/{postId}/comments")
     public List<Reply> listComments(@PathVariable long postId) {
         return boardService.listReplies(postId);
     }
 
-    /**
-     * 댓글 삭제(소프트 삭제)
-     */
+    /** 댓글 삭제(소프트 삭제) */
     @DeleteMapping("/comments/{commentId}")
     public ResponseEntity<Void> deleteComment(@PathVariable long commentId) {
         boardService.deleteReply(commentId);
         return ResponseEntity.noContent().build();
     }
 }
+
