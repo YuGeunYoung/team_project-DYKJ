@@ -32,9 +32,25 @@ public class KisService {
 
 	private static final Logger log = LoggerFactory.getLogger(KisService.class);
 
+	/**
+	 * KIS(한국투자증권) OpenAPI 호출 전용 서비스.
+	 *
+	 * 이 클래스의 역할
+	 * - access token 발급/보관(메모리) 및 필요 시 자동 발급
+	 * - KIS REST API 호출(WebClient)과 요청 헤더(tr_id/appkey/appsecret/custtype) 구성
+	 * - 실패 시(KIS 4xx/5xx) 응답 바디를 포함해 로그로 남겨 원인 분석 가능하게 함
+	 *
+	 * 주의사항
+	 * - KIS는 초당 호출 제한이 있어(예: EGW00201) 과도한 폴링/동시호출은 500으로 실패할 수 있음
+	 * - 일부 API는 환경(모의/실전)에 따라 baseUrl/tr_id가 달라짐
+	 */
 	private final KisProperties properties;
 	private final WebClient webClient;
 
+	/**
+	 * access token은 서버 메모리에만 저장(재시작하면 초기화).
+	 * - 장기적으로는 스케줄러로 24시간 갱신/재발급 관리 권장
+	 */
 	private volatile String accessToken;
 
 	public KisService(KisProperties properties) {
@@ -54,7 +70,9 @@ public class KisService {
 	}
 
 	/**
-	 * KIS access_token issue/refresh (client_credentials)
+	 * KIS access_token 발급/갱신 (client_credentials)
+	 * - KIS는 대부분의 시세/정보 API 호출 전에 Bearer 토큰이 필요함
+	 * - 이 메소드는 토큰을 받아 accessToken 필드에 저장
 	 */
 	public synchronized void refreshAccessToken() {
 		requireBasicConfig();
@@ -78,7 +96,8 @@ public class KisService {
 	}
 
 	/**
-	 * Issue token automatically if missing
+	 * accessToken이 없으면 자동으로 발급 후 반환
+	 * - 최초 호출 시 refreshAccessToken()을 실행
 	 */
 	public String getValidAccessToken() {
 		String token = this.accessToken;
@@ -95,7 +114,9 @@ public class KisService {
 	}
 
 	/**
-	 * Map volume rank (Top10) response to VO
+	 * 거래량 랭킹 응답을 Top10 형태로 변환해서 반환
+	 * - 내부적으로 volume-rank API 호출 후, data_rank 기준 정렬 + 상위 10개만 매핑
+	 * - 프론트 메인페이지 등에서 사용
 	 */
 	public List<VolumeRankItem> getVolumeTop10() {
 		KisVolumeRankResponse response = fetchVolumeRank();
@@ -117,7 +138,9 @@ public class KisService {
 	}
 
 	/**
-	 * Fetch raw volume rank response (extend as needed)
+	 * 거래량 랭킹 원본 응답 조회 (필요 시 확장용)
+	 * - properties.kis.volume-rank.path / tr-id / fid 기본값이 필요
+	 * - KIS 서버에서 오류코드(rt_cd != 0)면 IllegalStateException 발생
 	 */
 	public KisVolumeRankResponse fetchVolumeRank() {
 		requireBasicConfig();
@@ -173,7 +196,9 @@ public class KisService {
 	}
 
 	/**
-	 * Get current price (inquire-price) - returns Map (can be modeled as VO later)
+	 * 현재가 조회 (inquire-price)
+	 * - 반환은 Map으로 두었고, 필요하면 VO로 모델링 가능
+	 * - 프론트에서 "현재가/등락률" 등을 표시할 때 사용
 	 */
 	public Map<?, ?> getStockPrice(String stockCode) {
 		requireBasicConfig();
@@ -207,7 +232,9 @@ public class KisService {
 	}
 
 	/**
-	 * Fetch stock detail info (search-stock-info)
+	 * 종목 기본정보 조회 (search-stock-info)
+	 * - 종목코드(PDNO) 단건으로 기본정보를 가져오는 용도
+	 * - DB(STOCKS) 동기화(sync)할 때 사용 가능
 	 */
 	public KisStockInfoResponse fetchStockInfo(String prdtTypeCd, String pdno) {
 		requireBasicConfig();
@@ -263,8 +290,10 @@ public class KisService {
 	}
 
 	/**
-	 * Daily/weekly/monthly chart data (for graph)
+	 * 차트 데이터(일/주/월) 조회 (inquire-daily-itemchartprice)
 	 * - start/end: YYYYMMDD
+	 * - periodDivCode: D/W/M (기본값은 properties.kis.daily-chart.period-div-code)
+	 * - 화면 그래프(캔들/라인) 데이터로 사용
 	 */
 	public KisDailyChartResponse fetchDailyChart(String stockId, String start, String end, String periodDivCode) {
 		requireBasicConfig();
@@ -322,8 +351,10 @@ public class KisService {
 	}
 
 	/**
-	 * Multiple stock prices (KIS intstock-multprice)
-	 * - joins codes as: 005930|000660|035720 (KIS docs: up to 50)
+	 * 복수 종목 현재가 조회 (intstock-multprice)
+	 * - KIS 문서 형식: FID_COND_MRKT_DIV_CODE_1..30, FID_INPUT_ISCD_1..30
+	 * - 우리는 검색 결과 페이지에서 최대 20개까지만 요청하도록 상위 서비스에서 제한
+	 * - 반환은 Map(원본 JSON) 그대로이고, StockService에서 프론트가 쓰기 좋게 정규화함
 	 */
 	public Map<?, ?> fetchMultiplePrices(List<String> stockIds) {
 		requireBasicConfig();
@@ -371,6 +402,7 @@ public class KisService {
 	}
 
 	private void logKisError(String apiName, String uri, String trId, WebClientResponseException e) {
+		// KIS에서 내려주는 msg_cd/msg1를 확인해야 원인(레이트리밋/입력오류 등) 파악 가능
 		String body = e.getResponseBodyAsString();
 		if (body != null && body.length() > 2000) {
 			body = body.substring(0, 2000) + "...(truncated)";
@@ -386,6 +418,7 @@ public class KisService {
 	}
 
 	private void requireBasicConfig() {
+		// baseUrl/appkey/appsecret은 모든 KIS API의 공통 필수값
 		if (properties.getBaseUrl() == null || properties.getBaseUrl().isBlank()) {
 			throw new IllegalStateException("kis.base-url is required");
 		}
@@ -398,6 +431,7 @@ public class KisService {
 	}
 
 	private void requireVolumeRankConfig() {
+		// 거래량 랭킹 API 호출에 필요한 설정값 검증
 		if (properties.getVolumeRank() == null) {
 			throw new IllegalStateException("kis.volume-rank is required");
 		}
@@ -410,6 +444,7 @@ public class KisService {
 	}
 
 	private void requireStockInfoConfig() {
+		// 종목 기본정보 API 호출에 필요한 설정값 검증
 		if (properties.getStockInfo() == null) {
 			throw new IllegalStateException("kis.stock-info is required");
 		}
@@ -422,6 +457,7 @@ public class KisService {
 	}
 
 	private void requireDailyChartConfig() {
+		// 차트 API 호출에 필요한 설정값 검증 (tr_id 누락 시 "kis.daily-chart.tr-id is required" 발생)
 		if (properties.getDailyChart() == null) {
 			throw new IllegalStateException("kis.daily-chart is required");
 		}
@@ -434,6 +470,7 @@ public class KisService {
 	}
 
 	private void requireMultiPriceConfig() {
+		// 복수 현재가 API 호출에 필요한 설정값 검증
 		if (properties.getMultiPrice() == null) {
 			throw new IllegalStateException("kis.multi-price is required");
 		}
