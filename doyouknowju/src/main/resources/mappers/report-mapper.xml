@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.project.dykj.domain.report.mapper.ReportMapper">
+
+    <insert id="insertReport" parameterType="com.project.dykj.domain.report.vo.ReportVo">
+        INSERT INTO REPORTS (
+            REPORT_ID, 
+            REPORT_TYPE, 
+            CONTENT_ID, 
+            REPORTER_ID, 
+            TARGET_ID, 
+            REPORT_REASON,
+            REPORT_DATE,
+            STATUS
+        ) VALUES (
+            SEQ_REPORT_ID.NEXTVAL, 
+            #{reportType}, 
+            #{contentId}, 
+            #{reporterId}, 
+            #{targetId}, 
+            #{reportReason},
+            SYSDATE,
+            'PENDING'
+        )
+    </insert>
+
+</mapper>
