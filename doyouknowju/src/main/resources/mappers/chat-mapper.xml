@@ -27,4 +27,28 @@
     ORDER BY SEND_TIME ASC
 </select>
 
+<select id="selectChatListByPaging" resultType="com.project.dykj.domain.chat.dto.ChatMessageVO">
+    SELECT * FROM (
+        SELECT 
+            CHAT_ID, USER_ID, CHAT_CONTENT, SEND_TIME
+        FROM CHAT_MESSAGES
+        <if test="lastChatId != null">
+            WHERE CHAT_ID &lt; #{lastChatId}  </if>
+        ORDER BY CHAT_ID DESC  )
+    WHERE ROWNUM &lt;= #{limit}  </select>
+    
+    <select id="selectChatListPaged" parameterType="map" resultType="com.project.dykj.domain.chat.dto.ChatMessageVO">
+    SELECT * FROM (
+        SELECT 
+            CHAT_ID, 
+            USER_ID, 
+            CHAT_CONTENT, 
+            SEND_TIME
+        FROM CHAT_MESSAGES
+        WHERE 1=1
+        <if test="lastChatId != null">
+            AND CHAT_ID &lt; #{lastChatId}  </if>
+        ORDER BY CHAT_ID DESC  )
+    WHERE ROWNUM &lt;= #{limit}  </select>
+
 </mapper>
