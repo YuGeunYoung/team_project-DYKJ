@@ -1,6 +1,8 @@
 package com.project.dykj.domain.chat.service;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.stereotype.Service;
 
@@ -24,6 +26,14 @@ public class ChatService {
  // 기존 saveMessage 메서드 아래에 추가
     public List<ChatMessageVO> getChatList() {
         return chatRepository.selectChatList();
+    }
+    
+    //무한스크롤 방지
+    public List<ChatMessageVO> getChatListPaged(Long lastChatId, int limit) {
+        Map<String, Object> params = new HashMap<>();
+        params.put("lastChatId", lastChatId);
+        params.put("limit", limit);
+        return chatRepository.selectChatListPaged(params);
     }
     
     
