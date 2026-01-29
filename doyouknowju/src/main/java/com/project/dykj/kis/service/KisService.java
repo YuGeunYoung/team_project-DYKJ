@@ -338,14 +338,18 @@ public class KisService {
 			throw new IllegalStateException("KIS access token is missing");
 		}
 
-		String joinedCodes = String.join("|", stockIds);
-
-		String uri = UriComponentsBuilder.fromPath(properties.getMultiPrice().getPath())
-				.queryParam("fid_cond_mrkt_div_code", properties.getFid().getCondMrktDivCode())
-				.queryParam("fid_input_iscd", joinedCodes)
-				.build()
-				.encode()
-				.toUriString();
+		// KIS multi-price endpoint expects numbered params:
+		// FID_COND_MRKT_DIV_CODE_1..30, FID_INPUT_ISCD_1..30
+		String marketDivCode = properties.getFid().getCondMrktDivCode();
+		UriComponentsBuilder builder = UriComponentsBuilder.fromPath(properties.getMultiPrice().getPath());
+		for (int i = 0; i < stockIds.size(); i++) {
+			int n = i + 1;
+			String stockId = stockIds.get(i);
+			builder = builder
+					.queryParam("FID_COND_MRKT_DIV_CODE_" + n, marketDivCode)
+					.queryParam("FID_INPUT_ISCD_" + n, stockId);
+		}
+		String uri = builder.build(true).toUriString();
 
 		try {
 			return webClient.get()
