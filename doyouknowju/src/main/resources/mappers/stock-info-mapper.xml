@@ -3,7 +3,33 @@
   PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
   "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
 
-<mapper namespace="StockInfoMapper">
+<mapper namespace="com.project.dykj.domain.stock.mapper.StockInfoMapper">
 
+  <update id="updateStockInfoIsActiveToN">
+    UPDATE STOCKS
+    SET IS_ACTIVE = 'N'
+  </update>
+  <!-- 리스트에 있는 모든 종목에 대해 UPSERT를 수행한다.-->
+  <!-- Oracle DB는 MERGE INTO를 이용하여 구현할 수 있다.-->
+  <update id="upsertStockInfo" parameterType="java.util.List">
+    MERGE INTO STOCKS S
+    USING (
+      <foreach collection="list" item="stockInfo" separator="UNION ALL">
+        SELECT
+          #{stockInfo.stockId} AS STOCK_ID,
+          #{stockInfo.stockName} AS STOCK_NAME,
+          'Y' AS IS_ACTIVE
+        FROM DUAL
+      </foreach>
+    ) V
+    ON (S.STOCK_ID = V.STOCK_ID)
+    WHEN MATCHED THEN
+      UPDATE SET
+        S.STOCK_NAME = V.STOCK_NAME,
+        S.IS_ACTIVE = V.IS_ACTIVE
+    WHEN NOT MATCHED THEN
+      INSERT (STOCK_ID, STOCK_NAME, STOCK_SECTOR, IS_ACTIVE)
+      VALUES (V.STOCK_ID, V.STOCK_NAME, '-', V.IS_ACTIVE)
+  </update>
 </mapper>
 
