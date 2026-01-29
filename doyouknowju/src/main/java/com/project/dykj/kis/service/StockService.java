@@ -9,6 +9,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.ArrayList;
 import java.util.regex.Pattern;
 
 import org.mybatis.spring.SqlSessionTemplate;
@@ -108,21 +109,19 @@ public class StockService {
 			throw new IllegalStateException("KIS error: " + msgCd + " - " + msg1);
 		}
 
-		Object outputObj = raw.get("output");
-		if (!(outputObj instanceof List<?> outputList)) {
+		List<Map<?, ?>> outputItems = collectOutputItems(raw);
+		if (outputItems.isEmpty()) {
 			return Map.of();
 		}
 
 		Map<String, Object> byId = new HashMap<>();
-		for (Object itemObj : outputList) {
-			if (!(itemObj instanceof Map<?, ?> item)) {
-				continue;
-			}
+		for (Map<?, ?> item : outputItems) {
 
 			String stockId = firstNonBlank(
-					item.get("stck_shrn_iscd"),
-					item.get("mksc_shrn_iscd"),
-					item.get("pdno"),
+					item.get("inter_shrn_iscd"),   // intstock-multprice
+					item.get("stck_shrn_iscd"),    // other endpoints
+					item.get("mksc_shrn_iscd"),    // other endpoints
+					item.get("pdno"),              // stock-info
 					item.get("STOCK_ID"),
 					item.get("stockId"),
 					item.get("stock_id")
@@ -133,13 +132,56 @@ public class StockService {
 			}
 
 			Map<String, Object> priceInfo = new HashMap<>();
-			priceInfo.put("stck_prpr", item.get("stck_prpr"));
-			priceInfo.put("prdy_vrss", item.get("prdy_vrss"));
-			priceInfo.put("prdy_ctrt", item.get("prdy_ctrt"));
-			priceInfo.put("prdy_vrss_sign", item.get("prdy_vrss_sign"));
+			// normalize to keys used by UI
+			priceInfo.put("stck_prpr", firstNonBlank(item.get("stck_prpr"), item.get("inter2_prpr")));
+			priceInfo.put("prdy_vrss", firstNonBlank(item.get("prdy_vrss"), item.get("inter2_prdy_vrss")));
+			priceInfo.put("prdy_ctrt", firstNonBlank(item.get("prdy_ctrt")));
+			priceInfo.put("prdy_vrss_sign", firstNonBlank(item.get("prdy_vrss_sign")));
 			byId.put(stockId, priceInfo);
 		}
 		return byId;
+	}
+
+	@SuppressWarnings("unchecked")
+	private static List<Map<?, ?>> collectOutputItems(Map<?, ?> raw) {
+		List<Map<?, ?>> items = new ArrayList<>();
+
+		Object out = raw.get("output");
+		addOutput(items, out);
+
+		// Some KIS endpoints use output1/output2... or other output groups
+		for (Map.Entry<?, ?> e : raw.entrySet()) {
+			Object k = e.getKey();
+			if (!(k instanceof String key)) {
+				continue;
+			}
+			if ("output".equals(key)) {
+				continue;
+			}
+			if (key.startsWith("output")) {
+				addOutput(items, e.getValue());
+			}
+		}
+
+		return items;
+	}
+
+	@SuppressWarnings("unchecked")
+	private static void addOutput(List<Map<?, ?>> items, Object output) {
+		if (output == null) {
+			return;
+		}
+		if (output instanceof Map<?, ?> map) {
+			items.add(map);
+			return;
+		}
+		if (output instanceof List<?> list) {
+			for (Object v : list) {
+				if (v instanceof Map<?, ?> map) {
+					items.add(map);
+				}
+			}
+		}
 	}
 
 	private static String firstNonBlank(Object... candidates) {
