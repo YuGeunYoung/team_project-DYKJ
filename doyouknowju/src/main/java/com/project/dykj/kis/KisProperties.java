@@ -31,7 +31,7 @@ public class KisProperties {
 
 	@Data
 	public static class Fid {
-		private String condMrktDivCode = "J";
+		private String condMrktDivCode = "UN";
 		private String condScrDivCode = "20171";
 		private String inputIscd = "";
 		private String divClsCode = "0";

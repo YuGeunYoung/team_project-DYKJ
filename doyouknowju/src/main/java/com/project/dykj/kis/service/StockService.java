@@ -1,10 +1,5 @@
 ﻿package com.project.dykj.kis.service;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.nio.charset.Charset;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -26,16 +21,26 @@ import com.project.dykj.kis.model.vo.StockUpsertRequest;
 public class StockService {
 
 	/**
-	 * MST import result (simple summary)
+	 * STOCKS(종목 마스터) DB + KIS 시세/정보를 연결하는 서비스.
+	 *
+	 * 이 클래스의 역할
+	 * 1) DB(STOCKS) 기반 기능
+	 *   - 자동완성(suggest): 이름/코드 prefix 검색 (가볍고 빠르게)
+	 *   - 검색(search): 이름/코드 contains 검색 + 페이지네이션 (검색결과 페이지용)
+	 *   - master 조회(findById): 상세페이지에서 종목 고정정보(코드/이름/섹터 등)
+	 *
+	 * 2) KIS 기반 기능
+	 *   - 현재가(getCurrentPrice): KIS inquire-price 호출
+	 *   - 차트(getDailyChart): KIS 일/주/월 차트 호출
+	 *   - 복수 현재가(getMultiplePrices): 검색결과 리스트에서 최대 20개 종목을 한 번에 조회
+	 *
+	 * 3) 데이터 적재/동기화
+	 *   - KIS 기본정보 sync(syncFromKis): API로 종목 기본정보를 조회해 STOCKS upsert
+	 *
+	 * 주의사항
+	 * - KIS는 초당 제한이 있어 검색결과에서 종목마다 /price를 N번 호출하면 금방 막힘
+	 *   → 그래서 /prices(복수 현재가)로 묶어서 호출하도록 설계
 	 */
-	public record MstImportResult(
-			int totalLines,
-			int imported,
-			int skippedNotStock,
-			int skippedInvalid
-	) {
-	}
-
 	private static final Pattern STOCK_CODE_PATTERN = Pattern.compile("^(?:A)?\\d{6}$");
 
 	private static final String NS_STOCK = "stockMapper.";
@@ -50,6 +55,7 @@ public class StockService {
 
 	@Transactional(readOnly = true)
 	public StockUpsertRequest findById(String stockId) {
+		// DB(STOCKS)에서 종목 마스터(고정 정보) 단건 조회
 		String id = stockId == null ? "" : stockId.trim();
 		if (id.isEmpty()) {
 			throw new IllegalArgumentException("stockId is required");
@@ -59,6 +65,7 @@ public class StockService {
 
 	@Transactional(readOnly = true)
 	public Map<?, ?> getCurrentPrice(String stockId) {
+		// KIS 현재가 단건 조회 (실시간/변동 데이터)
 		String id = stockId == null ? "" : stockId.trim();
 		if (id.isEmpty()) {
 			throw new IllegalArgumentException("stockId is required");
@@ -68,6 +75,7 @@ public class StockService {
 
 	@Transactional(readOnly = true)
 	public KisDailyChartResponse getDailyChart(String stockId, String start, String end, String periodDivCode) {
+		// KIS 차트 데이터 조회 (그래프용)
 		String id = stockId == null ? "" : stockId.trim();
 		if (id.isEmpty()) {
 			throw new IllegalArgumentException("stockId is required");
@@ -80,6 +88,8 @@ public class StockService {
 	 */
 	@Transactional(readOnly = true)
 	public Map<String, Object> getMultiplePrices(List<String> stockIds) {
+		// 검색결과 리스트에서 "최대 20개"만 복수현재가로 묶어서 조회
+		// (KIS 초당 제한/동시호출 문제를 줄이기 위함)
 		if (stockIds == null || stockIds.isEmpty()) {
 			return Map.of();
 		}
@@ -98,6 +108,8 @@ public class StockService {
 	}
 
 	private Map<String, Object> normalizeMultiplePricesResponse(Map<?, ?> raw) {
+		// KIS 복수현재가 응답(JSON)을 프론트에서 쓰기 쉬운 형태로 정규화
+		// - 반환 형태: { "005930": { stck_prpr, prdy_vrss, prdy_ctrt, prdy_vrss_sign }, ... }
 		if (raw == null) {
 			return Map.of();
 		}
@@ -144,6 +156,7 @@ public class StockService {
 
 	@SuppressWarnings("unchecked")
 	private static List<Map<?, ?>> collectOutputItems(Map<?, ?> raw) {
+		// KIS 응답마다 output/output1/... 구조가 달라질 수 있어 최대한 안전하게 수집
 		List<Map<?, ?>> items = new ArrayList<>();
 
 		Object out = raw.get("output");
@@ -168,6 +181,7 @@ public class StockService {
 
 	@SuppressWarnings("unchecked")
 	private static void addOutput(List<Map<?, ?>> items, Object output) {
+		// output이 Map(단건) 또는 List(Map...)(다건)일 수 있어 둘 다 처리
 		if (output == null) {
 			return;
 		}
@@ -185,6 +199,7 @@ public class StockService {
 	}
 
 	private static String firstNonBlank(Object... candidates) {
+		// 여러 후보 필드 중 값이 존재하는 첫 번째 값을 선택 (응답 필드명 차이 흡수)
 		if (candidates == null) {
 			return null;
 		}
@@ -205,6 +220,7 @@ public class StockService {
 	 */
 	@Transactional
 	public void upsertStocks(List<StockUpsertRequest> items) {
+		// 외부에서 StockUpsertRequest 리스트를 받아 STOCKS에 MERGE(upsert)
 		if (items == null || items.isEmpty()) {
 			return;
 		}
@@ -219,6 +235,7 @@ public class StockService {
 	 */
 	@Transactional(readOnly = true)
 	public List<StockSuggestItem> suggest(String q, int limit) {
+		// 자동완성: 사용자가 타이핑 중 반복 호출되므로 prefix 검색 + limit 작게
 		String query = q == null ? "" : q.trim();
 		if (query.isEmpty()) {
 			return List.of();
@@ -235,6 +252,7 @@ public class StockService {
 	 */
 	@Transactional(readOnly = true)
 	public List<StockSearchItem> search(String q, int page, int size) {
+		// 검색결과 페이지: contains 검색 + 페이지네이션
 		String query = q == null ? "" : q.trim();
 		if (query.isEmpty()) {
 			return List.of();
@@ -257,6 +275,7 @@ public class StockService {
 	 */
 	@Transactional
 	public void syncFromKis(List<String> stockIds, String prdtTypeCd) {
+		// KIS API로 종목 기본정보를 조회해 STOCKS에 upsert
 		if (stockIds == null || stockIds.isEmpty()) {
 			return;
 		}
@@ -285,83 +304,8 @@ public class StockService {
 		}
 	}
 
-	/**
-	 * Import KOSPI code MST file into STOCKS (upsert)
-	 * - MST format: fixed-width. Parse required fields by substring.
-	 * - Currently imports (stockId / stockName) only.
-	 */
-	@Transactional
-	public MstImportResult importKospiCodeMst(InputStream inputStream, Charset charset, boolean onlyStocks) {
-		if (inputStream == null) {
-			throw new IllegalArgumentException("file is required");
-		}
-		Charset cs = charset == null ? Charset.forName("MS949") : charset;
-
-		int totalLines = 0;
-		int imported = 0;
-		int skippedNotStock = 0;
-		int skippedInvalid = 0;
-
-		final int codeLen = 9;
-		final int isinLen = 12;
-		final int nameLen = 40;
-		final int nameStart = codeLen + isinLen;
-
-		try (BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream, cs))) {
-			String line;
-			while ((line = reader.readLine()) != null) {
-				totalLines++;
-
-				String raw = line;
-				if (raw == null) {
-					skippedInvalid++;
-					continue;
-				}
-				if (raw.isBlank()) {
-					continue;
-				}
-				if (raw.length() < nameStart + 1) {
-					skippedInvalid++;
-					continue;
-				}
-
-				String rawCode = safeSubstring(raw, 0, codeLen).trim();
-				String stockId = normalizeStockId(rawCode);
-				if (stockId == null) {
-					if (onlyStocks) {
-						skippedNotStock++;
-						continue;
-					}
-					// allow non-stock codes only if caller explicitly permits; still require some id
-					skippedNotStock++;
-					continue;
-				}
-
-				String stockName = safeSubstring(raw, nameStart, nameStart + nameLen).trim();
-				if (stockName.isBlank()) {
-					skippedInvalid++;
-					continue;
-				}
-
-				StockUpsertRequest req = new StockUpsertRequest(
-						stockId,
-						stockName,
-						"UNKNOWN",
-						null,
-						"Y"
-				);
-				validateUpsert(req);
-				sqlSession.update(NS_STOCK + "mergeStock", Map.of("req", req));
-				imported++;
-			}
-		} catch (IOException e) {
-			throw new IllegalStateException("failed to read mst file", e);
-		}
-
-		return new MstImportResult(totalLines, imported, skippedNotStock, skippedInvalid);
-	}
-
 	private void validateUpsert(StockUpsertRequest req) {
+		// STOCKS에 넣을 데이터 최소 검증 (코드/이름 필수, isActive는 Y/N만 허용)
 		if (req == null) {
 			throw new IllegalArgumentException("body is required");
 		}
@@ -377,11 +321,13 @@ public class StockService {
 	}
 
 	private static String pickSector(String v) {
+		// sector(업종/섹터)는 비어있으면 UNKNOWN으로 대체
 		String s = v == null ? "" : v.trim();
 		return s.isEmpty() ? "UNKNOWN" : s;
 	}
 
 	private static String toIsActive(String trStopYn, String lstgAbolDt) {
+		// 거래정지/상장폐지 여부로 거래가능여부(Y/N) 판단
 		if ("Y".equalsIgnoreCase(trStopYn)) {
 			return "N";
 		}
@@ -395,16 +341,10 @@ public class StockService {
 		return v == null || v.trim().isEmpty();
 	}
 
-	private static String safeSubstring(String s, int start, int end) {
-		if (s == null) {
-			return "";
-		}
-		int safeStart = Math.max(0, Math.min(start, s.length()));
-		int safeEnd = Math.max(safeStart, Math.min(end, s.length()));
-		return s.substring(safeStart, safeEnd);
-	}
-
 	private static String normalizeStockId(String rawCode) {
+		// MST/입력값에서 종목코드를 6자리로 정규화
+		// - "A005930"처럼 앞에 A가 붙으면 제거
+		// - 6자리 아니면 null 처리
 		if (rawCode == null) {
 			return null;
 		}

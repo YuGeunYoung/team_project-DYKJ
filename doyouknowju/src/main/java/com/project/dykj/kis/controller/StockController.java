@@ -3,17 +3,14 @@
 import java.util.List;
 import java.util.Map;
 
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.multipart.MultipartFile;
 
 import com.project.dykj.kis.model.vo.KisDailyChartResponse;
 import com.project.dykj.kis.model.vo.StockSearchItem;
@@ -23,7 +20,6 @@ import com.project.dykj.kis.model.vo.StockUpsertRequest;
 import com.project.dykj.kis.model.vo.VolumeRankItem;
 import com.project.dykj.kis.ranking.MarketRankingService;
 import com.project.dykj.kis.service.StockService;
-import com.project.dykj.kis.service.StockService.MstImportResult;
 
 @RestController
 @RequestMapping("/api/stocks")
@@ -63,7 +59,7 @@ public class StockController {
     public List<StockSearchItem> search(
             @RequestParam String q,
             @RequestParam(defaultValue = "1") int page,
-            @RequestParam(defaultValue = "20") int size
+            @RequestParam(defaultValue = "30") int size
     ) {
         return stockService.search(q, page, size);
     }
@@ -174,39 +170,6 @@ public class StockController {
         String prdtTypeCd = req == null ? null : req.getPrdtTypeCd();
         stockService.syncFromKis(ids, prdtTypeCd);
         return ResponseEntity.ok(Map.of("count", ids == null ? 0 : ids.size()));
-    }
-
-    /**
-     * Import KOSPI code MST file and upsert into STOCKS
-     */
-    @PostMapping(value = "/import-mst/kospi", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<Map<String, Object>> importKospiCodeMst(
-            @RequestPart("file") MultipartFile file,
-            @RequestParam(defaultValue = "MS949") String encoding,
-            @RequestParam(defaultValue = "true") boolean onlyStocks
-    ) {
-        MstImportResult result = stockService.importKospiCodeMst(
-                asInputStream(file),
-                java.nio.charset.Charset.forName(encoding),
-                onlyStocks
-        );
-        return ResponseEntity.ok(Map.of(
-                "totalLines", result.totalLines(),
-                "imported", result.imported(),
-                "skippedNotStock", result.skippedNotStock(),
-                "skippedInvalid", result.skippedInvalid()
-        ));
-    }
-
-    private static java.io.InputStream asInputStream(MultipartFile file) {
-        if (file == null || file.isEmpty()) {
-            throw new IllegalArgumentException("file is required");
-        }
-        try {
-            return file.getInputStream();
-        } catch (java.io.IOException e) {
-            throw new IllegalStateException("failed to read upload", e);
-        }
     }
 }
 
