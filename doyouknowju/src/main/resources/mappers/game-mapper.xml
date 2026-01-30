@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.project.dykj.domain.game.mapper.GameMapper">
+
+	<!-- 레벨 정책 조회 -->
+	<select id="selectLevelPolicies" resultType="LevelPolicy">
+		SELECT LEVEL_ID,
+			   REQUIRED_EXP
+		FROM LEVEL_POLICIES
+		ORDER BY LEVEL_ID ASC
+	</select>
+	
+	<!-- 경험치 획득 기록 -->
+	<insert id="insertExpHistory" parameterType="ExpHistory">
+		INSERT INTO EXP_HISTORIES (
+			EXP_LOG_ID,
+			USER_ID,
+			GAINED_EXP,
+			SOURCE_TYPE,
+			SOURCE_ID,
+			GAINED_AT
+		) VALUES (
+			SEQ_EXP_HISTORIES.NEXTVAL,
+			#{userId},
+			#{gainedExp},
+			#{sourceType},
+			#{sourceId},
+			SYSDATE
+		)
+	</insert>
+	
+	<!-- 회원 경험치 증가 -->
+	<update id="updateMemberExp">
+		UPDATE MEMBERS
+			SET EXPERIENCE = EXPERIENCE + #{amount}
+		WHERE USER_ID = #{userId}
+	</update>
+	
+	<!-- 회원 레벨 증가 -->
+	<update id="updateMemberLevel">
+		UPDATE MEMBERS
+			SET USER_LEVEL = #{level}
+		WHERE USER_ID = #{userId}
+	</update>
+
+</mapper>
