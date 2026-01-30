@@ -81,6 +81,13 @@
         )
     </insert>
 
+    <select id="selectHoldingByUserIdAndStockId" parameterType="TradeReq" resultType="Holding">
+        SELECT *
+        FROM HOLDINGS
+        WHERE USER_ID = #{userId}
+        AND STOCK_ID = #{stockId}
+    </select>
+
     <update id="addHolding" parameterType="TradeReq">
         UPDATE HOLDINGS
         SET TOTAL_PRICE = TOTAL_PRICE + #{totalTradePrice},
@@ -88,6 +95,20 @@
         WHERE USER_ID = #{userId}
         AND STOCK_ID = #{stockId}
     </update>
+
+    <update id="reduceHolding" parameterType="TradeReq">
+        UPDATE HOLDINGS
+        SET TOTAL_PRICE = TOTAL_PRICE - #{totalTradePrice},
+            TOTAL_COUNT = TOTAL_COUNT - #{tradeCount}
+        WHERE USER_ID = #{userId}
+        AND STOCK_ID = #{stockId}
+    </update>
+
+    <delete id="deleteHolding" parameterType="TradeReq">
+        DELETE FROM HOLDINGS
+        WHERE USER_ID = #{userId}
+        AND STOCK_ID = #{stockId}
+    </delete>
 
     <update id="updateBalance" parameterType="TradeReq">
         UPDATE MEMBERS
