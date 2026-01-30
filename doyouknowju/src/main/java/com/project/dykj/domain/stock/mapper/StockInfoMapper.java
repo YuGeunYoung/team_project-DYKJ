@@ -12,6 +12,8 @@ import com.project.dykj.domain.stock.dto.res.StockInfoRes;
 @Repository
 public interface StockInfoMapper {
 
+    public String selectStockNameById(String stockId);
+
     public int updateStockInfoIsActiveToN();
     
     public int upsertStockInfo(@Param("list") List<StockInfoRes> stockInfoList);
