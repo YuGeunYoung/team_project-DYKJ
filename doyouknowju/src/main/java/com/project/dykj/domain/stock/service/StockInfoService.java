@@ -85,4 +85,8 @@ public class StockInfoService {
         stockInfoMapper.upsertStockInfo(stockInfoList);
         log.info("===End Upsert STOCKS===");
     }
+
+    public String getStockName(String stockId) {
+        return stockInfoMapper.selectStockNameById(stockId);
+    }
 }
