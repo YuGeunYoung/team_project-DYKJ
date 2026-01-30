@@ -30,15 +30,15 @@ public class BoardController {
     }
 
     /** 게시글 생성 (STOCK/FREE) */
-    @PostMapping("/posts")
+    @PostMapping("/insert")
     public ResponseEntity<Map<String, Object>> createPost(@RequestBody Board board) {
-        long postId = boardService.createPost(board);
-        return ResponseEntity.created(URI.create("/api/boards/posts/" + postId))
-                .body(Map.of("postId", postId));
+        long boardId = boardService.createPost(board);
+        return ResponseEntity.created(URI.create("/api/boards/detail/" + boardId))
+                .body(Map.of("boardId", boardId));
     }
 
     /** 게시글 목록 조회 (페이지네이션) */
-    @GetMapping("/posts")
+    @GetMapping("/list")
     public List<Board> listPosts(
             @RequestParam(required = false) String boardType,
             @RequestParam(required = false) String stockId,
@@ -49,50 +49,49 @@ public class BoardController {
     }
 
     /** 게시글 상세 조회 (view=true면 조회수 증가) */
-    @GetMapping("/posts/{postId}")
+    @GetMapping( "/detail/{boardId}")
     public Board getPost(
-            @PathVariable long postId,
+            @PathVariable long boardId,
             @RequestParam(defaultValue = "true") boolean view
     ) {
-        return boardService.getPost(postId, view);
+        return boardService.getPost(boardId, view);
     }
 
     /** 게시글 수정 */
-    @PutMapping("/posts/{postId}")
-    public ResponseEntity<Void> updatePost(@PathVariable long postId, @RequestBody Board board) {
-        boardService.updatePost(postId, board);
+    @PutMapping("/update/{boardId}")
+    public ResponseEntity<Void> updatePost(@PathVariable long boardId, @RequestBody Board board) {
+        boardService.updatePost(boardId, board);
         return ResponseEntity.noContent().build();
     }
 
     /** 게시글 삭제(소프트 삭제) */
-    @DeleteMapping("/posts/{postId}")
-    public ResponseEntity<Void> deletePost(@PathVariable long postId) {
-        boardService.deletePost(postId);
+    @DeleteMapping( "/delete/{boardId}")
+    public ResponseEntity<Void> deletePost(@PathVariable long boardId) {
+        boardService.deletePost(boardId);
         return ResponseEntity.noContent().build();
     }
 
     /** 댓글 작성 */
-    @PostMapping("/posts/{postId}/comments")
+    @PostMapping("/{boardId}/replies/insert")
     public ResponseEntity<Map<String, Object>> addComment(
-            @PathVariable long postId,
+            @PathVariable long boardId,
             @RequestBody Reply reply
     ) {
-        long replyId = boardService.addReply(postId, reply);
-        return ResponseEntity.created(URI.create("/api/boards/comments/" + replyId))
+        long replyId = boardService.addReply(boardId, reply);
+        return ResponseEntity.created(URI.create("/api/boards/replies/" + replyId))
                 .body(Map.of("replyId", replyId));
     }
 
     /** 댓글 목록 조회 */
-    @GetMapping("/posts/{postId}/comments")
-    public List<Reply> listComments(@PathVariable long postId) {
-        return boardService.listReplies(postId);
+    @GetMapping("/{boardId}/replies")
+    public List<Reply> listComments(@PathVariable long boardId) {
+        return boardService.listReplies(boardId);
     }
 
     /** 댓글 삭제(소프트 삭제) */
-    @DeleteMapping("/comments/{commentId}")
-    public ResponseEntity<Void> deleteComment(@PathVariable long commentId) {
-        boardService.deleteReply(commentId);
+    @DeleteMapping("/replies/{replyId}/delete")
+    public ResponseEntity<Void> deleteComment(@PathVariable long replyId) {
+        boardService.deleteReply(replyId);
         return ResponseEntity.noContent().build();
     }
 }
-

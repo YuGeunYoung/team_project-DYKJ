@@ -31,7 +31,7 @@
       DELETE_DATE   AS deleteDate,
       MODIFY_DATE   AS modifyDate
     FROM REPLY
-    WHERE BOARD_ID = #{postId}
+    WHERE BOARD_ID = #{boardId}
       AND DELETE_DATE IS NULL
     ORDER BY CREATE_DATE ASC
   </select>

@@ -12,9 +12,9 @@ public interface BoardMapper {
 
 	int insertPost(Board board);
 
-	int incrementViewCnt(@Param("postId") long postId);
+	int incrementViewCnt(@Param("boardId") long boardId);
 
-	Board selectPostDetail(@Param("postId") long postId);
+	Board selectPostDetail(@Param("boardId") long boardId);
 
 	List<Board> selectPostList(
 			@Param("boardType") String boardType,
@@ -25,6 +25,5 @@ public interface BoardMapper {
 
 	int updatePost(Board board);
 
-	int softDeletePost(@Param("postId") long postId);
+	int softDeletePost(@Param("boardId") long boardId);
 }
-

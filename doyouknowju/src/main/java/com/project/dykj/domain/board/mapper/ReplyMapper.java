@@ -12,8 +12,7 @@ public interface ReplyMapper {
 
 	int insertReply(Reply reply);
 
-	List<Reply> selectReplies(@Param("postId") long postId);
+	List<Reply> selectReplies(@Param("boardId") long boardId);
 
 	int softDeleteReply(@Param("replyId") long replyId);
 }
-
