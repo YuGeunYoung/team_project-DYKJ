@@ -1,4 +1,4 @@
-﻿package com.project.dykj.kis.service;
+package com.project.dykj.kis.service;
 
 import java.util.HashMap;
 import java.util.List;
@@ -12,7 +12,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.project.dykj.kis.model.vo.KisDailyChartResponse;
-import com.project.dykj.kis.model.vo.KisStockInfoResponse;
 import com.project.dykj.kis.model.vo.StockSearchItem;
 import com.project.dykj.kis.model.vo.StockSuggestItem;
 import com.project.dykj.kis.model.vo.StockUpsertRequest;
@@ -97,7 +96,7 @@ public class StockService {
 				.filter(v -> v != null && !v.trim().isEmpty())
 				.map(String::trim)
 				.distinct()
-				.limit(20)
+				.limit(30)
 				.toList();
 		if (codes.isEmpty()) {
 			return Map.of();
@@ -138,10 +137,6 @@ public class StockService {
 					item.get("stockId"),
 					item.get("stock_id")
 			);
-			stockId = normalizeStockId(stockId);
-			if (stockId == null || stockId.isBlank()) {
-				continue;
-			}
 
 			Map<String, Object> priceInfo = new HashMap<>();
 			// normalize to keys used by UI
@@ -216,21 +211,6 @@ public class StockService {
 	}
 
 	/**
-	 * Upsert into STOCKS (admin/manual import)
-	 */
-	@Transactional
-	public void upsertStocks(List<StockUpsertRequest> items) {
-		// 외부에서 StockUpsertRequest 리스트를 받아 STOCKS에 MERGE(upsert)
-		if (items == null || items.isEmpty()) {
-			return;
-		}
-		for (StockUpsertRequest req : items) {
-			validateUpsert(req);
-			sqlSession.update(NS_STOCK + "mergeStock", Map.of("req", req));
-		}
-	}
-
-	/**
 	 * Stock autocomplete (prefix search by name/code)
 	 */
 	@Transactional(readOnly = true)
@@ -266,99 +246,6 @@ public class StockService {
 		params.put("offset", offset);
 		params.put("size", safeSize);
 		return sqlSession.selectList(NS_STOCK + "search", params);
-	}
-
-	/**
-	 * Sync STOCKS from KIS "search-stock-info" API
-	 * - stockIds: stock codes list (PDNO)
-	 * - prdtTypeCd: product type code (PRDT_TYPE_CD)
-	 */
-	@Transactional
-	public void syncFromKis(List<String> stockIds, String prdtTypeCd) {
-		// KIS API로 종목 기본정보를 조회해 STOCKS에 upsert
-		if (stockIds == null || stockIds.isEmpty()) {
-			return;
-		}
-		for (String stockId : stockIds) {
-			String safeId = stockId == null ? "" : stockId.trim();
-			if (safeId.isEmpty()) {
-				continue;
-			}
-			KisStockInfoResponse info = kisService.fetchStockInfo(prdtTypeCd, safeId);
-			if (info.getOutput() == null) {
-				continue;
-			}
-
-			String sector = pickSector(info.getOutput().getStdIdstClsfCdName());
-			String isActive = toIsActive(info.getOutput().getTrStopYn(), info.getOutput().getLstgAbolDt());
-
-			StockUpsertRequest req = new StockUpsertRequest(
-					info.getOutput().getPdno(),
-					info.getOutput().getPrdtName(),
-					sector,
-					null,
-					isActive
-			);
-			validateUpsert(req);
-			sqlSession.update(NS_STOCK + "mergeStock", Map.of("req", req));
-		}
-	}
-
-	private void validateUpsert(StockUpsertRequest req) {
-		// STOCKS에 넣을 데이터 최소 검증 (코드/이름 필수, isActive는 Y/N만 허용)
-		if (req == null) {
-			throw new IllegalArgumentException("body is required");
-		}
-		if (isBlank(req.getStockId()) || isBlank(req.getStockName())) {
-			throw new IllegalArgumentException("stockId/stockName are required");
-		}
-		if (req.getIsActive() != null && !req.getIsActive().isBlank()) {
-			String v = req.getIsActive().trim();
-			if (!"Y".equalsIgnoreCase(v) && !"N".equalsIgnoreCase(v)) {
-				throw new IllegalArgumentException("isActive must be Y or N");
-			}
-		}
-	}
-
-	private static String pickSector(String v) {
-		// sector(업종/섹터)는 비어있으면 UNKNOWN으로 대체
-		String s = v == null ? "" : v.trim();
-		return s.isEmpty() ? "UNKNOWN" : s;
-	}
-
-	private static String toIsActive(String trStopYn, String lstgAbolDt) {
-		// 거래정지/상장폐지 여부로 거래가능여부(Y/N) 판단
-		if ("Y".equalsIgnoreCase(trStopYn)) {
-			return "N";
-		}
-		if (lstgAbolDt != null && !lstgAbolDt.trim().isEmpty()) {
-			return "N";
-		}
-		return "Y";
-	}
-
-	private static boolean isBlank(String v) {
-		return v == null || v.trim().isEmpty();
-	}
-
-	private static String normalizeStockId(String rawCode) {
-		// MST/입력값에서 종목코드를 6자리로 정규화
-		// - "A005930"처럼 앞에 A가 붙으면 제거
-		// - 6자리 아니면 null 처리
-		if (rawCode == null) {
-			return null;
-		}
-		String c = rawCode.trim();
-		if (c.isEmpty()) {
-			return null;
-		}
-		if (!STOCK_CODE_PATTERN.matcher(c).matches()) {
-			return null;
-		}
-		if (c.length() == 7 && (c.startsWith("A") || c.startsWith("a"))) {
-			return c.substring(1);
-		}
-		return c;
 	}
 }
 

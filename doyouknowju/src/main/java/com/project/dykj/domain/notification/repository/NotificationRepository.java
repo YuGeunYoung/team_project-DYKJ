@@ -1,4 +1,4 @@
-﻿package com.project.dykj.domain.notification.repository;
+package com.project.dykj.domain.notification.repository;
 
 import org.apache.ibatis.annotations.Mapper;
 import java.util.List;
