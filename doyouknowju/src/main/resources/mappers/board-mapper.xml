@@ -27,7 +27,7 @@
   <update id="incrementViewCnt">
     UPDATE BOARD
        SET VIEW_COUNT = VIEW_COUNT + 1
-     WHERE BOARD_ID = #{postId}
+     WHERE BOARD_ID = #{boardId}
        AND DELETE_DATE IS NULL
   </update>
 
@@ -44,7 +44,7 @@
       BOARD_TYPE    AS boardType,
       USER_ID       AS userId
     FROM BOARD
-    WHERE BOARD_ID = #{postId}
+    WHERE BOARD_ID = #{boardId}
       AND DELETE_DATE IS NULL
   </select>
 
@@ -86,7 +86,7 @@
     UPDATE BOARD
        SET DELETE_DATE = SYSDATE,
            MODIFY_DATE = SYSDATE
-     WHERE BOARD_ID = #{postId}
+     WHERE BOARD_ID = #{boardId}
        AND DELETE_DATE IS NULL
   </update>
 
