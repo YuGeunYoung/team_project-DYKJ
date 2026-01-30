@@ -29,7 +29,7 @@ public class GameService {
 		int previousLevel = member.getUserLevel();
 		int currentExp = member.getExperience();
 		
-		//경험치 로그 기록
+		// 경험치 로그 기록
 		ExpHistory history = ExpHistory.builder()
 								.userId(userId)
 								.gainedExp(amount)
@@ -37,15 +37,15 @@ public class GameService {
 								.build();
 		gameMapper.insertExpHistory(history);
 		
-		//회원 테이블 경험치 증가
+		// 회원 테이블 경험치 증가
 		gameMapper.updateMemberExp(userId, amount);
 		int totalExp = currentExp + amount;
 		
-		//레벨업 체크
+		// 레벨업 체크
 		List<LevelPolicy> policies = gameMapper.selectLevelPolicies();
 		int newLevel = previousLevel;
 		
-		//레벨 정책 확인
+		// 레벨 정책 확인
 		for(LevelPolicy policy : policies) {
 			//사용자 레벨보다 높은 레벨 정책만 고려
 			if(policy.getLevelId() > newLevel) {
@@ -70,5 +70,9 @@ public class GameService {
 					.totalExp(totalExp)
 					.isLevelUp(isLevelUp)
 					.build();
+	}
+	
+	public Member getMemberById(String userId) {
+		return memberMapper.findByUserId(userId);
 	}
 }

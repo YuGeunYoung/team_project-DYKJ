@@ -5,14 +5,13 @@ import java.util.Map;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.project.dykj.domain.member.dto.LoginRequestDTO;
-import com.project.dykj.domain.member.dto.MemberRequestDTO;
 import com.project.dykj.domain.member.entity.Member;
 import com.project.dykj.domain.member.service.MemberService;
 
@@ -23,7 +22,6 @@ import lombok.RequiredArgsConstructor;
 @RestController
 @RequestMapping("/api/members")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "http://localhost:5173", allowCredentials = "true")
 public class MemberController {
 	
 	private final MemberService memberService;
@@ -39,6 +37,13 @@ public class MemberController {
 		}
 	}
 	
+	//회원가입 시 아이디 중복 여부 확인 기능 추가
+	@GetMapping("/checkId")
+	public ResponseEntity<?> checkId(String userId){
+		boolean isExists = memberService.checkId(userId);
+		return ResponseEntity.ok(isExists);
+	}
+	
 	@PostMapping("/login")
 	public ResponseEntity<?> login(@RequestBody LoginRequestDTO loginRequest, HttpServletRequest request){
 		Member loginMember = memberService.login(loginRequest);
@@ -46,22 +51,36 @@ public class MemberController {
 		if(loginMember != null) {
 			HttpSession session = request.getSession();
 			session.setAttribute("loginUser", loginMember);
-			
-			Map<String, Object> responseData = new HashMap<>();
-			responseData.put("userId", loginMember.getUserId());
-	        responseData.put("phone", loginMember.getPhone());
-	        responseData.put("points", loginMember.getPoints());
-	        responseData.put("status", loginMember.getStatus());
-	        responseData.put("userRole", loginMember.getUserRole());
-	        responseData.put("enrollDate", loginMember.getEnrollDate());
-	        responseData.put("consecDays", loginMember.getConsecDays());
-	        responseData.put("isReceiveNotification", loginMember.getIsReceiveNotification());
-	        responseData.put("experience", loginMember.getExperience());
-	        responseData.put("userLevel", loginMember.getUserLevel());
 	        
-	        return ResponseEntity.ok(responseData);
+	        return ResponseEntity.ok(loginMember);
 		}else {
-			return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("LOGIN_FAIL");
+			Map<String, String> error = new HashMap<>();
+			error.put("message", "아이디 또는 비밀번호를 확인해주세요.");
+			return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(error);
 		}
+	}
+	
+	//서버에 남아있는 세션 제거
+	@PostMapping("/logout")
+	public ResponseEntity<?> logout(HttpSession session){
+		if(session != null) {
+			session.invalidate();
+		}
+		return ResponseEntity.ok("Logout_SUCCESS");
+	}
+	
+	//유저 정보 조회용 메소드
+	@GetMapping("/info")
+	public ResponseEntity<?> getMemberInfo(HttpSession session){
+		Member loginUser = (Member)session.getAttribute("loginUser");
+		
+		//서버쪽 문제로 세션이 만료되었을 경우 인터셉터가 제대로 작동하지 않는 경우가 있음
+		//따라서 정보 조회 수행 시에 로그인 정보 한번 더 확인
+		if(loginUser == null) {
+			return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("로그인이 필요합니다.");
+		}
+		
+		Member member = memberService.getMemberById(loginUser.getUserId());
+		return ResponseEntity.ok(member);
 	}
 }
