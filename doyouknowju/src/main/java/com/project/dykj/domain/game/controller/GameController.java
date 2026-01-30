@@ -3,7 +3,6 @@ package com.project.dykj.domain.game.controller;
 import java.util.Map;
 
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -21,7 +20,6 @@ import lombok.extern.slf4j.Slf4j;
 @RestController
 @RequestMapping("/api/game")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "http://localhost:5173", allowCredentials = "true")
 public class GameController {
 	private final GameService gameService;
 	
@@ -31,15 +29,15 @@ public class GameController {
 
         Member loginUser = (Member) session.getAttribute("loginUser");
 
-        if (loginUser == null) {
-            return ResponseEntity.status(401).body("로그인이 필요합니다.");
-        }
-
         String userId = loginUser.getUserId();
-        int amount = (Integer) request.get("amount");
+        int amount = ((Number) request.get("amount")).intValue();
 
         ExpResultDTO result = gameService.gainExp(userId, amount, "TEST_ADMIN");
-
+        
+        //경험치,레벨 업데이트 후 정보 다시 반영
+        Member updateMember = gameService.getMemberById(userId);
+        session.setAttribute("loginUser",updateMember);
+        
         return ResponseEntity.ok(result);
     }
 	
