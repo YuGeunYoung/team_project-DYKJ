@@ -1,4 +1,4 @@
-﻿package com.project.dykj.kis.controller;
+package com.project.dykj.kis.controller;
 
 import java.util.List;
 import java.util.Map;
@@ -14,7 +14,6 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.project.dykj.kis.model.vo.KisDailyChartResponse;
 import com.project.dykj.kis.model.vo.StockSearchItem;
-import com.project.dykj.kis.model.vo.StockSyncRequest;
 import com.project.dykj.kis.model.vo.StockSuggestItem;
 import com.project.dykj.kis.model.vo.StockUpsertRequest;
 import com.project.dykj.kis.model.vo.VolumeRankItem;
@@ -34,7 +33,9 @@ public class StockController {
     }
 
     /**
-     * Main page: volume TOP10
+     * 메인 페이지용: 거래량 TOP10 조회
+     * - 내부적으로 KIS 거래량 랭킹 API를 호출하여 상위 10개를 반환합니다.
+     * - KIS는 초당 제한이 있으므로(레이트리밋) 과도한 폴링/중복 호출은 500(EGW00201)을 유발할 수 있습니다.
      */
     @GetMapping("/top10")
     public List<VolumeRankItem> volumeTop10() {
@@ -42,7 +43,9 @@ public class StockController {
     }
 
     /**
-     * Stock autocomplete (suggest)
+     * 자동완성(추천) 목록 조회
+     * - q(prefix)로 시작하는 종목명/종목코드를 DB(STOCKS)에서 빠르게 조회합니다.
+     * - 입력 중 계속 호출될 수 있으므로 limit를 작게 유지하는 것을 권장합니다.
      */
     @GetMapping("/suggest")
     public List<StockSuggestItem> suggest(
@@ -53,7 +56,9 @@ public class StockController {
     }
 
     /**
-     * Stock search result page (contains match)
+     * 검색 결과 페이지용 목록 조회
+     * - q(키워드)가 포함(contains)된 종목을 DB(STOCKS)에서 조회합니다.
+     * - page/size로 페이지네이션을 지원합니다(기본 size=30).
      */
     @GetMapping("/search")
     public List<StockSearchItem> search(
@@ -65,7 +70,12 @@ public class StockController {
     }
 
     /**
-     * Multiple prices for list pages (max 20)
+     * 리스트 페이지용 복수 현재가 조회 (최대 20개)
+     * - 검색 결과 페이지에서 종목별로 /price를 N번 호출하면 KIS 레이트리밋에 걸리기 쉬워서,
+     *   복수 조회 API(intstock-multprice)로 한 번에 조회하도록 만든 엔드포인트입니다.
+     * - 요청 바디 예시:
+     *   1) { "stockIds": ["005930","000660"] }
+     *   2) ["005930","000660"]
      */
     @PostMapping("/prices")
     public Map<String, Object> getMultiplePrices(@RequestBody(required = false) Object body) {
@@ -98,7 +108,8 @@ public class StockController {
     }
 
     /**
-     * Stock master (DB) lookup
+     * 종목 마스터(DB) 단건 조회
+     * - STOCKS 테이블에 적재된 "고정 정보"(이름/섹터/설명/활성여부 등)를 반환합니다.
      */
     @GetMapping("/{stockId}/master")
     public ResponseEntity<StockUpsertRequest> getMaster(@PathVariable String stockId) {
@@ -110,7 +121,8 @@ public class StockController {
     }
 
     /**
-     * Real-time price (KIS inquire-price)
+     * 실시간 현재가 조회 (KIS inquire-price)
+     * - 단건 조회는 대부분의 종목코드를 처리하지만, 과도한 호출은 레이트리밋(EGW00201)에 걸릴 수 있습니다.
      */
     @GetMapping("/{stockId}/price")
     public Map<?, ?> getPrice(@PathVariable String stockId) {
@@ -118,7 +130,7 @@ public class StockController {
     }
 
     /**
-     * Daily chart data (KIS inquire-daily-itemchartprice)
+     * 일/주/월 차트 데이터 조회 (KIS inquire-daily-itemchartprice)
      * - start/end: YYYYMMDD
      * - period: D/W/M
      */
@@ -133,7 +145,9 @@ public class StockController {
     }
 
     /**
-     * Detail: master + price + chart
+     * 상세 페이지용 묶음 조회
+     * - master(DB) + price(KIS) + chart(KIS)를 한 번에 반환합니다.
+     * - 차트 설정(kis.daily-chart.tr-id)이 비어있으면 차트 호출에서 에러가 날 수 있습니다.
      */
     @GetMapping("/{stockId}/detail")
     public Map<String, Object> getDetail(
@@ -152,24 +166,5 @@ public class StockController {
         );
     }
 
-    /**
-     * Upsert STOCKS master directly
-     */
-    @PostMapping("/import")
-    public ResponseEntity<Map<String, Object>> importStocks(@RequestBody List<StockUpsertRequest> items) {
-        stockService.upsertStocks(items);
-        return ResponseEntity.ok(Map.of("count", items == null ? 0 : items.size()));
-    }
-
-    /**
-     * Fetch from KIS API and upsert into STOCKS
-     */
-    @PostMapping("/sync")
-    public ResponseEntity<Map<String, Object>> syncFromKis(@RequestBody StockSyncRequest req) {
-        List<String> ids = req == null ? List.of() : req.getStockIds();
-        String prdtTypeCd = req == null ? null : req.getPrdtTypeCd();
-        stockService.syncFromKis(ids, prdtTypeCd);
-        return ResponseEntity.ok(Map.of("count", ids == null ? 0 : ids.size()));
-    }
 }
 
