@@ -46,7 +46,7 @@ public class TradeController {
     // 주식 매도
     @PostMapping("/sell")
     public ResponseEntity<?> sellStock(@RequestBody TradeReq tradeReq) {
-        TradeRes sellRes = tradeService.tradeStock(tradeReq);
+        TradeRes sellRes = tradeService.sellStock(tradeReq);
 
         return ResponseEntity.ok(sellRes);
     }

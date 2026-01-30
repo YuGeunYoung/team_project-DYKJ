@@ -23,7 +23,7 @@ public interface TradeMapper {
 
     public int insertHolding(TradeReq tradeReq);
 
-    public int updateHolding(TradeReq tradeReq);
+    public int addHolding(TradeReq tradeReq);
 
     public int updateBalance(TradeReq tradeReq);
 }

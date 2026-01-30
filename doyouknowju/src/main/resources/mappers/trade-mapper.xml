@@ -3,7 +3,7 @@
   PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
   "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
 
-<mapper namespace="TradeMapper">
+<mapper namespace="com.project.dykj.domain.stock.mapper.TradeMapper">
     <!-- 나의 거래 내역 조회 -->
     <select id="selectMyTrades" parameterType="String" resultType="MyTradesRes">
         SELECT STOCK_ID,
@@ -54,7 +54,7 @@
             TRADE_DATE
         )
         VALUES (
-            SEQ_TRADE_ID.NEXTVAL,
+            SEQ_TRADE_HISTORIES.NEXTVAL,
             #{userId},
             #{stockId},
             #{tradeCategory},
@@ -65,5 +65,34 @@
             SYSDATE
         )
     </insert>
+
+    <insert id="insertHolding" parameterType="TradeReq">
+        INSERT INTO HOLDINGS (
+            USER_ID,
+            STOCK_ID,
+            TOTAL_PRICE,
+            TOTAL_COUNT
+        )
+        VALUES (
+            #{userId},
+            #{stockId},
+            #{totalTradePrice},
+            #{tradeCount}
+        )
+    </insert>
+
+    <update id="addHolding" parameterType="TradeReq">
+        UPDATE HOLDINGS
+        SET TOTAL_PRICE = TOTAL_PRICE + #{totalTradePrice},
+            TOTAL_COUNT = TOTAL_COUNT + #{tradeCount}
+        WHERE USER_ID = #{userId}
+        AND STOCK_ID = #{stockId}
+    </update>
+
+    <update id="updateBalance" parameterType="TradeReq">
+        UPDATE MEMBERS
+        SET POINTS = #{afterBalance}
+        WHERE USER_ID = #{userId}
+    </update>
 </mapper>
 

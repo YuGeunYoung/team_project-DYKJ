@@ -5,6 +5,12 @@
 
 <mapper namespace="com.project.dykj.domain.stock.mapper.StockInfoMapper">
 
+  <select id="selectStockNameById" parameterType="string" resultType="string">
+    SELECT STOCK_NAME
+    FROM STOCKS
+    WHERE STOCK_ID = #{stockId}
+  </select>
+
   <update id="updateStockInfoIsActiveToN">
     UPDATE STOCKS
     SET IS_ACTIVE = 'N'
