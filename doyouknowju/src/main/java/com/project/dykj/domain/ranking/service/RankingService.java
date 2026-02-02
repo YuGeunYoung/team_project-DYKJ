@@ -15,7 +15,7 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class RankingService {
 
-    private static final int GROUP_SIZE = 10;
+    private static final int GROUP_SIZE = 1;
     
     private final RankingMapper rankingMapper;
 
