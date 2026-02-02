@@ -64,6 +64,12 @@
     WHERE DELETE_DATE IS NULL
       <if test="boardType != null and boardType != ''">
         AND BOARD_TYPE = #{boardType}
+        <if test="boardType == 'FREE'">
+          AND STOCK_ID IS NULL
+        </if>
+        <if test="boardType == 'STOCK'">
+          AND STOCK_ID IS NOT NULL
+        </if>
       </if>
       <if test="stockId != null and stockId != ''">
         AND STOCK_ID = #{stockId}
