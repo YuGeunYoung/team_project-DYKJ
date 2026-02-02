@@ -20,7 +20,7 @@ public class WebConfig implements WebMvcConfigurer{
 		registry.addInterceptor(loginInterceptor)
 				.addPathPatterns("/api/members/info",
 								 "/api/members/logout",
-								 "api/game/**"
+								 "/api/game/**"
 				);
 	}
 }

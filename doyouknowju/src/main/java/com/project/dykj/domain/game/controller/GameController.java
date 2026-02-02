@@ -28,7 +28,11 @@ public class GameController {
             @RequestBody Map<String, Object> request, HttpSession session) {
 
         Member loginUser = (Member) session.getAttribute("loginUser");
-
+        
+        if(loginUser == null) {
+        	return ResponseEntity.status(401).body("로그인이 필요합니다.");
+        }
+        
         String userId = loginUser.getUserId();
         int amount = ((Number) request.get("amount")).intValue();
 
