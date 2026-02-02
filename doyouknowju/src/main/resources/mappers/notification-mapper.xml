@@ -39,5 +39,15 @@
         SET IS_READ = 'Y'
         WHERE NOTI_NO = #{notiNo}
     </update>
+    
+    
+    <!-- DB에서 오늘 날짜로 해당 종목의 알림(NOTI_URL에 종목코드가 포함됨)이 있는지 확인하는 쿼리를 추가합니다. -->
+    <select id="countTodayStockNotification" resultType="int">
+    SELECT COUNT(*) 
+    FROM NOTIFICATIONS 
+    WHERE USER_ID = #{userId}
+      AND NOTI_URL LIKE '%' || #{stockId} || '%'
+      AND TRUNC(CREATE_AT) = TRUNC(SYSDATE)
+</select>
 
 </mapper>

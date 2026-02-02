@@ -1,7 +1,10 @@
 package com.project.dykj.domain.notification.repository;
 
-import org.apache.ibatis.annotations.Mapper;
 import java.util.List;
+
+import org.apache.ibatis.annotations.Mapper;
+import org.apache.ibatis.annotations.Param;
+
 import com.project.dykj.domain.notification.dto.NotificationVO;
 
 @Mapper
@@ -14,4 +17,10 @@ public interface NotificationRepository {
 
     // [설명] 알림을 읽음(Y) 상태로 변경 (SQL ID: updateReadStatus)
     int updateReadStatus(Long notiNo);
+    
+    /**
+     * [추가] 오늘 특정 유저에게 특정 종목의 알림을 보냈는지 개수를 셉니다.
+     */
+    int countTodayStockNotification(@Param("userId") String userId, @Param("stockId") String stockId);
+    
 }
