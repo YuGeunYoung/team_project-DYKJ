@@ -2,8 +2,42 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.project.dykj.domain.notification.repository.NotificationRepository">
 
-    <select id="selectAllNotifications" resultType="com.project.dykj.domain.notification.dto.NotificationVO">
+    <resultMap id="notificationResultMap" type="com.project.dykj.domain.notification.dto.NotificationVO">
+        <id property="notiNo" column="NOTI_NO"/>
+        <result property="userId" column="USER_ID"/>
+        <result property="notiType" column="NOTI_TYPE"/>
+        <result property="notiChannel" column="NOTI_CHANNEL"/>
+        <result property="message" column="MESSAGE"/>
+        <result property="notiUrl" column="NOTI_URL"/>
+        <result property="isRead" column="IS_READ"/>
+        <result property="createAt" column="CREATE_AT"/>
+        <result property="sendStatus" column="SEND_STATUS"/>
+        <result property="sendAt" column="SEND_AT"/>
+        <result property="errorMsg" column="ERROR_MSG"/>
+        <result property="retryCount" column="RETRY_COUNT"/>
+    </resultMap>
+
+    <!-- [설명] 특정 유저의 알림 목록을 최신순(오름차순이 아닌 내림차순)으로 조회합니다 -->
+    <select id="selectAllNotifications" parameterType="string" resultMap="notificationResultMap">
         SELECT * FROM NOTIFICATIONS
+        WHERE USER_ID = #{userId}
+        ORDER BY CREATE_AT DESC
     </select>
+
+    <!-- [설명] 알림 데이터를 삽입합니다. 시퀀스(SEQ_NOTI_NO)를 사용해 번호를 자동 생성합니다 -->
+    <insert id="insertNotification" parameterType="com.project.dykj.domain.notification.dto.NotificationVO">
+        INSERT INTO NOTIFICATIONS (
+            NOTI_NO, USER_ID, NOTI_TYPE, NOTI_CHANNEL, MESSAGE, NOTI_URL, IS_READ, CREATE_AT
+        ) VALUES (
+            SEQ_NOTI_NO.NEXTVAL, #{userId}, #{notiType}, #{notiChannel}, #{message}, #{notiUrl}, 'N', SYSDATE
+        )
+    </insert>
+
+    <!-- [설명] 특정 알림(NOTI_NO)의 읽음 여부(IS_READ)를 'Y'로 수정합니다 -->
+    <update id="updateReadStatus" parameterType="long">
+        UPDATE NOTIFICATIONS
+        SET IS_READ = 'Y'
+        WHERE NOTI_NO = #{notiNo}
+    </update>
 
 </mapper>
