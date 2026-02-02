@@ -8,28 +8,41 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.project.dykj.domain.ranking.dto.req.PageReq;
+import com.project.dykj.domain.ranking.dto.res.AllRankingRes;
+import com.project.dykj.domain.ranking.dto.res.RankingRes;
+import com.project.dykj.domain.ranking.service.RankingService;
+
+import java.util.List;
+import lombok.RequiredArgsConstructor;
 
 @RestController
 @RequestMapping("/api/ranking")
+@RequiredArgsConstructor
 public class RankingController {
+
+    private final RankingService rankingService;
     
-    @GetMapping("/weekly")
-    public ResponseEntity<?> getWeeklyRanking(@RequestBody PageReq pageReq) {
-        return ResponseEntity.ok("getWeeklyRanking");
+    @GetMapping("/weekly/{page}")
+    public ResponseEntity<?> getWeeklyRanking(@PathVariable int page) {
+        List<RankingRes> rankingResList = rankingService.getWeeklyRanking(page);
+        return ResponseEntity.ok(rankingResList);
     }
 
-    @GetMapping("/monthly")
-    public ResponseEntity<?> getMonthlyRanking(@RequestBody PageReq pageReq) {
-        return ResponseEntity.ok("getMonthlyRanking");
+    @GetMapping("/monthly/{page}")
+    public ResponseEntity<?> getMonthlyRanking(@PathVariable int page) {
+        List<RankingRes> rankingResList = rankingService.getMonthlyRanking(page);
+        return ResponseEntity.ok(rankingResList);
     }
 
-    @GetMapping("/yearly")
-    public ResponseEntity<?> getYearlyRanking(@RequestBody PageReq pageReq) {
-        return ResponseEntity.ok("getYearlyRanking");
+    @GetMapping("/yearly/{page}")
+    public ResponseEntity<?> getYearlyRanking(@PathVariable int page) {
+        List<RankingRes> rankingResList = rankingService.getYearlyRanking(page);
+        return ResponseEntity.ok(rankingResList);
     }
 
-    @GetMapping("/all")
-    public ResponseEntity<?> getAllRanking(@RequestBody PageReq pageReq) {
-        return ResponseEntity.ok("getAllRanking");
+    @GetMapping("/all/{page}")
+    public ResponseEntity<?> getAllRanking(@PathVariable int page) {
+        List<AllRankingRes> allRankingResList = rankingService.getAllRanking(page);
+        return ResponseEntity.ok(allRankingResList);
     }
 }

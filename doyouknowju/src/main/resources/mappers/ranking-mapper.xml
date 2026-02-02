@@ -4,6 +4,28 @@
   "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
 
 <mapper namespace="com.project.dykj.domain.ranking.mapper.RankingMapper">
+    <select id="selectWeeklyRanking" resultType="RankingRes">
+        SELECT *
+        FROM (SELECT ROWNUM,
+                     USER_ID,
+                     START_POINT,
+                     CURRENT_POINT,
+                     RETURN_RATE,
+                     RANK() OVER (ORDER BY CURRENT_POINT DESC) AS RANK
+              FROM WEEKLY_RANKINGS
+              ORDER BY RETURN_RATE DESC)
+        WHERE ROWNUM BETWEEN #{start} AND #{end}
+    </select>
 
+    <select id="selectAllRanking" resultType="AllRankingRes">
+        SELECT *
+        FROM (SELECT ROWNUM,
+                     USER_ID,
+                     POINTS,
+                     RANK() OVER (ORDER BY POINTS DESC) AS RANK
+              FROM MEMBERS
+              ORDER BY POINTS DESC)
+        WHERE ROWNUM BETWEEN #{start} AND #{end}
+    </select>
 </mapper>
 

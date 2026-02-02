@@ -9,10 +9,8 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @Data
 @Builder
-public class RankingRes {
+public class AllRankingRes {
     private String userId;
-    private long startPoint;
-    private long currentPoint;
+    private long points;
     private long rank;
-    private double returnRate;
 }
