@@ -6,6 +6,7 @@ import org.apache.ibatis.annotations.Mapper;
 
 import com.project.dykj.domain.game.entity.ExpHistory;
 import com.project.dykj.domain.game.entity.LevelPolicy;
+import com.project.dykj.domain.game.entity.Quiz;
 
 @Mapper
 public interface GameMapper {
@@ -24,4 +25,10 @@ public interface GameMapper {
 	void updateCumulativeDays(String userId);
 
 	List<String> selectAttendanceHistory(String userId);
+
+	Quiz selectTodayQuiz();
+
+	int checkTodaySolved(String userId);
+
+	void insertMemberQuiz(String userId, int quizId, String isCorrect);
 }
