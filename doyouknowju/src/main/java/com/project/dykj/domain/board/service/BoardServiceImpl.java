@@ -56,7 +56,7 @@ public class BoardServiceImpl implements BoardService {
     // - FREE면 stockId 필터는 강제로 무시(null)하여 "종목코드 없는 글"만 내려오도록 한다.
     @Transactional(readOnly = true)
     @Override
-    public List<Board> listPosts(String boardType, String stockId, int page, int size) {
+    public List<Board> listPosts(String boardType, String stockId, String condition, String keyword, int page, int size) {
         int safePage = Math.max(1, page);
         int safeSize = Math.min(50, Math.max(1, size));
         int offset = (safePage - 1) * safeSize;
@@ -65,7 +65,17 @@ public class BoardServiceImpl implements BoardService {
                 ? null
                 : blankToNull(stockId);
 
-        return boardMapper.selectPostList(normalizedBoardType, normalizedStockId, offset, safeSize);
+        String normalizedCondition = normalizeCondition(condition);
+        String normalizedKeyword = blankToNull(keyword);
+
+        return boardMapper.selectPostList(
+                normalizedBoardType,
+                normalizedStockId,
+                normalizedCondition,
+                normalizedKeyword,
+                offset,
+                safeSize
+        );
     }
 
     // 게시글 수정
@@ -80,7 +90,36 @@ public class BoardServiceImpl implements BoardService {
         if (isBlank(board.getBoardTitle()) || isBlank(board.getBoardContent())) {
             throw new IllegalArgumentException("title/content are required");
         }
+
+        // 기존 게시글을 조회해서, boardType/stockId를 변경할 때 정합성을 보장한다.
+        Board existing = boardMapper.selectPostDetail(postId);
+        if (existing == null) {
+            throw new IllegalArgumentException("post not found");
+        }
+
+        String nextBoardType = normalizeBoardType(board.getBoardType());
+        if (nextBoardType == null) {
+            nextBoardType = normalizeBoardType(existing.getBoardType());
+        }
+        if (nextBoardType == null) {
+            throw new IllegalArgumentException("boardType is required");
+        }
+
+        String nextStockId = blankToNull(board.getStockId());
+
+        // FREE <-> STOCK 전환 규칙
+        if ("FREE".equals(nextBoardType)) {
+            nextStockId = null;
+        } else if ("STOCK".equals(nextBoardType)) {
+            if (nextStockId == null) {
+                throw new IllegalArgumentException("stockId is required for STOCK board");
+            }
+        }
+
         board.setBoardId((int) postId);
+        board.setBoardType(nextBoardType);
+        board.setStockId(nextStockId);
+
         int updated = boardMapper.updatePost(board);
         if (updated == 0) {
             throw new IllegalArgumentException("post not found");
@@ -185,5 +224,14 @@ public class BoardServiceImpl implements BoardService {
         }
         String upper = boardType.trim().toUpperCase();
         return ("FREE".equals(upper) || "STOCK".equals(upper)) ? upper : null;
+    }
+
+    // 검색 조건 정규화: title | content | writer 만 허용 (그 외는 null -> 검색 미적용)
+    private static String normalizeCondition(String condition) {
+        if (isBlank(condition)) {
+            return null;
+        }
+        String lower = condition.trim().toLowerCase();
+        return (lower.equals("title") || lower.equals("content") || lower.equals("writer")) ? lower : null;
     }
 }

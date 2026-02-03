@@ -20,6 +20,7 @@ public class Board {
     private LocalDateTime deleteDate;
     private int viewCount;
     private String stockId;
+    private String stockName;
     private String boardType;
     private String userId;
 }

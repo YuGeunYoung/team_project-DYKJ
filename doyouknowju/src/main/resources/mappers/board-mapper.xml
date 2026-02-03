@@ -33,54 +33,81 @@
 
   <select id="selectPostDetail" resultType="Board">
     SELECT
-      BOARD_ID      AS boardId,
-      BOARD_TITLE   AS boardTitle,
-      BOARD_CONTENT AS boardContent,
-      CREATE_DATE   AS createDate,
-      MODIFY_DATE   AS modifyDate,
-      DELETE_DATE   AS deleteDate,
-      VIEW_COUNT    AS viewCount,
-      STOCK_ID      AS stockId,
-      BOARD_TYPE    AS boardType,
-      USER_ID       AS userId
-    FROM BOARD
-    WHERE BOARD_ID = #{boardId}
-      AND DELETE_DATE IS NULL
+      B.BOARD_ID      AS boardId,
+      B.BOARD_TITLE   AS boardTitle,
+      B.BOARD_CONTENT AS boardContent,
+      B.CREATE_DATE   AS createDate,
+      B.MODIFY_DATE   AS modifyDate,
+      B.DELETE_DATE   AS deleteDate,
+      B.VIEW_COUNT    AS viewCount,
+      B.STOCK_ID      AS stockId,
+      S.STOCK_NAME  AS stockName,
+      B.BOARD_TYPE    AS boardType,
+      B.USER_ID       AS userId
+    FROM BOARD B
+    LEFT JOIN STOCKS S
+      ON S.STOCK_ID = B.STOCK_ID
+    WHERE B.BOARD_ID = #{boardId}
+      AND B.DELETE_DATE IS NULL
   </select>
 
   <select id="selectPostList" resultType="Board">
     SELECT
-      BOARD_ID      AS boardId,
-      BOARD_TITLE   AS boardTitle,
-      BOARD_CONTENT AS boardContent,
-      CREATE_DATE   AS createDate,
-      MODIFY_DATE   AS modifyDate,
-      DELETE_DATE   AS deleteDate,
-      VIEW_COUNT    AS viewCount,
-      STOCK_ID      AS stockId,
-      BOARD_TYPE    AS boardType,
-      USER_ID       AS userId
-    FROM BOARD
-    WHERE DELETE_DATE IS NULL
+      B.BOARD_ID      AS boardId,
+      B.BOARD_TITLE   AS boardTitle,
+      B.BOARD_CONTENT AS boardContent,
+      B.CREATE_DATE   AS createDate,
+      B.MODIFY_DATE   AS modifyDate,
+      B.DELETE_DATE   AS deleteDate,
+      B.VIEW_COUNT    AS viewCount,
+      B.STOCK_ID      AS stockId,
+      S.STOCK_NAME  AS stockName,
+      B.BOARD_TYPE    AS boardType,
+      B.USER_ID       AS userId
+    FROM BOARD B
+    LEFT JOIN STOCKS S
+      ON S.STOCK_ID = B.STOCK_ID
+    WHERE B.DELETE_DATE IS NULL
       <if test="boardType != null and boardType != ''">
-        AND BOARD_TYPE = #{boardType}
+        AND B.BOARD_TYPE = #{boardType}
         <if test="boardType == 'FREE'">
-          AND STOCK_ID IS NULL
+          AND B.STOCK_ID IS NULL
         </if>
         <if test="boardType == 'STOCK'">
-          AND STOCK_ID IS NOT NULL
+          AND B.STOCK_ID IS NOT NULL
         </if>
       </if>
       <if test="stockId != null and stockId != ''">
-        AND STOCK_ID = #{stockId}
+        AND B.STOCK_ID = #{stockId}
       </if>
-    ORDER BY CREATE_DATE DESC
+      <if test="keyword != null and keyword != ''">
+        <choose>
+          <when test="condition == 'title'">
+            AND B.BOARD_TITLE LIKE '%' || #{keyword} || '%'
+          </when>
+          <when test="condition == 'content'">
+            AND B.BOARD_CONTENT LIKE '%' || #{keyword} || '%'
+          </when>
+          <when test="condition == 'writer'">
+            AND B.USER_ID LIKE '%' || #{keyword} || '%'
+          </when>
+          <otherwise>
+            AND (
+              B.BOARD_TITLE LIKE '%' || #{keyword} || '%'
+              OR B.BOARD_CONTENT LIKE '%' || #{keyword} || '%'
+              OR B.USER_ID LIKE '%' || #{keyword} || '%'
+            )
+          </otherwise>
+        </choose>
+      </if>
+    ORDER BY B.CREATE_DATE DESC
     OFFSET #{offset} ROWS FETCH NEXT #{size} ROWS ONLY
   </select>
 
   <update id="updatePost">
     UPDATE BOARD
-       SET STOCK_ID = #{stockId},
+       SET BOARD_TYPE = #{boardType},
+           STOCK_ID = #{stockId},
            BOARD_TITLE = #{boardTitle},
            BOARD_CONTENT = #{boardContent},
            MODIFY_DATE = SYSDATE

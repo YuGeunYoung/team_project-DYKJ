@@ -11,7 +11,7 @@ public interface BoardService {
 
     Board getPost(long postId, boolean incrementView);
 
-    List<Board> listPosts(String boardType, String stockId, int page, int size);
+    List<Board> listPosts(String boardType, String stockId, String condition, String keyword, int page, int size);
 
     void updatePost(long postId, Board board);
 

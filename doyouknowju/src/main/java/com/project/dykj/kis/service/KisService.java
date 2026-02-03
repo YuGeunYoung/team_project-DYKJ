@@ -25,6 +25,7 @@ import com.project.dykj.kis.KisProperties;
 import com.project.dykj.kis.model.vo.KisDailyChartResponse;
 import com.project.dykj.kis.model.vo.KisStockInfoResponse;
 import com.project.dykj.kis.model.vo.KisVolumeRankResponse;
+import com.project.dykj.kis.model.vo.TradeAmountRankItem;
 import com.project.dykj.kis.model.vo.VolumeRankItem;
 
 @Service
@@ -134,6 +135,32 @@ public class KisService {
 						it.getStckPrpr(),
 						it.getPrdyCtrt(),
 						it.getAcmlVol()))
+				.toList();
+	}
+
+	/**
+	 * 거래대금 Top10 (거래량 순위 API의 표본 30건 내에서 재정렬)
+	 * - volume-rank 응답(output)에는 누적 거래대금(acml_tr_pbmn)이 포함되어 있어 이를 기준으로 내림차순 정렬
+	 * - 단, volume-rank 자체가 최대 30건만 제공하므로 "시장 전체 거래대금 Top10"과는 오차가 있을 수 있음
+	 */
+	public List<TradeAmountRankItem> getTradeAmountTop10() {
+		KisVolumeRankResponse response = fetchVolumeRank();
+		List<KisVolumeRankResponse.OutputItem> output = response.getOutput();
+		if (output == null) {
+			return List.of();
+		}
+
+		return output.stream()
+				.sorted(Comparator.comparingLong((KisVolumeRankResponse.OutputItem it) -> parseLongSafe(it.getAcmlTrPbmn()))
+						.reversed())
+				.limit(10)
+				.map(it -> new TradeAmountRankItem(
+						it.getMkscShrnIscd(),
+						it.getHtsKorIsnm(),
+						it.getStckPrpr(),
+						it.getPrdyCtrt(),
+						it.getAcmlVol(),
+						it.getAcmlTrPbmn()))
 				.toList();
 	}
 
@@ -494,5 +521,19 @@ public class KisService {
 			return Integer.MAX_VALUE;
 		}
 	}
-}
 
+	private static long parseLongSafe(String value) {
+		try {
+			if (value == null) {
+				return Long.MIN_VALUE;
+			}
+			String cleaned = value.replaceAll("[^0-9\\-]", "");
+			if (cleaned.isBlank() || "-".equals(cleaned)) {
+				return Long.MIN_VALUE;
+			}
+			return Long.parseLong(cleaned);
+		} catch (Exception e) {
+			return Long.MIN_VALUE;
+		}
+	}
+}

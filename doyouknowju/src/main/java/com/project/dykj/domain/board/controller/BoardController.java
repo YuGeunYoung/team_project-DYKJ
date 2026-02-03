@@ -42,10 +42,12 @@ public class BoardController {
     public List<Board> listPosts(
             @RequestParam(required = false) String boardType,
             @RequestParam(required = false) String stockId,
+            @RequestParam(required = false) String condition,
+            @RequestParam(required = false) String keyword,
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "20") int size
     ) {
-        return boardService.listPosts(boardType, stockId, page, size);
+        return boardService.listPosts(boardType, stockId, condition, keyword, page, size);
     }
 
     /** 게시글 상세 조회 (view=true면 조회수 증가) */

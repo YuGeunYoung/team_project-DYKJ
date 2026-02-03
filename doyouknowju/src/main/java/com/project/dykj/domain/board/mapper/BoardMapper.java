@@ -19,6 +19,8 @@ public interface BoardMapper {
 	List<Board> selectPostList(
 			@Param("boardType") String boardType,
 			@Param("stockId") String stockId,
+			@Param("condition") String condition,
+			@Param("keyword") String keyword,
 			@Param("offset") int offset,
 			@Param("size") int size
 	);
