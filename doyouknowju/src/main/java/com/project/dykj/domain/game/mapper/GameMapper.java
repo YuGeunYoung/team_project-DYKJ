@@ -16,4 +16,12 @@ public interface GameMapper {
 	int updateMemberExp(String userId, int amount);
 	
 	int updateMemberLevel(String userId, int level);
+
+	int selectTodayAttendance(String userId);
+
+	void insertAttendance(String userId);
+
+	void updateCumulativeDays(String userId);
+
+	List<String> selectAttendanceHistory(String userId);
 }
