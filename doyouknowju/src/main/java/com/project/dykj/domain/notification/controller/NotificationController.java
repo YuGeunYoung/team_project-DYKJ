@@ -13,7 +13,7 @@ public class NotificationController {
     @Autowired
     private NotificationService notificationService;
 
-    // [수정] offset과 size를 @RequestParam으로 받습니다. 값이 없으면 기본값(0, 20)을 사용합니다.
+    // [수정] 페이징 처리를 위해 offset과 size를 파라미터로 받습니다.
     @GetMapping("/{userId}")
     public List<NotificationVO> getNotificationList(
             @PathVariable String userId,
@@ -25,5 +25,11 @@ public class NotificationController {
     @PutMapping("/read/{notiNo}")
     public void markAsRead(@PathVariable Long notiNo) {
         notificationService.markAsRead(notiNo);
+    }
+
+    // [추가] 모두 읽음 처리 API
+    @PutMapping("/read-all/{userId}")
+    public void markAllAsRead(@PathVariable String userId) {
+        notificationService.markAllAsRead(userId);
     }
 }

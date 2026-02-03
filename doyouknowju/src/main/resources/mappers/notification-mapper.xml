@@ -36,4 +36,11 @@
         SELECT COUNT(*) FROM NOTIFICATIONS 
         WHERE USER_ID = #{userId} AND NOTI_URL LIKE '%' || #{stockId} || '%' AND TRUNC(CREATE_AT) = TRUNC(SYSDATE)
     </select>
+    
+    <update id="markAllAsRead" parameterType="string">
+    UPDATE NOTIFICATIONS
+    SET IS_READ = 'Y'
+    WHERE USER_ID = #{userId}
+      AND IS_READ = 'N'
+	</update>
 </mapper>
