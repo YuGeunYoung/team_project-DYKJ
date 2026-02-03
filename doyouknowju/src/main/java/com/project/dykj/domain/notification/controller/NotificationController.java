@@ -13,15 +13,15 @@ public class NotificationController {
     @Autowired
     private NotificationService notificationService;
 
-    // [설명] 특정 유저(userId)의 알림 목록을 조회하는 API입니다.
-    // 프론트엔드에서 /dykj/api/notifications/{userId} 로 요청하면 호출됩니다.
+    // [수정] offset과 size를 @RequestParam으로 받습니다. 값이 없으면 기본값(0, 20)을 사용합니다.
     @GetMapping("/{userId}")
-    public List<NotificationVO> getNotificationList(@PathVariable String userId) {
-        return notificationService.getNotificationList(userId);
+    public List<NotificationVO> getNotificationList(
+            @PathVariable String userId,
+            @RequestParam(defaultValue = "0") int offset,
+            @RequestParam(defaultValue = "20") int size) {
+        return notificationService.getNotificationList(userId, offset, size);
     }
 
-    // [설명] 특정 알림(notiNo)을 '읽음' 처리 하는 API입니다.
-    // 알림을 클릭했을 때 호출되어 IS_READ 상태를 'Y'로 변경합니다.
     @PutMapping("/read/{notiNo}")
     public void markAsRead(@PathVariable Long notiNo) {
         notificationService.markAsRead(notiNo);
