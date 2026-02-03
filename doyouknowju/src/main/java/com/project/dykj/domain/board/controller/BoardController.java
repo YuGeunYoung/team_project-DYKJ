@@ -94,4 +94,14 @@ public class BoardController {
         boardService.deleteReply(replyId);
         return ResponseEntity.noContent().build();
     }
+
+    /** 댓글 수정 */
+    @PutMapping("/replies/{replyId}/update")
+    public ResponseEntity<Void> updateComment(
+            @PathVariable long replyId,
+            @RequestBody Reply reply
+    ) {
+        boardService.updateReply(replyId, reply);
+        return ResponseEntity.noContent().build();
+    }
 }

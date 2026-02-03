@@ -22,5 +22,6 @@ public interface BoardService {
     List<Reply> listReplies(long postId);
 
     void deleteReply(long replyId);
-}
 
+    void updateReply(long replyId, Reply reply);
+}

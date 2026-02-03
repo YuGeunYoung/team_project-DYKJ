@@ -36,6 +36,14 @@
     ORDER BY CREATE_DATE ASC
   </select>
 
+  <update id="updateReply">
+    UPDATE REPLY
+       SET REPLY_CONTENT = #{replyContent},
+           MODIFY_DATE = SYSDATE
+     WHERE REPLY_ID = #{replyId}
+       AND DELETE_DATE IS NULL
+  </update>
+
   <update id="softDeleteReply">
     UPDATE REPLY
        SET DELETE_DATE = SYSDATE,

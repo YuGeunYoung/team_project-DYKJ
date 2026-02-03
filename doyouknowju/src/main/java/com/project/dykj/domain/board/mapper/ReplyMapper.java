@@ -14,5 +14,7 @@ public interface ReplyMapper {
 
 	List<Reply> selectReplies(@Param("boardId") long boardId);
 
+	int updateReply(Reply reply);
+
 	int softDeleteReply(@Param("replyId") long replyId);
 }

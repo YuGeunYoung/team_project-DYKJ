@@ -1,6 +1,6 @@
 package com.project.dykj.domain.board.model.vo;
 
-import java.sql.Date;
+import java.time.LocalDateTime;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -14,10 +14,9 @@ import lombok.NoArgsConstructor;
 public class Reply {
     private int replyId;
     private String replyContent;
-    private Date createDate;
+    private LocalDateTime createDate;
     private int boardId;
     private String userId;
-    private Date deleteDate;
-    private Date modifyDate;
+    private LocalDateTime deleteDate;
+    private LocalDateTime modifyDate;
 }
-
