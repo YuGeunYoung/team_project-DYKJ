@@ -17,6 +17,32 @@
         WHERE ROWNUM BETWEEN #{start} AND #{end}
     </select>
 
+    <select id="selectMonthlyRanking" resultType="RankingRes">
+        SELECT *
+        FROM (SELECT ROWNUM,
+                     USER_ID,
+                     START_POINT,
+                     CURRENT_POINT,
+                     RETURN_RATE,
+                     RANK() OVER (ORDER BY CURRENT_POINT DESC) AS RANK
+              FROM MONTHLY_RANKINGS
+              ORDER BY RETURN_RATE DESC)
+        WHERE ROWNUM BETWEEN #{start} AND #{end}
+    </select>
+
+    <select id="selectYearlyRanking" resultType="RankingRes">
+        SELECT *
+        FROM (SELECT ROWNUM,
+                     USER_ID,
+                     START_POINT,
+                     CURRENT_POINT,
+                     RETURN_RATE,
+                     RANK() OVER (ORDER BY CURRENT_POINT DESC) AS RANK
+              FROM YEARLY_RANKINGS
+              ORDER BY RETURN_RATE DESC)
+        WHERE ROWNUM BETWEEN #{start} AND #{end}
+    </select>
+
     <select id="selectAllRanking" resultType="AllRankingRes">
         SELECT *
         FROM (SELECT ROWNUM,

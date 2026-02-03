@@ -11,4 +11,14 @@
         FROM HOLDINGS
     </select>
 
+    <select id="selectHoldingByUserId" resultType="com.project.dykj.domain.stock.vo.Holding" parameterType="string">
+        SELECT 
+            USER_ID as userId, 
+            STOCK_ID as stockId, 
+            TOTAL_PRICE as totalPrice, 
+            TOTAL_COUNT as totalCount
+        FROM HOLDINGS
+        WHERE USER_ID = #{userId}
+    </select>
+
 </mapper>
