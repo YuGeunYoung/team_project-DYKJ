@@ -10,4 +10,8 @@ public interface NotificationService {
     void markAsRead(Long notiNo);
 
     void createNotification(NotificationVO notification);
+    
+    
+    // NotificationService.java 에 추가
+    void markAllAsRead(String userId);
 }

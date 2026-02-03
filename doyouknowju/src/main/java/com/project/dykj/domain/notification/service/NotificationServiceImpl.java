@@ -26,5 +26,12 @@ public class NotificationServiceImpl implements NotificationService {
     @Override
     public void createNotification(NotificationVO notification) {
         notificationRepository.insertNotification(notification);
+
+    }
+
+    // NotificationServiceImpl.java 에 추가
+    @Override
+    public void markAllAsRead(String userId) {
+        notificationRepository.markAllAsRead(userId);
     }
 }

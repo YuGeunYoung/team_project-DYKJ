@@ -48,4 +48,8 @@
  		WHERE USER_ID = #{userId}
     </select>
 
+    <select id="selectAllMemberIds" resultType="string">
+        SELECT USER_ID FROM MEMBERS
+    </select>
+
 </mapper>

@@ -7,14 +7,11 @@ import com.project.dykj.domain.notification.dto.NotificationVO;
 
 @Mapper
 public interface NotificationRepository {
-    // [수정] 페이징 처리를 위해 offset과 size 파라미터를 추가했습니다.
-    List<NotificationVO> selectAllNotifications(
-        @Param("userId") String userId, 
-        @Param("offset") int offset, 
-        @Param("size") int size
-    );
-
+    List<NotificationVO> selectAllNotifications(@Param("userId") String userId, @Param("offset") int offset, @Param("size") int size);
     int insertNotification(NotificationVO notification);
     int updateReadStatus(Long notiNo);
     int countTodayStockNotification(@Param("userId") String userId, @Param("stockId") String stockId);
+
+    // [추가] 모두 읽음 처리
+    int markAllAsRead(String userId);
 }
