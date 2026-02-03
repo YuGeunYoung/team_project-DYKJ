@@ -1,18 +1,22 @@
 package com.project.dykj.domain.game.controller;
 
+import java.util.List;
 import java.util.Map;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.project.dykj.domain.game.dto.AttendanceDTO;
 import com.project.dykj.domain.game.dto.ExpResultDTO;
 import com.project.dykj.domain.game.service.GameService;
 import com.project.dykj.domain.member.entity.Member;
 
 import jakarta.servlet.http.HttpSession;
+import jakarta.websocket.Session;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -45,4 +49,29 @@ public class GameController {
         return ResponseEntity.ok(result);
     }
 	
+	@PostMapping("/attend")
+	public ResponseEntity<?> checkAttend(HttpSession session){
+		Member loginUser = (Member) session.getAttribute("loginUser");
+		if(loginUser == null) {
+			return ResponseEntity.status(401).body("로그인이 필요합니다.");
+		}
+		
+		AttendanceDTO result = gameService.checkIn(loginUser.getUserId());
+		if(result.isSuccess()) {
+			Member updatedMember = gameService.getMemberById(loginUser.getUserId());
+			session.setAttribute("loginUser", updatedMember);
+		}
+		return ResponseEntity.ok(result);
+	}
+	
+	@GetMapping("/attend/history")
+	public ResponseEntity<?> checkhistory(HttpSession session){
+		Member loginUser = (Member) session.getAttribute("loginUser");
+		if(loginUser == null) {
+			return ResponseEntity.status(401).body("로그인이 필요합니다.");
+		}
+		
+		List<String> history = gameService.getAttendanceHistory(loginUser.getUserId());
+		return ResponseEntity.ok(history);
+	}
 }

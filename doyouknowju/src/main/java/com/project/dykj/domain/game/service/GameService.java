@@ -5,6 +5,7 @@ import java.util.List;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.project.dykj.domain.game.dto.AttendanceDTO;
 import com.project.dykj.domain.game.dto.ExpResultDTO;
 import com.project.dykj.domain.game.entity.ExpHistory;
 import com.project.dykj.domain.game.entity.LevelPolicy;
@@ -74,5 +75,37 @@ public class GameService {
 	
 	public Member getMemberById(String userId) {
 		return memberMapper.findByUserId(userId);
+	}
+
+	@Transactional
+	public AttendanceDTO checkIn(String userId) {
+		int todayCount = gameMapper.selectTodayAttendance(userId);
+		if (todayCount > 0) {
+			return AttendanceDTO.builder()
+					.success(false)
+					.message("오늘은 이미 출석체크를 완료하셨습니다.")
+					.build();
+		}
+		
+		gameMapper.insertAttendance(userId);
+		gameMapper.updateCumulativeDays(userId);
+		//보상 경험치
+		int rewardExp = 100;
+		
+		ExpResultDTO expResult = gainExp(userId, rewardExp, "ATTENDANCE");
+		Member member = memberMapper.findByUserId(userId);
+		
+		return AttendanceDTO.builder()
+				.success(true)
+				.message("출석 체크가 완료되었습니다! 100 EXP 획득!")
+				.gainedExp(rewardExp)
+				.cumulativeDays(member.getConsecDays())
+				.levelUp(expResult.isLevelUp())
+				.currentLevel(expResult.getCurrentLevel())
+				.build();
+	}
+
+	public List<String> getAttendanceHistory(String userId) {
+		return gameMapper.selectAttendanceHistory(userId);
 	}
 }
