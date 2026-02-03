@@ -55,11 +55,11 @@
 	<insert id="insertAttendance">
 		INSERT INTO ATTENDANCES(
 			ATTENDANCE_ID,
-			USER_ID
+			USER_ID,
 			ATTENDANCE_DATE
 		)VALUES(
 			SEQ_ATTENDANCES.NEXTVAL,
-			#{userId}
+			#{userId},
 			SYSDATE
 		)
 	</insert>
