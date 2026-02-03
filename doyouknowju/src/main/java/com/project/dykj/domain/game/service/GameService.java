@@ -7,8 +7,10 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.project.dykj.domain.game.dto.AttendanceDTO;
 import com.project.dykj.domain.game.dto.ExpResultDTO;
+import com.project.dykj.domain.game.dto.QuizDTO;
 import com.project.dykj.domain.game.entity.ExpHistory;
 import com.project.dykj.domain.game.entity.LevelPolicy;
+import com.project.dykj.domain.game.entity.Quiz;
 import com.project.dykj.domain.game.mapper.GameMapper;
 import com.project.dykj.domain.member.entity.Member;
 import com.project.dykj.domain.member.mapper.MemberMapper;
@@ -107,5 +109,46 @@ public class GameService {
 
 	public List<String> getAttendanceHistory(String userId) {
 		return gameMapper.selectAttendanceHistory(userId);
+	}
+
+	public QuizDTO getTodayQuiz(String userId) {
+		if(gameMapper.checkTodaySolved(userId) > 0) {
+			return QuizDTO.builder()
+					.solved(true)
+					.build();
+		}
+		
+		Quiz quiz = gameMapper.selectTodayQuiz();
+		if(quiz == null) return null;
+		
+		return QuizDTO.builder()
+				.quizId(quiz.getQuizId())
+				.quizQuestion(quiz.getQuizQuestion())
+				.solved(false)
+				.rewardExp(quiz.getQuizReward())
+				.build();
+	}
+	
+	@Transactional
+	public QuizDTO solveQuiz(String userId, int quizId, String answer) {
+		Quiz quiz = gameMapper.selectTodayQuiz();
+		
+		boolean isCorrect = quiz.getQuizAnswer().equals(answer);
+		
+		gameMapper.insertMemberQuiz(userId, quizId, isCorrect ? "Y" : "N");
+		
+		QuizDTO result = QuizDTO.builder()
+								.correct(isCorrect)
+								.quizAnswer(quiz.getQuizAnswer())
+								.quizExplain(quiz.getQuizExplain())
+								.rewardExp(quiz.getQuizReward())
+								.build();
+		
+		if(isCorrect) {
+			ExpResultDTO expResult = gainExp(userId, quiz.getQuizReward(), "QUIZ");
+			result.setLevelUp(expResult.isLevelUp());
+			result.setCurrentLevel(expResult.getCurrentLevel());
+		}
+		return result;
 	}
 }

@@ -78,4 +78,40 @@
 		WHERE USER_ID = #{userId}
 		ORDER BY ATTENDANCE_DATE DESC
 	</select>
+	
+	<!-- 오늘의 퀴즈 조회 -->
+	<select id="selectTodayQuiz" resultType="Quiz">
+		SELECT 
+			Q.QUIZ_ID,
+			Q.QUIZ_QUESTION,
+			Q.QUIZ_ANSWER,
+			Q.QUIZ_EXPLAIN,
+			Q.QUIZ_REWARD
+		FROM QUIZZES Q
+		JOIN QUIZ_CALENDAR C ON Q.QUIZ_ID = C.QUIZ_ID
+		WHERE TRUNC(C.QUIZ_DATE) = TRUNC(SYSDATE)
+	</select>
+
+	<!-- 오늘 퀴즈 풀이 여부 확인 -->
+	<select id="checkTodaySolved" resultType="_int">
+		SELECT COUNT(*)
+		FROM MEMBER_QUIZZES
+		WHERE USER_ID = #{userId}
+		  AND TRUNC(SOLVED_AT) = TRUNC(SYSDATE)
+	</select>
+
+	<!-- 퀴즈 풀이 기록 저장 -->
+	<insert id="insertMemberQuiz">
+		INSERT INTO MEMBER_QUIZZES (
+			USER_ID,
+			QUIZ_ID,
+			SOLVED_AT,
+			IS_CORRECT
+		) VALUES (
+			#{userId},
+			#{quizId},
+			SYSDATE,
+			#{isCorrect}
+		)
+	</insert>
 </mapper>
