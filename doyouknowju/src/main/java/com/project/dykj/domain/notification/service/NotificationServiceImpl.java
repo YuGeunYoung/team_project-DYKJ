@@ -12,19 +12,17 @@ public class NotificationServiceImpl implements NotificationService {
     @Autowired
     private NotificationRepository notificationRepository;
 
-    // [설명] DB(Repository)에서 해당 유저의 모든 알림을 조회하여 반환합니다.
+    // [수정] Controller에서 받은 offset과 size를 Repository의 쿼리로 전달합니다.
     @Override
-    public List<NotificationVO> getNotificationList(String userId) {
-        return notificationRepository.selectAllNotifications(userId);
+    public List<NotificationVO> getNotificationList(String userId, int offset, int size) {
+        return notificationRepository.selectAllNotifications(userId, offset, size);
     }
 
-    // [설명] DB(Repository)에 요청하여 해당 알림 번호의 읽음 상태(IS_READ)를 업데이트합니다.
     @Override
     public void markAsRead(Long notiNo) {
         notificationRepository.updateReadStatus(notiNo);
     }
 
-    // [설명] DB(Repository)에 요청하여 새로운 알림 데이터를 삽입(Insert)합니다.
     @Override
     public void createNotification(NotificationVO notification) {
         notificationRepository.insertNotification(notification);

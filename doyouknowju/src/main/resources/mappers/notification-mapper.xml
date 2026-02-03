@@ -11,20 +11,15 @@
         <result property="notiUrl" column="NOTI_URL"/>
         <result property="isRead" column="IS_READ"/>
         <result property="createAt" column="CREATE_AT"/>
-        <result property="sendStatus" column="SEND_STATUS"/>
-        <result property="sendAt" column="SEND_AT"/>
-        <result property="errorMsg" column="ERROR_MSG"/>
-        <result property="retryCount" column="RETRY_COUNT"/>
     </resultMap>
 
-    <!-- [설명] 특정 유저의 알림 목록을 최신순(오름차순이 아닌 내림차순)으로 조회합니다 -->
-    <select id="selectAllNotifications" parameterType="string" resultMap="notificationResultMap">
+    <select id="selectAllNotifications" resultMap="notificationResultMap">
         SELECT * FROM NOTIFICATIONS
         WHERE USER_ID = #{userId}
         ORDER BY CREATE_AT DESC
+        OFFSET #{offset} ROWS FETCH NEXT #{size} ROWS ONLY
     </select>
 
-    <!-- [설명] 알림 데이터를 삽입합니다. 시퀀스(SEQ_NOTI_NO)를 사용해 번호를 자동 생성합니다 -->
     <insert id="insertNotification" parameterType="com.project.dykj.domain.notification.dto.NotificationVO">
         INSERT INTO NOTIFICATIONS (
             NOTI_NO, USER_ID, NOTI_TYPE, NOTI_CHANNEL, MESSAGE, NOTI_URL, IS_READ, CREATE_AT
@@ -33,21 +28,12 @@
         )
     </insert>
 
-    <!-- [설명] 특정 알림(NOTI_NO)의 읽음 여부(IS_READ)를 'Y'로 수정합니다 -->
     <update id="updateReadStatus" parameterType="long">
-        UPDATE NOTIFICATIONS
-        SET IS_READ = 'Y'
-        WHERE NOTI_NO = #{notiNo}
+        UPDATE NOTIFICATIONS SET IS_READ = 'Y' WHERE NOTI_NO = #{notiNo}
     </update>
     
-    
-    <!-- DB에서 오늘 날짜로 해당 종목의 알림(NOTI_URL에 종목코드가 포함됨)이 있는지 확인하는 쿼리를 추가합니다. -->
     <select id="countTodayStockNotification" resultType="int">
-    SELECT COUNT(*) 
-    FROM NOTIFICATIONS 
-    WHERE USER_ID = #{userId}
-      AND NOTI_URL LIKE '%' || #{stockId} || '%'
-      AND TRUNC(CREATE_AT) = TRUNC(SYSDATE)
-</select>
-
+        SELECT COUNT(*) FROM NOTIFICATIONS 
+        WHERE USER_ID = #{userId} AND NOTI_URL LIKE '%' || #{stockId} || '%' AND TRUNC(CREATE_AT) = TRUNC(SYSDATE)
+    </select>
 </mapper>
