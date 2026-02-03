@@ -7,6 +7,7 @@ import org.springframework.stereotype.Service;
 
 import com.project.dykj.kis.service.KisService;
 import com.project.dykj.kis.model.vo.VolumeRankItem;
+import com.project.dykj.kis.model.vo.TradeAmountRankItem;
 
 @Service
 @ConditionalOnProperty(name = "ranking.source", havingValue = "kis")
@@ -21,5 +22,10 @@ public class KisMarketRankingService implements MarketRankingService {
 	@Override
 	public List<VolumeRankItem> getVolumeTop10() {
 		return kisService.getVolumeTop10();
+	}
+
+	@Override
+	public List<TradeAmountRankItem> getTradeAmountTop10() {
+		return kisService.getTradeAmountTop10();
 	}
 }

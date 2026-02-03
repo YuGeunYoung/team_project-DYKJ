@@ -16,6 +16,7 @@ import com.project.dykj.kis.model.vo.KisDailyChartResponse;
 import com.project.dykj.kis.model.vo.StockSearchItem;
 import com.project.dykj.kis.model.vo.StockSuggestItem;
 import com.project.dykj.kis.model.vo.StockUpsertRequest;
+import com.project.dykj.kis.model.vo.TradeAmountRankItem;
 import com.project.dykj.kis.model.vo.VolumeRankItem;
 import com.project.dykj.kis.ranking.MarketRankingService;
 import com.project.dykj.kis.service.StockService;
@@ -40,6 +41,14 @@ public class StockController {
     @GetMapping("/top10")
     public List<VolumeRankItem> volumeTop10() {
         return marketRankingService.getVolumeTop10();
+    }
+
+    /**
+     * 거래대금 Top10 (거래량 순위 API의 표본 30건 내에서 재정렬)
+     */
+    @GetMapping("/top10/trade-amount")
+    public List<TradeAmountRankItem> tradeAmountTop10() {
+        return marketRankingService.getTradeAmountTop10();
     }
 
     /**
@@ -167,4 +176,3 @@ public class StockController {
     }
 
 }
-
