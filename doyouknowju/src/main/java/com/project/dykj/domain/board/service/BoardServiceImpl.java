@@ -133,6 +133,22 @@ public class BoardServiceImpl implements BoardService {
         }
     }
 
+    // 댓글 수정
+    // - replyContent 필수
+    // - UPDATE 결과가 0이면(없거나 삭제됨) 예외
+    @Transactional
+    @Override
+    public void updateReply(long replyId, Reply reply) {
+        if (reply == null || isBlank(reply.getReplyContent())) {
+            throw new IllegalArgumentException("content is required");
+        }
+        reply.setReplyId((int) replyId);
+        int updated = replyMapper.updateReply(reply);
+        if (updated == 0) {
+            throw new IllegalArgumentException("comment not found");
+        }
+    }
+
     // 게시글 등록 시 입력값 검증 및 정규화
     private void validateCreate(Board board) {
         if (board == null) {
