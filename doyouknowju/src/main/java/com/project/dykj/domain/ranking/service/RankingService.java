@@ -19,6 +19,16 @@ public class RankingService {
     
     private final RankingMapper rankingMapper;
 
+    public List<RankingRes> getPeriodRanking(String period, int page) {
+        PageReq pageReq = new PageReq();
+        pageReq.setPage(page);
+        pageReq.setGroupSize(GROUP_SIZE);
+        pageReq.setStart((page - 1) * pageReq.getGroupSize() + 1);
+        pageReq.setEnd(page * pageReq.getGroupSize());
+        List<RankingRes> rankingResList = rankingMapper.selectSeasonRanking(period, 1, pageReq); 
+        return rankingResList;      
+    }
+
     public List<RankingRes> getWeeklyRanking(int page) {
         PageReq pageReq = new PageReq();
         pageReq.setPage(page);

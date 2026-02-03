@@ -4,6 +4,52 @@
   "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
 
 <mapper namespace="com.project.dykj.domain.ranking.mapper.RankingMapper">
+
+    <select id="getCurrentWeeklySeasonNo" resultType="_int">
+        SELECT SEQ_WEEKLY_SEASON_NO.CURRVAL
+        FROM DUAL
+    </select>
+
+    <select id="getCurrentMonthlySeasonNo" resultType="_int">
+        SELECT SEQ_MONTHLY_SEASON_NO.CURRVAL
+        FROM DUAL
+    </select>
+
+    <select id="getCurrentYearlySeasonNo" resultType="_int">
+        SELECT SEQ_YEARLY_SEASON_NO.CURRVAL
+        FROM DUAL
+    </select>
+
+    <select id="increaseCurrentWeeklySeasonNo" resultType="_int">
+        SELECT SEQ_WEEKLY_SEASON_NO.NEXTVAL
+        FROM DUAL
+    </select>
+
+    <select id="increaseCurrentMonthlySeasonNo" resultType="_int">
+        SELECT SEQ_MONTHLY_SEASON_NO.NEXTVAL
+        FROM DUAL
+    </select>
+
+    <select id="increaseCurrentYearlySeasonNo" resultType="_int">
+        SELECT SEQ_YEARLY_SEASON_NO.NEXTVAL
+        FROM DUAL
+    </select>
+
+    <select id="selectSeasonRanking" resultType="RankingRes">
+        SELECT *
+        FROM (SELECT ROWNUM,
+                     USER_ID,
+                     START_POINT,
+                     CURRENT_POINT,
+                     RETURN_RATE,
+                     RANK() OVER (ORDER BY CURRENT_POINT DESC) AS RANK
+              FROM SEASON_RANKINGS
+              WHERE SEASON_PERIOD = #{season}
+              AND SEASON_NO = #{seasonNo}
+              ORDER BY RETURN_RATE DESC)
+        WHERE ROWNUM BETWEEN #{start} AND #{end}
+    </select>
+
     <select id="selectWeeklyRanking" resultType="RankingRes">
         SELECT *
         FROM (SELECT ROWNUM,

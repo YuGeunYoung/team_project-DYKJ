@@ -21,6 +21,12 @@ import lombok.RequiredArgsConstructor;
 public class RankingController {
 
     private final RankingService rankingService;
+
+    @GetMapping("/period/{period:weekly|monthly|yearly}/{page}")
+    public ResponseEntity<?> getPeriodRanking(@PathVariable String period, @PathVariable int page) {
+        List<RankingRes> rankingResList = rankingService.getPeriodRanking(period, page);
+        return ResponseEntity.ok(rankingResList);
+    }
     
     @GetMapping("/weekly/{page}")
     public ResponseEntity<?> getWeeklyRanking(@PathVariable int page) {
