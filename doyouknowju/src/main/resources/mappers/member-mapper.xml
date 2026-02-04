@@ -51,5 +51,11 @@
     <select id="selectAllMemberIds" resultType="string">
         SELECT USER_ID FROM MEMBERS
     </select>
+    
+    <select id="checkId" resultType="_int">
+        SELECT COUNT(*)
+        FROM MEMBERS
+        WHERE USER_ID = #{userId}
+    </select>
 
 </mapper>
