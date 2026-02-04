@@ -19,4 +19,6 @@ public class StockInfoRes {
 
     @JsonProperty("itmsNm")
     private String stockName;
+
+    private long currentPrice;
 }

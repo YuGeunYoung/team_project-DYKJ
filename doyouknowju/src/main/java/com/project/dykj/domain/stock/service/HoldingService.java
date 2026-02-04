@@ -3,6 +3,7 @@ package com.project.dykj.domain.stock.service;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -27,7 +28,7 @@ public class HoldingService {
         // holdings를 순회하면서 stockId를 이용해서 현재가를 가져와서 profitAndLoss, profitAndLossRate를 계산
         // 단, 그 수가 너무 커질 수 있으므로 최대 30개 씩 한 번에 가져올 수 있는 API를 사용
         
-        // 20개씩 묶어서 현재가 가져오기
+        // 30개씩 묶어서 현재가 가져오기
         List<String> stockIds = holdings.stream().map(Holding::getStockId).distinct().toList();
         Map<String, Object> prices = stockService.getMultiplePrices(stockIds);
         
