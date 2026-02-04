@@ -24,6 +24,7 @@
         SELECT
           #{stockInfo.stockId} AS STOCK_ID,
           #{stockInfo.stockName} AS STOCK_NAME,
+          #{stockInfo.currentPrice} AS CURRENT_PRICE,
           'Y' AS IS_ACTIVE
         FROM DUAL
       </foreach>
@@ -32,10 +33,11 @@
     WHEN MATCHED THEN
       UPDATE SET
         S.STOCK_NAME = V.STOCK_NAME,
+        S.CURRENT_PRICE = V.CURRENT_PRICE,
         S.IS_ACTIVE = V.IS_ACTIVE
     WHEN NOT MATCHED THEN
-      INSERT (STOCK_ID, STOCK_NAME, STOCK_SECTOR, IS_ACTIVE)
-      VALUES (V.STOCK_ID, V.STOCK_NAME, '-', V.IS_ACTIVE)
+      INSERT (STOCK_ID, STOCK_NAME, CURRENT_PRICE, STOCK_SECTOR, IS_ACTIVE)
+      VALUES (V.STOCK_ID, V.STOCK_NAME, V.CURRENT_PRICE, '-', V.IS_ACTIVE)
   </update>
 </mapper>
 
