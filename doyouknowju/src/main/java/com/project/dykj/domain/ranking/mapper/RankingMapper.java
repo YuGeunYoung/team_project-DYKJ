@@ -13,15 +13,14 @@ import com.project.dykj.domain.ranking.dto.res.RankingRes;
 @Mapper
 @Repository
 public interface RankingMapper {
-    int getCurrentWeeklySeasonNo();
-    int getCurrentMonthlySeasonNo();
-    int getCurrentYearlySeasonNo();
-    int increaseCurrentWeeklySeasonNo();
-    int increaseCurrentMonthlySeasonNo();
-    int increaseCurrentYearlySeasonNo();
-    List<RankingRes> selectSeasonRanking(@Param("season") String season, @Param("seasonNo") int seasonNo, @Param("pageReq") PageReq pageReq);
-    List<RankingRes> selectWeeklyRanking(PageReq pageReq);
-    List<RankingRes> selectMonthlyRanking(PageReq pageReq);
-    List<RankingRes> selectYearlyRanking(PageReq pageReq);
-    List<AllRankingRes> selectAllRanking(PageReq pageReq);
+    public int getCurrentSeasonNo(@Param("seasonPeriod") String seasonPeriod);
+    public int increaseCurrentSeasonNo(@Param("seasonPeriod") String seasonPeriod);
+    public List<RankingRes> selectSeasonRanking(@Param("seasonPeriod") String seasonPeriod, @Param("seasonNo") int seasonNo, @Param("pageReq") PageReq pageReq);
+    public List<RankingRes> selectWeeklyRanking(PageReq pageReq);
+    public List<RankingRes> selectMonthlyRanking(PageReq pageReq);
+    public List<RankingRes> selectYearlyRanking(PageReq pageReq);
+    public List<AllRankingRes> selectAllRanking(PageReq pageReq);
+
+    public void updateSeasonRanking();
+    public void insertNewSeasonRanking(@Param("seasonPeriod") String seasonPeriod);
 }

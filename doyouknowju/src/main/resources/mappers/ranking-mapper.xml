@@ -4,39 +4,44 @@
   "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
 
 <mapper namespace="com.project.dykj.domain.ranking.mapper.RankingMapper">
-
-    <select id="getCurrentWeeklySeasonNo" resultType="_int">
-        SELECT SEQ_WEEKLY_SEASON_NO.CURRVAL
-        FROM DUAL
+    <!-- 시즌 번호를 가져오는 메소드 -->
+    <!-- LAST_NUMBER의 값은 현재 시즌 번호보다 1 큰 값이므로 1을 빼준다. -->
+    <select id="getCurrentSeasonNo" parameterType="string" resultType="_int">
+        SELECT LAST_NUMBER - 1
+        FROM USER_SEQUENCES
+        WHERE SEQUENCE_NAME = 
+        <choose>
+            <when test="seasonPeriod == 'WEEKLY'">
+                'SEQ_WEEKLY_SEASON_NO'
+            </when>
+            <when test="seasonPeriod == 'MONTHLY'">
+                'SEQ_MONTHLY_SEASON_NO'
+            </when>
+            <when test="seasonPeriod == 'YEARLY'">
+                'SEQ_YEARLY_SEASON_NO'
+            </when>
+        </choose>
     </select>
 
-    <select id="getCurrentMonthlySeasonNo" resultType="_int">
-        SELECT SEQ_MONTHLY_SEASON_NO.CURRVAL
-        FROM DUAL
-    </select>
-
-    <select id="getCurrentYearlySeasonNo" resultType="_int">
-        SELECT SEQ_YEARLY_SEASON_NO.CURRVAL
-        FROM DUAL
-    </select>
-
-    <select id="increaseCurrentWeeklySeasonNo" resultType="_int">
-        SELECT SEQ_WEEKLY_SEASON_NO.NEXTVAL
-        FROM DUAL
-    </select>
-
-    <select id="increaseCurrentMonthlySeasonNo" resultType="_int">
-        SELECT SEQ_MONTHLY_SEASON_NO.NEXTVAL
-        FROM DUAL
-    </select>
-
-    <select id="increaseCurrentYearlySeasonNo" resultType="_int">
-        SELECT SEQ_YEARLY_SEASON_NO.NEXTVAL
-        FROM DUAL
+    <select id="increaseCurrentSeasonNo" parameterType="string" resultType="_int">
+        <choose>
+            <when test="seasonPeriod == 'WEEKLY'">
+                SELECT SEQ_WEEKLY_SEASON_NO.NEXTVAL
+                FROM DUAL
+            </when>
+            <when test="seasonPeriod == 'MONTHLY'">
+                SELECT SEQ_MONTHLY_SEASON_NO.NEXTVAL
+                FROM DUAL
+            </when>
+            <when test="seasonPeriod == 'YEARLY'">
+                SELECT SEQ_YEARLY_SEASON_NO.NEXTVAL
+                FROM DUAL
+            </when>
+        </choose>
     </select>
 
     <select id="selectSeasonRanking" resultType="RankingRes">
-        SELECT *
+        SELECT USER_ID, START_POINT, CURRENT_POINT, RETURN_RATE, RANK
         FROM (SELECT ROWNUM,
                      USER_ID,
                      START_POINT,
@@ -44,10 +49,10 @@
                      RETURN_RATE,
                      RANK() OVER (ORDER BY CURRENT_POINT DESC) AS RANK
               FROM SEASON_RANKINGS
-              WHERE SEASON_PERIOD = #{season}
+              WHERE SEASON_PERIOD = #{seasonPeriod}
               AND SEASON_NO = #{seasonNo}
               ORDER BY RETURN_RATE DESC)
-        WHERE ROWNUM BETWEEN #{start} AND #{end}
+        WHERE ROWNUM BETWEEN #{pageReq.start} AND #{pageReq.end}
     </select>
 
     <select id="selectWeeklyRanking" resultType="RankingRes">
@@ -99,5 +104,64 @@
               ORDER BY POINTS DESC)
         WHERE ROWNUM BETWEEN #{start} AND #{end}
     </select>
+
+    <update id="updateSeasonRanking" parameterType="string">
+        MERGE INTO SEASON_RANKINGS S
+        USING (
+            SELECT M.USER_ID, (M.POINTS + NVL(T.TOTAL_STOCK_PRICE, 0)) AS TOTAL_ASSET
+            FROM MEMBERS M
+            LEFT OUTER JOIN (SELECT USER_ID, SUM(H.TOTAL_COUNT * S.CURRENT_PRICE) AS TOTAL_STOCK_PRICE
+                            FROM HOLDINGS H
+                            JOIN STOCKS S ON (H.STOCK_ID = S.STOCK_ID)
+                            GROUP BY USER_ID) T
+            ON M.USER_ID = T.USER_ID
+            WHERE M.STATUS = 'Y'
+        ) T
+        ON ((S.SEASON_PERIOD = 'WEEKLY' AND S.SEASON_NO = SEQ_WEEKLY_SEASON_NO.CURRVAL
+            OR S.SEASON_PERIOD = 'MONTHLY' AND S.SEASON_NO = SEQ_MONTHLY_SEASON_NO.CURRVAL
+            OR S.SEASON_PERIOD = 'YEARLY' AND S.SEASON_NO = SEQ_YEARLY_SEASON_NO.CURRVAL)
+            AND S.USER_ID = T.USER_ID)
+        WHEN MATCHED THEN
+            UPDATE SET
+                S.CURRENT_POINT = T.TOTAL_ASSET
+    </update>
+
+    <insert id="insertNewSeasonRanking" parameterType="string">
+        INSERT INTO SEASON_RANKINGS(RANKING_NO
+                                ,USER_ID
+                                ,START_POINT
+                                ,CURRENT_POINT
+                                ,RETURN_RATE
+                                ,SEASON_PERIOD
+                                ,SEASON_NO)
+        SELECT SEQ_RANKING_NO.NEXTVAL
+            ,T.USER_ID
+            ,T.TOTAL_ASSET
+            ,T.TOTAL_ASSET
+            ,0
+            ,#{seasonPeriod}
+            ,
+            <choose>
+                <when test="seasonPeriod == 'WEEKLY'">
+                    SEQ_WEEKLY_SEASON_NO.CURRVAL
+                </when>
+                <when test="seasonPeriod == 'MONTHLY'">
+                    SEQ_MONTHLY_SEASON_NO.CURRVAL
+                </when>
+                <when test="seasonPeriod == 'YEARLY'">
+                    SEQ_YEARLY_SEASON_NO.CURRVAL
+                </when>
+            </choose>
+        FROM (
+            SELECT M.USER_ID, (M.POINTS + NVL(T.TOTAL_STOCK_PRICE, 0)) AS TOTAL_ASSET
+            FROM MEMBERS M
+            LEFT OUTER JOIN (SELECT USER_ID, SUM(H.TOTAL_COUNT * S.CURRENT_PRICE) AS TOTAL_STOCK_PRICE
+                            FROM HOLDINGS H
+                            JOIN STOCKS S ON (H.STOCK_ID = S.STOCK_ID)
+                            GROUP BY USER_ID) T
+            ON M.USER_ID = T.USER_ID
+            WHERE M.STATUS = 'Y'
+        ) T
+    </insert>
 </mapper>
 
