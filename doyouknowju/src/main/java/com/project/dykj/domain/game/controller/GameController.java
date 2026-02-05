@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.project.dykj.domain.game.dto.AchievementDTO;
 import com.project.dykj.domain.game.dto.AttendanceDTO;
 import com.project.dykj.domain.game.dto.ExpResultDTO;
 import com.project.dykj.domain.game.dto.QuizDTO;
@@ -110,4 +111,46 @@ public class GameController {
 			return ResponseEntity.status(500).body(e.getMessage());
 		}
 	}
+	
+	@GetMapping("/achiev/list")
+	public ResponseEntity<?> getAchievements(HttpSession session){
+		Member loginUser = (Member) session.getAttribute("loginUser");
+		if(loginUser == null) {
+			return ResponseEntity.status(401).body("로그인이 필요합니다.");
+		}	
+			
+		try {
+			List<AchievementDTO> list = gameService.getAchievementList(loginUser.getUserId());
+			return ResponseEntity.ok(list);
+		}catch(Exception e) {
+			log.error("도전과제 목록 조회 중 오류 발생: ", e);
+			return ResponseEntity.status(500).body("정보를 불러오는 데 실패했습니다.");
+		}
+	}
+	
+	@PostMapping("/achiev/claim")
+	public ResponseEntity<?> claimReward(@RequestBody Map<String, Object> request, HttpSession session){
+		Member loginUser = (Member)session.getAttribute("loginUser");
+		if(loginUser == null) {
+			return ResponseEntity.status(401).body("로그인이 필요합니다.");
+		}
+		
+		try {
+			int achievementId = ((Number)request.get("achievementId")).intValue();
+			
+			boolean success = gameService.processRewardClaim(loginUser.getUserId(), achievementId);
+			
+			if(success) {
+				Member updateMember = gameService.getMemberById(loginUser.getUserId());
+				session.setAttribute("loginUser", updateMember);
+				
+				return ResponseEntity.ok(Map.of("message","보상이 수령되었습니다.","success", true));
+			}else {
+				return ResponseEntity.badRequest().body(Map.of("message","이미 수령했거나 수령 조건이 맞지 않습니다.","success",false));
+			}
+		}catch(Exception e) {
+			return ResponseEntity.status(500).body("보상 처리 중 서버 오류가 발생했습니다.");
+		}
+	}
+	
 }
