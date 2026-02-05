@@ -10,6 +10,7 @@ import org.springframework.stereotype.Component;
 
 import com.project.dykj.domain.member.mapper.MemberMapper;
 import com.project.dykj.domain.ranking.service.RankingService;
+import com.project.dykj.domain.stock.service.StockInfoService;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -21,6 +22,7 @@ public class RankingScheduler {
 
     private final MemberMapper memberMapper;
     private final RankingService rankingService;
+    private final StockInfoService stockInfoService;
     
     // 매일 자정 주간, 월간, 연간 랭킹을 업데이트한다.
     // 여기서 수행하는 업데이트는 각 회원의 보유 자산 총합으로 현재 포인트를 업데이트시키는 것이다.
@@ -29,8 +31,9 @@ public class RankingScheduler {
     // 보유 현금은 회원 테이블에서 가져온다.
     // 랭킹 테이블에 업데이트한다.
     
-    @Scheduled(cron = "0 0 0 * * *")
+    @Scheduled(cron = "45 50 11 * * *", zone = "Asia/Seoul")
     public void updateRanking() {
+        stockInfoService.syncStockInfo();
         rankingService.updateRanking();
     }
 
