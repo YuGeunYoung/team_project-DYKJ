@@ -22,9 +22,9 @@ public class RankingController {
 
     private final RankingService rankingService;
 
-    @GetMapping("/period/{period:weekly|monthly|yearly}/{page}")
-    public ResponseEntity<?> getPeriodRanking(@PathVariable String period, @PathVariable int page) {
-        List<RankingRes> rankingResList = rankingService.getPeriodRanking(period, page);
+    @GetMapping("/season/{season:weekly|monthly|yearly}/{page}")
+    public ResponseEntity<?> getSeasonRanking(@PathVariable String season, @PathVariable int page) {
+        List<RankingRes> rankingResList = rankingService.getSeasonRanking(season.toUpperCase(), page);
         return ResponseEntity.ok(rankingResList);
     }
     
