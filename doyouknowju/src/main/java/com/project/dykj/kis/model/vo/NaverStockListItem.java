@@ -1,4 +1,4 @@
-package com.project.dykj.domain.stock.dto.res;
+package com.project.dykj.kis.model.vo;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;

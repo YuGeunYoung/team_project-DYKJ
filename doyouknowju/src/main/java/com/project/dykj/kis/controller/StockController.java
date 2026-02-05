@@ -12,8 +12,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.project.dykj.domain.stock.dto.res.NaverTradeValueRankItem;
-import com.project.dykj.domain.stock.service.NaverRankingService;
+import com.project.dykj.kis.model.vo.NaverTradeValueRankItem;
+import com.project.dykj.kis.service.NaverRankingService;
 import com.project.dykj.kis.model.vo.KisDailyChartResponse;
 import com.project.dykj.kis.model.vo.StockSearchItem;
 import com.project.dykj.kis.model.vo.StockSuggestItem;
@@ -42,9 +42,10 @@ public class StockController {
     }
 
     /**
-     * 메인 페이지용: 거래량 TOP10 조회
-     * - 기본적으로 KIS 거래량 순위 API를 호출해 상위 10개를 반환합니다.
-     * - KIS는 초당 호출 제한이 있으므로(예: EGW00201) 과도한 폴링/중복 호출은 피해야 합니다.
+     * 메인페이지용 거래량 TOP10 조회
+     * - KIS 거래량 순위 API를 호출해 상위 10개를 반환합니다.
+     * - KIS는 초당 호출 제한(EGW00201)이 있어, 프론트에서 폴링/중복 호출 시 500이 날 수 있습니다.
+     *   (백엔드에서 짧은 캐시로 보호하고 있습니다.)
      */
     @GetMapping("/top10")
     public List<VolumeRankItem> volumeTop10() {
@@ -52,7 +53,9 @@ public class StockController {
     }
 
     /**
-     * 거래대금 Top10 (거래량 순위 API의 표본 30건 내에서 재정렬)
+     * 거래대금 Top10
+     * - 현재 구현은 KIS 거래량 순위 API의 표본(최대 30건) 안에서 누적 거래대금 필드를 기준으로 정렬해 Top10을 만듭니다.
+     * - 따라서 "시장 전체 거래대금 Top10"과는 오차가 있을 수 있습니다.
      */
     @GetMapping("/top10/trade-amount")
     public List<TradeAmountRankItem> tradeAmountTop10() {
@@ -60,9 +63,9 @@ public class StockController {
     }
 
     /**
-     * 네이버(내부 JSON API) 기반 거래대금 Top10
-     * - priceTop 페이지의 랭킹 목록(pageSize=100)을 받아 누적 거래대금(accAmount) 기준으로 재정렬해 상위 10개를 반환합니다.
-     * - 외부 API를 과도하게 호출하지 않도록 서버에서 짧은 캐시(TTL)를 사용합니다.
+     * 네이버(증권) 거래대금 Top10 조회
+     * - stock.naver.com 내부 JSON API를 호출해 표본(pageSize=100)에서 누적 거래대금(accAmount) 기준 Top10을 만듭니다.
+     * - 외부 API 호출 폭발을 막기 위해 서버에서 캐시(TTL)를 사용합니다.
      */
     @GetMapping("/top10/trade-value/naver")
     public List<NaverTradeValueRankItem> naverTradeValueTop10() {
@@ -72,7 +75,7 @@ public class StockController {
     /**
      * 자동완성(추천) 목록 조회
      * - q(prefix)로 시작하는 종목명/종목코드를 DB(STOCKS)에서 조회합니다.
-     * - 입력 중 계속 호출되므로 limit을 너무 크게 두지 않는 것을 권장합니다.
+     * - 입력 중 계속 호출될 수 있으므로 limit은 작게 두는 것을 권장합니다.
      */
     @GetMapping("/suggest")
     public List<StockSuggestItem> suggest(
@@ -97,8 +100,9 @@ public class StockController {
     }
 
     /**
-     * 리스트 페이지용: 복수 현재가 조회
-     * - 검색결과 페이지에서 종목별로 /price를 N번 호출하면 KIS 호출 제한에 걸리기 쉬워, 복수 조회로 한 번에 조회합니다.
+     * 리스트 페이지용 복수 현재가 조회
+     * - 검색 결과 리스트에서 종목별로 /price를 N번 호출하면 KIS 호출 제한에 걸리기 쉬우므로,
+     *   가능한 한 번의 호출로 여러 종목의 현재가를 조회합니다.
      *
      * 요청 바디 예시:
      * 1) { "stockIds": ["005930","000660"] }
@@ -136,7 +140,7 @@ public class StockController {
 
     /**
      * 종목 마스터(DB) 단건 조회
-     * - STOCKS 테이블에 적재된 "고정 정보"(이름/섹터/설명/활성 여부 등)를 반환합니다.
+     * - STOCKS 테이블에 적재된 "고정 정보"(종목명/섹터/설명/활성 여부 등)를 반환합니다.
      */
     @GetMapping("/{stockId}/master")
     public ResponseEntity<StockUpsertRequest> getMaster(@PathVariable String stockId) {
@@ -148,8 +152,8 @@ public class StockController {
     }
 
     /**
-     * 실시간 현재가 조회 (KIS inquire-price)
-     * - 과도한 호출은 KIS 레이트리밋(EGW00201)에 걸릴 수 있습니다.
+     * 실시간 현재가 조회(KIS inquire-price)
+     * - KIS는 초당 호출 제한(EGW00201)이 있어, 과도한 호출 시 실패할 수 있습니다.
      */
     @GetMapping("/{stockId}/price")
     public Map<?, ?> getPrice(@PathVariable String stockId) {
@@ -157,7 +161,7 @@ public class StockController {
     }
 
     /**
-     * 일/주/월 차트 데이터 조회 (KIS inquire-daily-itemchartprice)
+     * 일/주/월 차트 데이터 조회(KIS inquire-daily-itemchartprice)
      * - start/end: YYYYMMDD
      * - period: D/W/M
      */
@@ -172,9 +176,9 @@ public class StockController {
     }
 
     /**
-     * 상세 페이지용: 묶음 조회
+     * 상세 페이지용 묶음 조회
      * - master(DB) + price(KIS) + chart(KIS)를 한 번에 반환합니다.
-     * - 차트 설정(kis.daily-chart.tr-id)이 비어있으면 차트 호출에서 오류가 발생할 수 있습니다.
+     * - 차트 설정(kis.daily-chart.tr-id)이 비어있으면 차트 호출에서 오류가 날 수 있습니다.
      */
     @GetMapping("/{stockId}/detail")
     public Map<String, Object> getDetail(

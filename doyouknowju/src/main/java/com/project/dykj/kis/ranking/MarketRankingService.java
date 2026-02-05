@@ -4,10 +4,15 @@ import java.util.List;
 
 import com.project.dykj.kis.model.vo.TradeAmountRankItem;
 import com.project.dykj.kis.model.vo.VolumeRankItem;
+import com.project.dykj.kis.model.vo.RiseFallRankItem;
 
 public interface MarketRankingService {
 
 	List<VolumeRankItem> getVolumeTop10();
 
 	List<TradeAmountRankItem> getTradeAmountTop10();
+
+	List<RiseFallRankItem> getRiseRateTop10();
+
+	List<RiseFallRankItem> getFallRateTop10();
 }

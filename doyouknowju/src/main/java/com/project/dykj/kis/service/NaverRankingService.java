@@ -1,4 +1,4 @@
-package com.project.dykj.domain.stock.service;
+package com.project.dykj.kis.service;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -16,8 +16,8 @@ import org.springframework.web.util.UriComponentsBuilder;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.project.dykj.domain.stock.dto.res.NaverStockListItem;
-import com.project.dykj.domain.stock.dto.res.NaverTradeValueRankItem;
+import com.project.dykj.kis.model.vo.NaverStockListItem;
+import com.project.dykj.kis.model.vo.NaverTradeValueRankItem;
 
 /**
  * 네이버 증권(stock.naver.com) 내부 JSON API를 호출해서 랭킹 데이터를 만든다.

@@ -21,6 +21,7 @@ public class KisProperties {
 	private StockInfo stockInfo = new StockInfo();
 	private DailyChart dailyChart = new DailyChart();
 	private MultiPrice multiPrice = new MultiPrice();
+	private RiseFallRank riseFallRank = new RiseFallRank();
 
 	@Data
 	public static class VolumeRank {
@@ -69,5 +70,23 @@ public class KisProperties {
 	public static class MultiPrice {
 		private String path;
 		private String trId;
+	}
+
+	@Data
+	public static class RiseFallRank {
+		private String path;
+		private String trId;
+		/**
+		 * 조건 화면 분류 코드 (KIS 문서 예: 20170)
+		 */
+		private String condScrDivCode = "20170";
+		/**
+		 * 조건 시장 분류 코드 (J:KRX, NX:NXT). 기본은 KRX(J)
+		 */
+		private String condMrktDivCode = "J";
+		/**
+		 * 입력 종목코드(시장). 0000: 전체, 0001: 코스피, 1001: 코스닥 등(KIS 문서 기준)
+		 */
+		private String inputIscd = "0000";
 	}
 }

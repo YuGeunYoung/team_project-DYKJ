@@ -1,6 +1,7 @@
 package com.project.dykj.kis.service;
 
 import java.time.Duration;
+import java.time.Instant;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
@@ -23,8 +24,10 @@ import org.springframework.web.util.UriComponentsBuilder;
 
 import com.project.dykj.kis.KisProperties;
 import com.project.dykj.kis.model.vo.KisDailyChartResponse;
+import com.project.dykj.kis.model.vo.KisRiseFallRankResponse;
 import com.project.dykj.kis.model.vo.KisStockInfoResponse;
 import com.project.dykj.kis.model.vo.KisVolumeRankResponse;
+import com.project.dykj.kis.model.vo.RiseFallRankItem;
 import com.project.dykj.kis.model.vo.TradeAmountRankItem;
 import com.project.dykj.kis.model.vo.VolumeRankItem;
 
@@ -47,6 +50,17 @@ public class KisService {
 	 */
 	private final KisProperties properties;
 	private final WebClient webClient;
+
+	// KIS는 초당 호출 제한이 있어(예: EGW00201) 프론트에서 폴링/중복 호출이 발생하면 500이 자주 납니다.
+	// 메인 화면용 랭킹 API는 짧게 캐시해서 외부 호출을 줄입니다.
+	private static final Duration RANK_CACHE_TTL = Duration.ofSeconds(10);
+	private final Object volumeRankLock = new Object();
+	private final Object riseFallRankLock = new Object();
+	private volatile Cache<KisVolumeRankResponse> volumeRankResponseCache = Cache.empty();
+	private volatile Cache<List<VolumeRankItem>> volumeTop10Cache = Cache.empty();
+	private volatile Cache<List<TradeAmountRankItem>> tradeAmountTop10Cache = Cache.empty();
+	private volatile Cache<List<RiseFallRankItem>> riseRateTop10Cache = Cache.empty();
+	private volatile Cache<List<RiseFallRankItem>> fallRateTop10Cache = Cache.empty();
 
 	/**
 	 * access token은 서버 메모리에만 저장(재시작하면 초기화).
@@ -120,22 +134,37 @@ public class KisService {
 	 * - 프론트 메인페이지 등에서 사용
 	 */
 	public List<VolumeRankItem> getVolumeTop10() {
-		KisVolumeRankResponse response = fetchVolumeRank();
-		List<KisVolumeRankResponse.OutputItem> output = response.getOutput();
-		if (output == null) {
-			return List.of();
-		}
+		Cache<List<VolumeRankItem>> cached = this.volumeTop10Cache;
+		if (cached.isValid()) return cached.value;
 
-		return output.stream()
-				.sorted(Comparator.comparingInt(it -> parseIntSafe(it.getDataRank())))
-				.limit(10)
-				.map(it -> new VolumeRankItem(
-						it.getMkscShrnIscd(),
-						it.getHtsKorIsnm(),
-						it.getStckPrpr(),
-						it.getPrdyCtrt(),
-						it.getAcmlVol()))
-				.toList();
+		synchronized (volumeRankLock) {
+			cached = this.volumeTop10Cache;
+			if (cached.isValid()) return cached.value;
+
+			try {
+				KisVolumeRankResponse response = getVolumeRankResponseCached();
+				List<KisVolumeRankResponse.OutputItem> output = response.getOutput();
+				if (output == null) return List.of();
+
+				List<VolumeRankItem> result = output.stream()
+						.sorted(Comparator.comparingInt(it -> parseIntSafe(it.getDataRank())))
+						.limit(10)
+						.map(it -> new VolumeRankItem(
+								it.getMkscShrnIscd(),
+								it.getHtsKorIsnm(),
+								it.getStckPrpr(),
+								it.getPrdyCtrt(),
+								it.getAcmlVol()))
+						.toList();
+
+				this.volumeTop10Cache = new Cache<>(result, Instant.now().plus(RANK_CACHE_TTL));
+				return result;
+			} catch (RuntimeException e) {
+				// 레이트리밋 등으로 실패해도 마지막(만료된 캐시 포함) 값이 있으면 화면은 유지
+				if (cached.value != null) return cached.value;
+				throw e;
+			}
+		}
 	}
 
 	/**
@@ -144,24 +173,37 @@ public class KisService {
 	 * - 단, volume-rank 자체가 최대 30건만 제공하므로 "시장 전체 거래대금 Top10"과는 오차가 있을 수 있음
 	 */
 	public List<TradeAmountRankItem> getTradeAmountTop10() {
-		KisVolumeRankResponse response = fetchVolumeRank();
-		List<KisVolumeRankResponse.OutputItem> output = response.getOutput();
-		if (output == null) {
-			return List.of();
-		}
+		Cache<List<TradeAmountRankItem>> cached = this.tradeAmountTop10Cache;
+		if (cached.isValid()) return cached.value;
 
-		return output.stream()
-				.sorted(Comparator.comparingLong((KisVolumeRankResponse.OutputItem it) -> parseLongSafe(it.getAcmlTrPbmn()))
-						.reversed())
-				.limit(10)
-				.map(it -> new TradeAmountRankItem(
-						it.getMkscShrnIscd(),
-						it.getHtsKorIsnm(),
-						it.getStckPrpr(),
-						it.getPrdyCtrt(),
-						it.getAcmlVol(),
-						it.getAcmlTrPbmn()))
-				.toList();
+		synchronized (volumeRankLock) {
+			cached = this.tradeAmountTop10Cache;
+			if (cached.isValid()) return cached.value;
+
+			try {
+				KisVolumeRankResponse response = getVolumeRankResponseCached();
+				List<KisVolumeRankResponse.OutputItem> output = response.getOutput();
+				if (output == null) return List.of();
+
+				List<TradeAmountRankItem> result = output.stream()
+						.sorted(Comparator.comparingLong((KisVolumeRankResponse.OutputItem it) -> parseLongSafe(it.getAcmlTrPbmn())).reversed())
+						.limit(10)
+						.map(it -> new TradeAmountRankItem(
+								it.getMkscShrnIscd(),
+								it.getHtsKorIsnm(),
+								it.getStckPrpr(),
+								it.getPrdyCtrt(),
+								it.getAcmlVol(),
+								it.getAcmlTrPbmn()))
+						.toList();
+
+				this.tradeAmountTop10Cache = new Cache<>(result, Instant.now().plus(RANK_CACHE_TTL));
+				return result;
+			} catch (RuntimeException e) {
+				if (cached.value != null) return cached.value;
+				throw e;
+			}
+		}
 	}
 
 	/**
@@ -169,6 +211,73 @@ public class KisService {
 	 * - properties.kis.volume-rank.path / tr-id / fid 기본값이 필요
 	 * - KIS 서버에서 오류코드(rt_cd != 0)면 IllegalStateException 발생
 	 */
+	/**
+	 * 등락률(상승률) Top10
+	 * - KIS 등락률 순위 API를 호출해 상승률 순(fid_rank_sort_cls_code=0)으로 상위 10개를 반환
+	 */
+	public List<RiseFallRankItem> getRiseRateTop10() {
+		Cache<List<RiseFallRankItem>> cached = this.riseRateTop10Cache;
+		if (cached.isValid()) return cached.value;
+
+		synchronized (riseFallRankLock) {
+			cached = this.riseRateTop10Cache;
+			if (cached.isValid()) return cached.value;
+
+			try {
+				List<RiseFallRankItem> result = fetchRiseFallTop10("0", "0");
+				this.riseRateTop10Cache = new Cache<>(result, Instant.now().plus(RANK_CACHE_TTL));
+				return result;
+			} catch (RuntimeException e) {
+				if (cached.value != null) return cached.value;
+				throw e;
+			}
+		}
+	}
+
+	/**
+	 * 등락률(하락률) Top10
+	 * - KIS 등락률 순위 API를 호출해 하락률 순(fid_rank_sort_cls_code=1)으로 상위 10개를 반환
+	 */
+	public List<RiseFallRankItem> getFallRateTop10() {
+		Cache<List<RiseFallRankItem>> cached = this.fallRateTop10Cache;
+		if (cached.isValid()) return cached.value;
+
+		synchronized (riseFallRankLock) {
+			cached = this.fallRateTop10Cache;
+			if (cached.isValid()) return cached.value;
+
+			try {
+				List<RiseFallRankItem> result = fetchRiseFallTop10("1", "0");
+				this.fallRateTop10Cache = new Cache<>(result, Instant.now().plus(RANK_CACHE_TTL));
+				return result;
+			} catch (RuntimeException e) {
+				if (cached.value != null) return cached.value;
+				throw e;
+			}
+		}
+	}
+
+
+/**
+ * 거래량순위(volume-rank) 원본 응답을 짧게 캐시합니다.
+ * - /top10 과 /top10/trade-amount 가 동시에 호출되면 KIS를 2번 치게 되는데,
+ *   초당 제한(EGW00201)에 걸려 500이 발생할 수 있어 1번 호출 결과를 공유합니다.
+ */
+private KisVolumeRankResponse getVolumeRankResponseCached() {
+	Cache<KisVolumeRankResponse> cached = this.volumeRankResponseCache;
+	if (cached.isValid()) return cached.value;
+
+	try {
+		KisVolumeRankResponse response = fetchVolumeRank();
+		this.volumeRankResponseCache = new Cache<>(response, Instant.now().plus(RANK_CACHE_TTL));
+		return response;
+	} catch (RuntimeException e) {
+		// 만료된 캐시라도 값이 있으면 그것을 반환(화면 깨짐 방지)
+		if (cached.value != null) return cached.value;
+		throw e;
+	}
+}
+
 	public KisVolumeRankResponse fetchVolumeRank() {
 		requireBasicConfig();
 		requireVolumeRankConfig();
@@ -227,6 +336,71 @@ public class KisService {
 	 * - 반환은 Map으로 두었고, 필요하면 VO로 모델링 가능
 	 * - 프론트에서 "현재가/등락률" 등을 표시할 때 사용
 	 */
+	private List<RiseFallRankItem> fetchRiseFallTop10(String rankSortClsCode, String prcClsCode) {
+		requireBasicConfig();
+		requireRiseFallRankConfig();
+
+		String token = getValidAccessToken();
+		if (token == null || token.isBlank()) {
+			throw new IllegalStateException("KIS access token is missing");
+		}
+
+		String uri = UriComponentsBuilder.fromPath(properties.getRiseFallRank().getPath())
+				.queryParam("fid_rsfl_rate2", "")
+				.queryParam("fid_cond_mrkt_div_code", properties.getRiseFallRank().getCondMrktDivCode())
+				.queryParam("fid_cond_scr_div_code", properties.getRiseFallRank().getCondScrDivCode())
+				.queryParam("fid_input_iscd", properties.getRiseFallRank().getInputIscd())
+				.queryParam("fid_rank_sort_cls_code", rankSortClsCode)
+				.queryParam("fid_input_cnt_1", "0")
+				.queryParam("fid_prc_cls_code", prcClsCode)
+				.queryParam("fid_input_price_1", "")
+				.queryParam("fid_input_price_2", "")
+				.queryParam("fid_vol_cnt", "")
+				.queryParam("fid_trgt_cls_code", "0")
+				.queryParam("fid_trgt_exls_cls_code", "0")
+				.queryParam("fid_div_cls_code", "0")
+				.queryParam("fid_rsfl_rate1", "")
+				.build(true)
+				.toUriString();
+
+		try {
+			KisRiseFallRankResponse response = webClient.get()
+					.uri(uri)
+					.accept(MediaType.APPLICATION_JSON)
+					.header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
+					.header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
+					.header("appkey", properties.getAppkey())
+					.header("appsecret", properties.getAppsecret())
+					.header("tr_id", properties.getRiseFallRank().getTrId())
+					.header("custtype", properties.getCusttype())
+					.retrieve()
+					.bodyToMono(KisRiseFallRankResponse.class)
+					.block(Duration.ofSeconds(5));
+
+			List<KisRiseFallRankResponse.OutputItem> output = response == null ? null : response.getOutput();
+			if (output == null) {
+				return List.of();
+			}
+
+			return output.stream()
+					.sorted(Comparator.comparingInt(it -> parseIntSafe(it.getDataRank())))
+					.limit(10)
+					.map(it -> new RiseFallRankItem(
+							it.getStckShrnIscd(),
+							it.getHtsKorIsnm(),
+							it.getStckPrpr(),
+							it.getPrdyVrssSign(),
+							it.getPrdyVrss(),
+							it.getPrdyCtrt(),
+							it.getAcmlVol()
+					))
+					.toList();
+		} catch (WebClientResponseException e) {
+			logKisError("rise-fall-rank", uri, properties.getRiseFallRank().getTrId(), e);
+			throw e;
+		}
+	}
+
 	public Map<?, ?> getStockPrice(String stockCode) {
 		requireBasicConfig();
 
@@ -509,6 +683,18 @@ public class KisService {
 		}
 	}
 
+	private void requireRiseFallRankConfig() {
+		if (properties.getRiseFallRank() == null) {
+			throw new IllegalStateException("kis.rise-fall-rank is required");
+		}
+		if (properties.getRiseFallRank().getPath() == null || properties.getRiseFallRank().getPath().isBlank()) {
+			throw new IllegalStateException("kis.rise-fall-rank.path is required");
+		}
+		if (properties.getRiseFallRank().getTrId() == null || properties.getRiseFallRank().getTrId().isBlank()) {
+			throw new IllegalStateException("kis.rise-fall-rank.tr-id is required");
+		}
+	}
+
 	private Duration timeout() {
 		Duration t = properties.getVolumeRank().getTimeout();
 		return t == null ? Duration.ofSeconds(5) : t;
@@ -534,6 +720,16 @@ public class KisService {
 			return Long.parseLong(cleaned);
 		} catch (Exception e) {
 			return Long.MIN_VALUE;
+		}
+	}
+
+	private record Cache<T>(T value, Instant expiresAt) {
+		static <T> Cache<T> empty() {
+			return new Cache<>(null, Instant.EPOCH);
+		}
+
+		boolean isValid() {
+			return value != null && expiresAt != null && Instant.now().isBefore(expiresAt);
 		}
 	}
 }
