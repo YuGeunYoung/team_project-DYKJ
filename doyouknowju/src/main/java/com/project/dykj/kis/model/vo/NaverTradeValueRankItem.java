@@ -1,4 +1,4 @@
-package com.project.dykj.domain.stock.dto.res;
+package com.project.dykj.kis.model.vo;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -21,4 +21,3 @@ public class NaverTradeValueRankItem {
 	private Long changeVal;
 	private Double changeRate;
 }
-
