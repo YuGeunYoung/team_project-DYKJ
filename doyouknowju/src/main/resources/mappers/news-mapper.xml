@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.project.dykj.domain.news.mapper.NewsMapper">
+
+    <insert id="insertNewsList" parameterType="java.util.List">
+        INSERT INTO NEWS (NEWS_ID, TITLE, NEWS_URL, IMAGE_URL, PUB_DATE, AI_SUMMARY, NEWS_CATEGORY)
+        SELECT SEQ_NEWS_ID.NEXTVAL, A.* FROM (
+        <foreach collection="list" item="news" separator="UNION ALL">
+            SELECT #{news.title}, #{news.newsUrl}, #{news.imageUrl}, #{news.pubDate}, #{news.aiSummary}, 
+                   NVL(#{news.newsCategory}, '경제') FROM DUAL
+        </foreach>
+        ) A
+    </insert>
+
+    <select id="selectLatestNews" resultType="com.project.dykj.domain.news.vo.NewsVO">
+        SELECT 
+            NEWS_ID as newsId, 
+            TITLE, 
+            NEWS_URL as newsUrl, 
+            IMAGE_URL as imageUrl, 
+            PUB_DATE as pubDate, 
+            AI_SUMMARY as aiSummary, 
+            NEWS_CATEGORY as newsCategory, 
+            CREATED_AT as createdAt
+        FROM (
+            SELECT * FROM NEWS ORDER BY CREATED_AT DESC
+        ) WHERE ROWNUM &lt;= 10
+    </select>
+
+</mapper>
