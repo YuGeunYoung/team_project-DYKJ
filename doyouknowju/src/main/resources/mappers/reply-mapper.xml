@@ -36,12 +36,28 @@
     ORDER BY CREATE_DATE ASC
   </select>
 
+  <select id="selectRepliesByUserId" resultType="Reply">
+    SELECT
+      REPLY_ID      AS replyId,
+      REPLY_CONTENT AS replyContent,
+      CREATE_DATE   AS createDate,
+      BOARD_ID      AS boardId,
+      USER_ID       AS userId,
+      DELETE_DATE   AS deleteDate,
+      MODIFY_DATE   AS modifyDate
+    FROM REPLY
+    WHERE USER_ID = #{userId}
+      AND DELETE_DATE IS NULL
+    ORDER BY CREATE_DATE DESC
+    OFFSET #{offset} ROWS FETCH NEXT #{size} ROWS ONLY
+  </select>
+
   <update id="updateReply">
     UPDATE REPLY
        SET REPLY_CONTENT = #{replyContent},
            MODIFY_DATE = SYSDATE
      WHERE REPLY_ID = #{replyId}
-       AND DELETE_DATE IS NULL
+      AND DELETE_DATE IS NULL
   </update>
 
   <update id="softDeleteReply">

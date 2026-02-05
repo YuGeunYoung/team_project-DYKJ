@@ -21,6 +21,10 @@ public interface BoardService {
 
     List<Reply> listReplies(long postId);
 
+    List<Board> listPostsByUserId(String userId, int page, int size);
+
+    List<Reply> listRepliesByUserId(String userId, int page, int size);
+
     void deleteReply(long replyId);
 
     void updateReply(long replyId, Reply reply);

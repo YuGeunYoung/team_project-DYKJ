@@ -104,6 +104,28 @@
     OFFSET #{offset} ROWS FETCH NEXT #{size} ROWS ONLY
   </select>
 
+  <select id="selectPostListByUserId" resultType="Board">
+    SELECT
+      B.BOARD_ID      AS boardId,
+      B.BOARD_TITLE   AS boardTitle,
+      B.BOARD_CONTENT AS boardContent,
+      B.CREATE_DATE   AS createDate,
+      B.MODIFY_DATE   AS modifyDate,
+      B.DELETE_DATE   AS deleteDate,
+      B.VIEW_COUNT    AS viewCount,
+      B.STOCK_ID      AS stockId,
+      S.STOCK_NAME    AS stockName,
+      B.BOARD_TYPE    AS boardType,
+      B.USER_ID       AS userId
+    FROM BOARD B
+    LEFT JOIN STOCKS S
+      ON S.STOCK_ID = B.STOCK_ID
+    WHERE B.DELETE_DATE IS NULL
+      AND B.USER_ID = #{userId}
+    ORDER BY B.CREATE_DATE DESC
+    OFFSET #{offset} ROWS FETCH NEXT #{size} ROWS ONLY
+  </select>
+
   <update id="updatePost">
     UPDATE BOARD
        SET BOARD_TYPE = #{boardType},

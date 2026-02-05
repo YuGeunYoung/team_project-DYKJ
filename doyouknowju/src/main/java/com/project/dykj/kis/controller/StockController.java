@@ -15,6 +15,8 @@ import org.springframework.web.bind.annotation.RestController;
 import com.project.dykj.kis.model.vo.NaverTradeValueRankItem;
 import com.project.dykj.kis.service.NaverRankingService;
 import com.project.dykj.kis.model.vo.KisDailyChartResponse;
+import com.project.dykj.kis.model.vo.MarketCapRankItem;
+import com.project.dykj.kis.model.vo.RiseFallRankItem;
 import com.project.dykj.kis.model.vo.StockSearchItem;
 import com.project.dykj.kis.model.vo.StockSuggestItem;
 import com.project.dykj.kis.model.vo.StockUpsertRequest;
@@ -77,6 +79,12 @@ public class StockController {
      * - q(prefix)로 시작하는 종목명/종목코드를 DB(STOCKS)에서 조회합니다.
      * - 입력 중 계속 호출될 수 있으므로 limit은 작게 두는 것을 권장합니다.
      */
+    /** 시가총액 TOP10 조회 (KIS) */
+    @GetMapping("/top10/market-cap")
+    public List<MarketCapRankItem> marketCapTop10() {
+        return marketRankingService.getMarketCapTop10();
+    }
+
     @GetMapping("/suggest")
     public List<StockSuggestItem> suggest(
             @RequestParam String q,
@@ -195,6 +203,18 @@ public class StockController {
                 "price", price,
                 "chart", chart
         );
+    }
+
+    /** 등락률(상승) TOP10 조회 */
+    @GetMapping("/top10/rise-rate")
+    public List<RiseFallRankItem> riseRateTop10() {
+        return marketRankingService.getRiseRateTop10();
+    }
+
+    /** 등락률(하락) TOP10 조회 */
+    @GetMapping("/top10/fall-rate")
+    public List<RiseFallRankItem> fallRateTop10() {
+        return marketRankingService.getFallRateTop10();
     }
 
 }

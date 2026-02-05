@@ -163,6 +163,30 @@ public class BoardServiceImpl implements BoardService {
     }
 
     // 댓글 삭제(소프트 삭제)
+    @Transactional(readOnly = true)
+    @Override
+    public List<Board> listPostsByUserId(String userId, int page, int size) {
+        if (isBlank(userId)) {
+            throw new IllegalArgumentException("userId is required");
+        }
+        int safePage = Math.max(1, page);
+        int safeSize = Math.min(50, Math.max(1, size));
+        int offset = (safePage - 1) * safeSize;
+        return boardMapper.selectPostListByUserId(userId.trim(), offset, safeSize);
+    }
+
+    @Transactional(readOnly = true)
+    @Override
+    public List<Reply> listRepliesByUserId(String userId, int page, int size) {
+        if (isBlank(userId)) {
+            throw new IllegalArgumentException("userId is required");
+        }
+        int safePage = Math.max(1, page);
+        int safeSize = Math.min(50, Math.max(1, size));
+        int offset = (safePage - 1) * safeSize;
+        return replyMapper.selectRepliesByUserId(userId.trim(), offset, safeSize);
+    }
+
     @Transactional
     @Override
     public void deleteReply(long replyId) {

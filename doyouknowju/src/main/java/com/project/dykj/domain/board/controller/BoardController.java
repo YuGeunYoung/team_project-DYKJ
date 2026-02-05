@@ -90,6 +90,26 @@ public class BoardController {
         return boardService.listReplies(boardId);
     }
 
+    /** 마이페이지: 내가 작성한 게시글 목록 조회 */
+    @GetMapping("/users/{userId}/posts")
+    public List<Board> listMyPosts(
+            @PathVariable String userId,
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "20") int size
+    ) {
+        return boardService.listPostsByUserId(userId, page, size);
+    }
+
+    /** 마이페이지: 내가 작성한 댓글 목록 조회 */
+    @GetMapping("/users/{userId}/replies")
+    public List<Reply> listMyReplies(
+            @PathVariable String userId,
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "20") int size
+    ) {
+        return boardService.listRepliesByUserId(userId, page, size);
+    }
+
     /** 댓글 삭제(소프트 삭제) */
     @DeleteMapping("/replies/{replyId}/delete")
     public ResponseEntity<Void> deleteComment(@PathVariable long replyId) {

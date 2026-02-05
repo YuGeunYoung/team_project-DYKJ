@@ -27,6 +27,7 @@ import com.project.dykj.kis.model.vo.KisDailyChartResponse;
 import com.project.dykj.kis.model.vo.KisRiseFallRankResponse;
 import com.project.dykj.kis.model.vo.KisStockInfoResponse;
 import com.project.dykj.kis.model.vo.KisVolumeRankResponse;
+import com.project.dykj.kis.model.vo.MarketCapRankItem;
 import com.project.dykj.kis.model.vo.RiseFallRankItem;
 import com.project.dykj.kis.model.vo.TradeAmountRankItem;
 import com.project.dykj.kis.model.vo.VolumeRankItem;
@@ -56,11 +57,13 @@ public class KisService {
 	private static final Duration RANK_CACHE_TTL = Duration.ofSeconds(10);
 	private final Object volumeRankLock = new Object();
 	private final Object riseFallRankLock = new Object();
+	private final Object marketCapRankLock = new Object();
 	private volatile Cache<KisVolumeRankResponse> volumeRankResponseCache = Cache.empty();
 	private volatile Cache<List<VolumeRankItem>> volumeTop10Cache = Cache.empty();
 	private volatile Cache<List<TradeAmountRankItem>> tradeAmountTop10Cache = Cache.empty();
 	private volatile Cache<List<RiseFallRankItem>> riseRateTop10Cache = Cache.empty();
 	private volatile Cache<List<RiseFallRankItem>> fallRateTop10Cache = Cache.empty();
+	private volatile Cache<List<MarketCapRankItem>> marketCapTop10Cache = Cache.empty();
 
 	/**
 	 * access token은 서버 메모리에만 저장(재시작하면 초기화).
@@ -224,7 +227,8 @@ public class KisService {
 			if (cached.isValid()) return cached.value;
 
 			try {
-				List<RiseFallRankItem> result = fetchRiseFallTop10("0", "0");
+				// 상승률순(fid_rank_sort_cls_code=0) + 종가대비(fid_prc_cls_code=1)
+				List<RiseFallRankItem> result = fetchRiseFallTop10("0", "1");
 				this.riseRateTop10Cache = new Cache<>(result, Instant.now().plus(RANK_CACHE_TTL));
 				return result;
 			} catch (RuntimeException e) {
@@ -247,7 +251,8 @@ public class KisService {
 			if (cached.isValid()) return cached.value;
 
 			try {
-				List<RiseFallRankItem> result = fetchRiseFallTop10("1", "0");
+				// 하락률순(fid_rank_sort_cls_code=1) + 종가대비(fid_prc_cls_code=1)
+				List<RiseFallRankItem> result = fetchRiseFallTop10("1", "1");
 				this.fallRateTop10Cache = new Cache<>(result, Instant.now().plus(RANK_CACHE_TTL));
 				return result;
 			} catch (RuntimeException e) {
@@ -263,6 +268,29 @@ public class KisService {
  * - /top10 과 /top10/trade-amount 가 동시에 호출되면 KIS를 2번 치게 되는데,
  *   초당 제한(EGW00201)에 걸려 500이 발생할 수 있어 1번 호출 결과를 공유합니다.
  */
+	/**
+	 * 시가총액 Top10
+	 * - KIS 시가총액 순위 API를 호출해 상위 10개를 반환합니다.
+	 */
+	public List<MarketCapRankItem> getMarketCapTop10() {
+		Cache<List<MarketCapRankItem>> cached = this.marketCapTop10Cache;
+		if (cached.isValid()) return cached.value;
+
+		synchronized (marketCapRankLock) {
+			cached = this.marketCapTop10Cache;
+			if (cached.isValid()) return cached.value;
+
+			try {
+				List<MarketCapRankItem> result = fetchMarketCapTop10();
+				this.marketCapTop10Cache = new Cache<>(result, Instant.now().plus(RANK_CACHE_TTL));
+				return result;
+			} catch (RuntimeException e) {
+				if (cached.value != null) return cached.value;
+				throw e;
+			}
+		}
+	}
+
 private KisVolumeRankResponse getVolumeRankResponseCached() {
 	Cache<KisVolumeRankResponse> cached = this.volumeRankResponseCache;
 	if (cached.isValid()) return cached.value;
@@ -377,13 +405,30 @@ private KisVolumeRankResponse getVolumeRankResponseCached() {
 					.bodyToMono(KisRiseFallRankResponse.class)
 					.block(Duration.ofSeconds(5));
 
+			if (response == null) {
+				return List.of();
+			}
+			if (!"0".equals(response.getRtCd())) {
+				log.warn("KIS rise-fall-rank returned error: msg_cd={} msg1={} uri={}",
+						response.getMsgCd(), response.getMsg1(), uri);
+				return List.of();
+			}
+
 			List<KisRiseFallRankResponse.OutputItem> output = response == null ? null : response.getOutput();
 			if (output == null) {
 				return List.of();
 			}
 
+			// KIS의 data_rank가 기대와 다르게 보이는 경우가 있어,
+			// 프론트 요구사항(종가대비 등락률) 기준으로 서버에서 한 번 더 정렬합니다.
+			Comparator<KisRiseFallRankResponse.OutputItem> byChangeRate = Comparator
+					.comparingDouble(it -> parseDoubleSafe(it.getPrdyCtrt()));
+			if ("0".equals(rankSortClsCode)) {
+				byChangeRate = byChangeRate.reversed(); // 상승률 Top
+			}
+
 			return output.stream()
-					.sorted(Comparator.comparingInt(it -> parseIntSafe(it.getDataRank())))
+					.sorted(byChangeRate)
 					.limit(10)
 					.map(it -> new RiseFallRankItem(
 							it.getStckShrnIscd(),
@@ -399,6 +444,96 @@ private KisVolumeRankResponse getVolumeRankResponseCached() {
 			logKisError("rise-fall-rank", uri, properties.getRiseFallRank().getTrId(), e);
 			throw e;
 		}
+	}
+
+	private List<MarketCapRankItem> fetchMarketCapTop10() {
+		requireBasicConfig();
+		requireMarketCapRankConfig();
+
+		String token = getValidAccessToken();
+		if (token == null || token.isBlank()) {
+			throw new IllegalStateException("KIS access token is missing");
+		}
+
+		String uri = UriComponentsBuilder.fromPath(properties.getMarketCapRank().getPath())
+				.queryParam("fid_cond_mrkt_div_code", properties.getMarketCapRank().getCondMrktDivCode())
+				.queryParam("fid_cond_scr_div_code", properties.getMarketCapRank().getCondScrDivCode())
+				.queryParam("fid_input_iscd", properties.getMarketCapRank().getInputIscd())
+				.queryParam("fid_trgt_cls_code", "0")
+				.queryParam("fid_trgt_exls_cls_code", "0")
+				.queryParam("fid_div_cls_code", "0")
+				.build(true)
+				.toUriString();
+
+		try {
+			@SuppressWarnings("unchecked")
+			Map<String, Object> response = webClient.get()
+					.uri(uri)
+					.accept(MediaType.APPLICATION_JSON)
+					.header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
+					.header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
+					.header("appkey", properties.getAppkey())
+					.header("appsecret", properties.getAppsecret())
+					.header("tr_id", properties.getMarketCapRank().getTrId())
+					.header("custtype", properties.getCusttype())
+					.retrieve()
+					.bodyToMono(Map.class)
+					.block(Duration.ofSeconds(5));
+
+			if (response == null) {
+				return List.of();
+			}
+			Object rtCd = response.get("rt_cd");
+			if (rtCd != null && !"0".equals(String.valueOf(rtCd))) {
+				log.warn("KIS market-cap-rank returned error: msg_cd={} msg1={} uri={}",
+						response.get("msg_cd"), response.get("msg1"), uri);
+				return List.of();
+			}
+
+			Object outputRaw = response.get("output");
+			List<?> outputList = (outputRaw instanceof List<?> list) ? list : null;
+			if (outputList == null) {
+				// 일부 API는 output1/output2 형태일 수 있어 fallback
+				Object fallback = response.get("output1");
+				outputList = (fallback instanceof List<?> list) ? list : null;
+			}
+			if (outputList == null) {
+				return List.of();
+			}
+
+			return outputList.stream()
+					.filter(v -> v instanceof Map<?, ?>)
+					.map(v -> (Map<?, ?>) v)
+					.map(it -> {
+						String stockId = pick(it, "stck_shrn_iscd", "mksc_shrn_iscd", "inter_shrn_iscd", "jong_code", "itemcode");
+						String stockName = pick(it, "hts_kor_isnm", "inter_kor_isnm", "prdt_name", "itemname");
+						String currentPrice = pick(it, "stck_prpr", "nowVal");
+						String changeSign = pick(it, "prdy_vrss_sign");
+						String changeValue = pick(it, "prdy_vrss", "changeVal");
+						String changeRate = pick(it, "prdy_ctrt", "changeRate");
+						String marketCap = pick(it, "stck_avls", "market_cap", "market_sum", "marketSum");
+						String dataRank = pick(it, "data_rank", "dataRank");
+						return new MarketCapRankItem(stockId, stockName, currentPrice, changeSign, changeValue, changeRate, marketCap, dataRank);
+					})
+					.sorted(Comparator.comparingInt(it -> parseIntSafe(it.getDataRank())))
+					.limit(10)
+					.toList();
+		} catch (WebClientResponseException e) {
+			logKisError("market-cap-rank", uri, properties.getMarketCapRank().getTrId(), e);
+			throw e;
+		}
+	}
+
+	private static String pick(Map<?, ?> map, String... keys) {
+		if (map == null || keys == null) return null;
+		for (String key : keys) {
+			if (key == null) continue;
+			Object v = map.get(key);
+			if (v == null) continue;
+			String s = String.valueOf(v).trim();
+			if (!s.isEmpty()) return s;
+		}
+		return null;
 	}
 
 	public Map<?, ?> getStockPrice(String stockCode) {
@@ -695,6 +830,18 @@ private KisVolumeRankResponse getVolumeRankResponseCached() {
 		}
 	}
 
+	private void requireMarketCapRankConfig() {
+		if (properties.getMarketCapRank() == null) {
+			throw new IllegalStateException("kis.market-cap-rank is required");
+		}
+		if (properties.getMarketCapRank().getPath() == null || properties.getMarketCapRank().getPath().isBlank()) {
+			throw new IllegalStateException("kis.market-cap-rank.path is required");
+		}
+		if (properties.getMarketCapRank().getTrId() == null || properties.getMarketCapRank().getTrId().isBlank()) {
+			throw new IllegalStateException("kis.market-cap-rank.tr-id is required");
+		}
+	}
+
 	private Duration timeout() {
 		Duration t = properties.getVolumeRank().getTimeout();
 		return t == null ? Duration.ofSeconds(5) : t;
@@ -705,6 +852,17 @@ private KisVolumeRankResponse getVolumeRankResponseCached() {
 			return Integer.parseInt(value);
 		} catch (Exception e) {
 			return Integer.MAX_VALUE;
+		}
+	}
+
+	private static double parseDoubleSafe(String value) {
+		try {
+			if (value == null) return Double.NEGATIVE_INFINITY;
+			String cleaned = value.trim();
+			if (cleaned.isEmpty() || "-".equals(cleaned)) return Double.NEGATIVE_INFINITY;
+			return Double.parseDouble(cleaned);
+		} catch (Exception e) {
+			return Double.NEGATIVE_INFINITY;
 		}
 	}
 
