@@ -22,33 +22,39 @@ public class RankingController {
 
     private final RankingService rankingService;
 
-    @GetMapping("/season/{season:weekly|monthly|yearly}/{page}")
+    @GetMapping("/{season:weekly|monthly|yearly|all}/{page}")
     public ResponseEntity<?> getSeasonRanking(@PathVariable String season, @PathVariable int page) {
         List<RankingRes> rankingResList = rankingService.getSeasonRanking(season.toUpperCase(), page);
         return ResponseEntity.ok(rankingResList);
     }
+
+    @GetMapping("/{season:weekly|monthly|yearly|all}/count")
+    public ResponseEntity<?> getSeasonRankingCount(@PathVariable String season) {
+        int count = rankingService.getSeasonRankingCount(season.toUpperCase());
+        return ResponseEntity.ok(count);
+    }
     
-    @GetMapping("/weekly/{page}")
-    public ResponseEntity<?> getWeeklyRanking(@PathVariable int page) {
-        List<RankingRes> rankingResList = rankingService.getWeeklyRanking(page);
-        return ResponseEntity.ok(rankingResList);
-    }
+    // @GetMapping("/weekly/{page}")
+    // public ResponseEntity<?> getWeeklyRanking(@PathVariable int page) {
+    //     List<RankingRes> rankingResList = rankingService.getWeeklyRanking(page);
+    //     return ResponseEntity.ok(rankingResList);
+    // }
 
-    @GetMapping("/monthly/{page}")
-    public ResponseEntity<?> getMonthlyRanking(@PathVariable int page) {
-        List<RankingRes> rankingResList = rankingService.getMonthlyRanking(page);
-        return ResponseEntity.ok(rankingResList);
-    }
+    // @GetMapping("/monthly/{page}")
+    // public ResponseEntity<?> getMonthlyRanking(@PathVariable int page) {
+    //     List<RankingRes> rankingResList = rankingService.getMonthlyRanking(page);
+    //     return ResponseEntity.ok(rankingResList);
+    // }
 
-    @GetMapping("/yearly/{page}")
-    public ResponseEntity<?> getYearlyRanking(@PathVariable int page) {
-        List<RankingRes> rankingResList = rankingService.getYearlyRanking(page);
-        return ResponseEntity.ok(rankingResList);
-    }
+    // @GetMapping("/yearly/{page}")
+    // public ResponseEntity<?> getYearlyRanking(@PathVariable int page) {
+    //     List<RankingRes> rankingResList = rankingService.getYearlyRanking(page);
+    //     return ResponseEntity.ok(rankingResList);
+    // }
 
-    @GetMapping("/all/{page}")
-    public ResponseEntity<?> getAllRanking(@PathVariable int page) {
-        List<AllRankingRes> allRankingResList = rankingService.getAllRanking(page);
-        return ResponseEntity.ok(allRankingResList);
-    }
+    // @GetMapping("/all/{page}")
+    // public ResponseEntity<?> getAllRanking(@PathVariable int page) {
+    //     List<AllRankingRes> allRankingResList = rankingService.getAllRanking(page);
+    //     return ResponseEntity.ok(allRankingResList);
+    // }
 }
