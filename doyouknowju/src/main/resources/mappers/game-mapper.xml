@@ -114,4 +114,43 @@
 			#{isCorrect}
 		)
 	</insert>
+	
+	<select id="selectUserAchievements" resultType="com.project.dykj.domain.game.dto.AchievementDTO">
+		SELECT
+			a.ACHIEVEMENT_ID,
+			a.ACHIEV_NAME,
+			a.ACHIEV_DESC,
+			a.REWARD_EXP,
+			TO_CHAR(ma.ACHIEVED_AT, 'YYYY-MM-DD') AS achievedAt,
+			ma.IS_REWARDED
+		FROM ACHIEVEMENTS a
+		JOIN MEMBER_ACHIEVEMENT ma ON a.ACHIEVEMENT_ID = ma.ACHIEVEMENT_ID
+		WHERE ma.USER_ID = #{userId}
+		ORDER BY ma.ACHIEVED_AT DESC
+	</select>
+	
+	<select id="getAchievementMasterInfo" resultType="com.project.dykj.domain.game.dto.AchievementDTO">
+		SELECT
+			ACHIEVEMENT_ID,
+			REWARD_EXP
+		FROM ACHIEVEMENTS
+		WHERE ACHIEVEMENT_ID = #{achievementId}
+	</select>
+	
+	<update id="updateRewardStatus">
+		UPDATE MEMBER_ACHIEVEMENT
+		SET IS_REWARDED = 'Y'
+		WHERE USER_ID = #{userId}
+			AND ACHIEVEMENT_ID = #{achievementId}
+			AND IS_REWARDED = 'N'
+	</update>
+	
+	<insert id="insertMemberAchievement">
+		MERGE INTO MEMBER_ACHIEVEMENT ma
+		USING DUAL
+		ON (ma.USER_ID = #{userId} AND ma.ACHIEVEMENT_ID = #{achievementId})
+		WHEN NOT MATCHED THEN
+			INSERT(USER_ID, ACHIEVEMENT_ID, ACHIEVED_AT, IS_REWARDED)
+			VALUES(#{userId}, #{achievementId}, SYSDATE, 'N')
+	</insert>
 </mapper>

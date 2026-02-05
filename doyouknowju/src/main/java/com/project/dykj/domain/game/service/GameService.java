@@ -5,6 +5,7 @@ import java.util.List;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.project.dykj.domain.game.dto.AchievementDTO;
 import com.project.dykj.domain.game.dto.AttendanceDTO;
 import com.project.dykj.domain.game.dto.ExpResultDTO;
 import com.project.dykj.domain.game.dto.QuizDTO;
@@ -150,5 +151,27 @@ public class GameService {
 			result.setCurrentLevel(expResult.getCurrentLevel());
 		}
 		return result;
+	}
+
+	public List<AchievementDTO> getAchievementList(String userId) {
+		return gameMapper.selectUserAchievements(userId);
+	}
+
+	@Transactional
+	public boolean processRewardClaim(String userId, int achievementId) {
+		AchievementDTO achiev = gameMapper.getAchievementMasterInfo(achievementId);
+		
+		int result = gameMapper.updateRewardStatus(userId, achievementId);
+		
+		if(result > 0 && achiev != null) {
+			gainExp(userId, achiev.getRewardExp(), "ACHIEV_"+achievementId);
+			return true;
+		}
+		return false;
+	}
+	
+	@Transactional
+	public void recordAchievement(String userId, int achievementId) {
+		gameMapper.insertMemberAchievement(userId, achievementId);
 	}
 }

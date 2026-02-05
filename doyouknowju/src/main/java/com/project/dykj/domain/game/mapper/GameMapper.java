@@ -4,6 +4,7 @@ import java.util.List;
 
 import org.apache.ibatis.annotations.Mapper;
 
+import com.project.dykj.domain.game.dto.AchievementDTO;
 import com.project.dykj.domain.game.entity.ExpHistory;
 import com.project.dykj.domain.game.entity.LevelPolicy;
 import com.project.dykj.domain.game.entity.Quiz;
@@ -31,4 +32,13 @@ public interface GameMapper {
 	int checkTodaySolved(String userId);
 
 	void insertMemberQuiz(String userId, int quizId, String isCorrect);
+
+	List<AchievementDTO> selectUserAchievements(String userId);
+
+	AchievementDTO getAchievementMasterInfo(int achievementId);
+
+	int updateRewardStatus(String userId, int achievementId);
+
+	void insertMemberAchievement(String userId, int achievementId);
+
 }
