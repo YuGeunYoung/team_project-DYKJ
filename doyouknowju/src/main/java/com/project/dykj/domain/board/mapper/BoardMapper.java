@@ -25,6 +25,12 @@ public interface BoardMapper {
 			@Param("size") int size
 	);
 
+	List<Board> selectPostListByUserId(
+			@Param("userId") String userId,
+			@Param("offset") int offset,
+			@Param("size") int size
+	);
+
 	int updatePost(Board board);
 
 	int softDeletePost(@Param("boardId") long boardId);

@@ -14,6 +14,12 @@ public interface ReplyMapper {
 
 	List<Reply> selectReplies(@Param("boardId") long boardId);
 
+	List<Reply> selectRepliesByUserId(
+			@Param("userId") String userId,
+			@Param("offset") int offset,
+			@Param("size") int size
+	);
+
 	int updateReply(Reply reply);
 
 	int softDeleteReply(@Param("replyId") long replyId);

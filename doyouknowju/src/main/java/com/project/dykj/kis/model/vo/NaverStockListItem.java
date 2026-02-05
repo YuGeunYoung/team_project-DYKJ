@@ -38,4 +38,3 @@ public class NaverStockListItem {
 	@JsonProperty("changeRate")
 	private String changeRate;
 }
-

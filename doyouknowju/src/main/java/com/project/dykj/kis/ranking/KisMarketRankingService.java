@@ -9,6 +9,7 @@ import com.project.dykj.kis.service.KisService;
 import com.project.dykj.kis.model.vo.RiseFallRankItem;
 import com.project.dykj.kis.model.vo.VolumeRankItem;
 import com.project.dykj.kis.model.vo.TradeAmountRankItem;
+import com.project.dykj.kis.model.vo.MarketCapRankItem;
 
 @Service
 @ConditionalOnProperty(name = "ranking.source", havingValue = "kis")
@@ -38,5 +39,10 @@ public class KisMarketRankingService implements MarketRankingService {
 	@Override
 	public List<RiseFallRankItem> getFallRateTop10() {
 		return kisService.getFallRateTop10();
+	}
+
+	@Override
+	public List<MarketCapRankItem> getMarketCapTop10() {
+		return kisService.getMarketCapTop10();
 	}
 }
