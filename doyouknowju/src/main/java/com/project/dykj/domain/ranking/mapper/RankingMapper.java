@@ -23,4 +23,5 @@ public interface RankingMapper {
 
     public void updateSeasonRanking();
     public void insertNewSeasonRanking(@Param("seasonPeriod") String seasonPeriod);
+    public int selectSeasonRankingCount(@Param("seasonPeriod") String seasonPeriod);
 }

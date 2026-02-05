@@ -111,8 +111,7 @@ public class RankingService {
         }
     }
 
-    @Transactional
-    public void updateSeasonRanking() {
-
+    public int getSeasonRankingCount(String season) {
+        return rankingMapper.selectSeasonRankingCount(season);
     }
 }
