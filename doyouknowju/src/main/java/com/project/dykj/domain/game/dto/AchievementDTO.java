@@ -16,7 +16,7 @@ public class AchievementDTO {
 	private String achievName;
 	private String achievDesc;
 	private int rewardExp;
-	private int rewardTitleId;
+	private Integer rewardTitleId;
 	
 	private String achievedAt;
 	private String isRewarded;
