@@ -126,4 +126,15 @@ public class BoardController {
         boardService.updateReply(replyId, reply);
         return ResponseEntity.noContent().build();
     }
+
+    /** 메인페이지 인기글 조회 */
+    
+    @GetMapping("/popular")
+    public List<Board> popularityBoard(
+            @RequestParam String boardType,
+            @RequestParam(defaultValue = "realtime") String range,
+            @RequestParam(defaultValue = "10") int limit
+    ) {
+        return boardService.popularityBoard(boardType, range, limit);
+    }
 }

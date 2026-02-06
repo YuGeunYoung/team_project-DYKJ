@@ -28,4 +28,12 @@ public interface BoardService {
     void deleteReply(long replyId);
 
     void updateReply(long replyId, Reply reply);
+
+    /**
+     * 메인 페이지 인기글 조회
+     * @param boardType free|stock (자유/종목 게시판 구분)
+     * @param range realtime|weekly (기간 구분)
+     * @param limit 상위 N개
+     */
+    List<Board> popularityBoard(String boardType, String range, int limit);
 }

@@ -1,5 +1,6 @@
 package com.project.dykj.domain.board.mapper;
 
+import java.util.Date;
 import java.util.List;
 
 import org.apache.ibatis.annotations.Mapper;
@@ -22,16 +23,20 @@ public interface BoardMapper {
 			@Param("condition") String condition,
 			@Param("keyword") String keyword,
 			@Param("offset") int offset,
-			@Param("size") int size
-	);
+			@Param("size") int size);
 
 	List<Board> selectPostListByUserId(
 			@Param("userId") String userId,
 			@Param("offset") int offset,
-			@Param("size") int size
-	);
+			@Param("size") int size);
 
 	int updatePost(Board board);
 
 	int softDeletePost(@Param("boardId") long boardId);
+
+	List<Board> popularityBoard(
+		@Param("boardType") String boardType,
+		@Param("fromDate") Date fromDate,
+		@Param("limit") int limit
+	);
 }
