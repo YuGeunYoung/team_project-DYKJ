@@ -145,4 +145,42 @@
        AND DELETE_DATE IS NULL
   </update>
 
+  <select id="popularityBoard" resultType="Board">
+    SELECT
+      B.BOARD_ID      AS boardId,
+      B.BOARD_TITLE   AS boardTitle,
+      B.BOARD_CONTENT AS boardContent,
+      B.CREATE_DATE   AS createDate,
+      B.MODIFY_DATE   AS modifyDate,
+      B.DELETE_DATE   AS deleteDate,
+      B.VIEW_COUNT    AS viewCount,
+      B.STOCK_ID      AS stockId,
+      S.STOCK_NAME    AS stockName,
+      B.BOARD_TYPE    AS boardType,
+      B.USER_ID       AS userId
+    FROM BOARD B
+    LEFT JOIN STOCKS S
+      ON S.STOCK_ID = B.STOCK_ID
+    WHERE B.DELETE_DATE IS NULL
+      AND B.CREATE_DATE &gt;= #{fromDate}
+      <choose>
+        <when test="boardType == 'FREE'">
+          AND B.STOCK_ID IS NULL
+        </when>
+        <when test="boardType == 'STOCK'">
+          AND B.STOCK_ID IS NOT NULL
+        </when>
+      </choose>
+    ORDER BY (
+      (B.VIEW_COUNT + (
+        SELECT COUNT(*)
+          FROM REPLY R
+         WHERE R.BOARD_ID = B.BOARD_ID
+           AND R.DELETE_DATE IS NULL
+      ) * 3)
+      / (((SYSDATE - B.CREATE_DATE) * 24) + 1)
+    ) DESC
+    FETCH FIRST #{limit} ROWS ONLY
+  </select>
+
 </mapper>
