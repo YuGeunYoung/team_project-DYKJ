@@ -14,4 +14,5 @@ import lombok.Setter;
 public class TitleDTO {
 	private int titleId;
 	private String titleName;
+	private String titleImgUrl;
 }
