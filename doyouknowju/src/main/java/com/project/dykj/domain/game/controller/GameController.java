@@ -14,6 +14,7 @@ import com.project.dykj.domain.game.dto.AchievementDTO;
 import com.project.dykj.domain.game.dto.AttendanceDTO;
 import com.project.dykj.domain.game.dto.ExpResultDTO;
 import com.project.dykj.domain.game.dto.QuizDTO;
+import com.project.dykj.domain.game.dto.TitleDTO;
 import com.project.dykj.domain.game.service.GameService;
 import com.project.dykj.domain.member.entity.Member;
 
@@ -153,4 +154,18 @@ public class GameController {
 		}
 	}
 	
+	@GetMapping("/titles")
+	public ResponseEntity<?> getMyTitles(HttpSession session){
+		Member loginUser = (Member) session.getAttribute("loginUser");
+		if(loginUser == null) {
+			return ResponseEntity.status(401).body("로그인이 필요합니다.");
+		}
+		
+		try {
+			List<TitleDTO> titles = gameService.getMyTitles(loginUser.getUserId());
+			return ResponseEntity.ok(titles);
+		}catch(Exception e) {
+			return ResponseEntity.status(500).body("칭호 정보를 불러오는 데 실패했습니다.");
+		}
+	}
 }
