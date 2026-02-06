@@ -134,7 +134,8 @@
 	<select id="getAchievementMasterInfo" resultType="com.project.dykj.domain.game.dto.AchievementDTO">
 		SELECT
 			ACHIEVEMENT_ID,
-			REWARD_EXP
+			REWARD_EXP,
+			REWARD_TITLE_ID
 		FROM ACHIEVEMENTS
 		WHERE ACHIEVEMENT_ID = #{achievementId}
 	</select>
@@ -155,4 +156,36 @@
 			INSERT(USER_ID, ACHIEVEMENT_ID, ACHIEVED_AT, IS_REWARDED)
 			VALUES(#{userId}, #{achievementId}, SYSDATE, 'N')
 	</insert>
+	
+	<select id="selectAttendanceCount" resultType="_int">
+		SELECT COUNT(*)
+		FROM ATTENDANCES
+		WHERE USER_ID = #{userId}
+	</select>
+	
+	<select id="selectCorrectQuizCount" resultType="_int">
+		SELECT COUNT(*)
+		FROM MEMBER_QUIZZES
+		WHERE USER_ID = #{userId}
+			AND IS_CORRECT = 'Y'
+	</select>
+	
+	<update id="insertMemberTitle">
+		MERGE INTO MEMBER_TITLES mt
+		USING DUAL
+		ON (mt.USER_ID = #{userId} AND mt.TITLE_ID = #{titleId})
+		WHEN NOT MATCHED THEN
+			INSERT(USER_ID, TITLE_ID, ACQUIRED_AT)
+			VALUES(#{userId}, #{titleId}, SYSDATE)
+	</update>
+	
+	<select id="selectMemberTitles" resultType="com.project.dykj.domain.game.dto.TitleDTO">
+		SELECT
+			t.TITLE_ID,
+			t.TITLE_NAME
+		FROM MEMBER_TITLES mt
+		JOIN TITLES t ON mt.TITLE_ID = t.TITLE_ID
+		WHERE mt.USER_ID = #{userId}
+		ORDER BY mt.ACQUIRED_AT DESC
+	</select>
 </mapper>

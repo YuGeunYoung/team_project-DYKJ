@@ -5,6 +5,7 @@ import java.util.List;
 import org.apache.ibatis.annotations.Mapper;
 
 import com.project.dykj.domain.game.dto.AchievementDTO;
+import com.project.dykj.domain.game.dto.TitleDTO;
 import com.project.dykj.domain.game.entity.ExpHistory;
 import com.project.dykj.domain.game.entity.LevelPolicy;
 import com.project.dykj.domain.game.entity.Quiz;
@@ -40,5 +41,15 @@ public interface GameMapper {
 	int updateRewardStatus(String userId, int achievementId);
 
 	void insertMemberAchievement(String userId, int achievementId);
+
+	int selectAttendanceCount(String userId);
+
+	int selectCorrectQuizCount(String userId);
+
+	void insertMemberTitle(String userId, Integer rewardTitleId);
+
+	List<TitleDTO> selectMemberTitles(String userId);
+
+
 
 }

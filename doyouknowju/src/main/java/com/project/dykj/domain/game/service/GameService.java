@@ -9,6 +9,7 @@ import com.project.dykj.domain.game.dto.AchievementDTO;
 import com.project.dykj.domain.game.dto.AttendanceDTO;
 import com.project.dykj.domain.game.dto.ExpResultDTO;
 import com.project.dykj.domain.game.dto.QuizDTO;
+import com.project.dykj.domain.game.dto.TitleDTO;
 import com.project.dykj.domain.game.entity.ExpHistory;
 import com.project.dykj.domain.game.entity.LevelPolicy;
 import com.project.dykj.domain.game.entity.Quiz;
@@ -25,6 +26,9 @@ import lombok.extern.slf4j.Slf4j;
 public class GameService {
 	private final GameMapper gameMapper;
 	private final MemberMapper memberMapper;
+	
+	private static final int ACHIEV_FIRST_ATTENDANCE = 1;
+	private static final int ACHIEV_FIRST_QUIZ = 2;
 	
 	@Transactional
 	public ExpResultDTO gainExp(String userId, int amount, String source) {
@@ -92,15 +96,21 @@ public class GameService {
 		
 		gameMapper.insertAttendance(userId);
 		gameMapper.updateCumulativeDays(userId);
+		
+		int attendanceCount = gameMapper.selectAttendanceCount(userId);
+		if(attendanceCount == 1) {
+			recordAchievement(userId, ACHIEV_FIRST_ATTENDANCE);
+		}
+		
 		//보상 경험치
-		int rewardExp = 100;
+		int rewardExp = 50;
 		
 		ExpResultDTO expResult = gainExp(userId, rewardExp, "ATTENDANCE");
 		Member member = memberMapper.findByUserId(userId);
 		
 		return AttendanceDTO.builder()
 				.success(true)
-				.message("출석 체크가 완료되었습니다! 100 EXP 획득!")
+				.message("출석 체크가 완료되었습니다! 50 EXP 획득!")
 				.gainedExp(rewardExp)
 				.cumulativeDays(member.getConsecDays())
 				.levelUp(expResult.isLevelUp())
@@ -138,6 +148,13 @@ public class GameService {
 		
 		gameMapper.insertMemberQuiz(userId, quizId, isCorrect ? "Y" : "N");
 		
+		if(isCorrect) {
+			int correctCount = gameMapper.selectCorrectQuizCount(userId);
+			if(correctCount == 1) {
+				recordAchievement(userId, ACHIEV_FIRST_QUIZ);
+			}
+		}
+		
 		QuizDTO result = QuizDTO.builder()
 								.correct(isCorrect)
 								.quizAnswer(quiz.getQuizAnswer())
@@ -165,6 +182,10 @@ public class GameService {
 		
 		if(result > 0 && achiev != null) {
 			gainExp(userId, achiev.getRewardExp(), "ACHIEV_"+achievementId);
+			
+			if(achiev.getRewardTitleId() != null && achiev.getRewardTitleId() > 0) {
+				gameMapper.insertMemberTitle(userId, achiev.getRewardTitleId());
+			}
 			return true;
 		}
 		return false;
@@ -173,5 +194,9 @@ public class GameService {
 	@Transactional
 	public void recordAchievement(String userId, int achievementId) {
 		gameMapper.insertMemberAchievement(userId, achievementId);
+	}
+
+	public List<TitleDTO> getMyTitles(String userId) {
+		return gameMapper.selectMemberTitles(userId);
 	}
 }
