@@ -5,6 +5,7 @@ import java.time.Instant;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 import io.netty.channel.ChannelOption;
@@ -421,14 +422,20 @@ private KisVolumeRankResponse getVolumeRankResponseCached() {
 
 			// KIS의 data_rank가 기대와 다르게 보이는 경우가 있어,
 			// 프론트 요구사항(종가대비 등락률) 기준으로 서버에서 한 번 더 정렬합니다.
-			Comparator<KisRiseFallRankResponse.OutputItem> byChangeRate = Comparator
-					.comparingDouble(it -> parseDoubleSafe(it.getPrdyCtrt()));
+			Comparator<KisRiseFallRankResponse.OutputItem> bySignedRate = Comparator
+					.comparingDouble(it -> parseDoubleSafe(normalizeSignedChangeRate(it.getPrdyCtrt(), it.getPrdyVrssSign())));
 			if ("0".equals(rankSortClsCode)) {
-				byChangeRate = byChangeRate.reversed(); // 상승률 Top
+				bySignedRate = bySignedRate.reversed(); // 상승률 Top
 			}
 
 			return output.stream()
-					.sorted(byChangeRate)
+					.filter(it -> {
+						String sign = it.getPrdyVrssSign();
+						if ("0".equals(rankSortClsCode)) return isRiseSign(sign);
+						if ("1".equals(rankSortClsCode)) return isFallSign(sign);
+						return true;
+					})
+					.sorted(bySignedRate)
 					.limit(10)
 					.map(it -> new RiseFallRankItem(
 							it.getStckShrnIscd(),
@@ -436,7 +443,7 @@ private KisVolumeRankResponse getVolumeRankResponseCached() {
 							it.getStckPrpr(),
 							it.getPrdyVrssSign(),
 							it.getPrdyVrss(),
-							it.getPrdyCtrt(),
+							normalizeSignedChangeRate(it.getPrdyCtrt(), it.getPrdyVrssSign()),
 							it.getAcmlVol()
 					))
 					.toList();
@@ -462,6 +469,10 @@ private KisVolumeRankResponse getVolumeRankResponseCached() {
 				.queryParam("fid_trgt_cls_code", "0")
 				.queryParam("fid_trgt_exls_cls_code", "0")
 				.queryParam("fid_div_cls_code", "0")
+				// KIS 문서상 Required 항목(전체 조회 시 공란 권장)
+				.queryParam("fid_input_price_1", "")
+				.queryParam("fid_input_price_2", "")
+				.queryParam("fid_vol_cnt", "")
 				.build(true)
 				.toUriString();
 
@@ -485,9 +496,10 @@ private KisVolumeRankResponse getVolumeRankResponseCached() {
 			}
 			Object rtCd = response.get("rt_cd");
 			if (rtCd != null && !"0".equals(String.valueOf(rtCd))) {
-				log.warn("KIS market-cap-rank returned error: msg_cd={} msg1={} uri={}",
-						response.get("msg_cd"), response.get("msg1"), uri);
-				return List.of();
+				String msgCd = String.valueOf(response.get("msg_cd"));
+				String msg1 = String.valueOf(response.get("msg1"));
+				log.warn("KIS market-cap-rank returned error: msg_cd={} msg1={} uri={}", msgCd, msg1, uri);
+				throw new IllegalStateException("KIS market-cap-rank error: " + msgCd + " - " + msg1);
 			}
 
 			Object outputRaw = response.get("output");
@@ -505,7 +517,7 @@ private KisVolumeRankResponse getVolumeRankResponseCached() {
 					.filter(v -> v instanceof Map<?, ?>)
 					.map(v -> (Map<?, ?>) v)
 					.map(it -> {
-						String stockId = pick(it, "stck_shrn_iscd", "mksc_shrn_iscd", "inter_shrn_iscd", "jong_code", "itemcode");
+						String stockId = pick(it, "mksc_shrn_iscd", "stck_shrn_iscd", "inter_shrn_iscd", "jong_code", "itemcode");
 						String stockName = pick(it, "hts_kor_isnm", "inter_kor_isnm", "prdt_name", "itemname");
 						String currentPrice = pick(it, "stck_prpr", "nowVal");
 						String changeSign = pick(it, "prdy_vrss_sign");
@@ -864,6 +876,41 @@ private KisVolumeRankResponse getVolumeRankResponseCached() {
 		} catch (Exception e) {
 			return Double.NEGATIVE_INFINITY;
 		}
+	}
+
+	private static boolean isRiseSign(String signCode) {
+		return "1".equals(signCode) || "2".equals(signCode);
+	}
+
+	private static boolean isFallSign(String signCode) {
+		return "4".equals(signCode) || "5".equals(signCode);
+	}
+
+	/**
+	 * KIS 응답의 등락률(prdy_ctrt)은 일부 API에서 부호가 누락되거나(절대값) 부호 코드(prdy_vrss_sign)와
+	 * 함께 제공되는 경우가 있어, 화면 표시/정렬을 위해 서버에서 "부호 포함 등락률"로 정규화합니다.
+	 */
+	private static String normalizeSignedChangeRate(String rawRate, String signCode) {
+		if (rawRate == null) return null;
+		String cleaned = rawRate.trim();
+		if (cleaned.isEmpty() || "-".equals(cleaned)) return rawRate;
+
+		double value;
+		try {
+			value = Double.parseDouble(cleaned);
+		} catch (Exception e) {
+			return rawRate;
+		}
+
+		double abs = Math.abs(value);
+		if (isRiseSign(signCode)) {
+			return String.format(Locale.US, "%.2f", abs);
+		}
+		if (isFallSign(signCode)) {
+			return String.format(Locale.US, "%.2f", -abs);
+		}
+		// 보합/기타는 원본 유지
+		return rawRate;
 	}
 
 	private static long parseLongSafe(String value) {
