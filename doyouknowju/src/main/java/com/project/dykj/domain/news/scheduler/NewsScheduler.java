@@ -23,7 +23,7 @@ public class NewsScheduler {
     }
 
     // 10분마다 실행 (0분, 10분, 20분, 30분, 40분, 50분)
-    @Scheduled(cron = "0 0/10 * * * *")
+    @Scheduled(cron = "0 0 */6 * * *")
     public void scheduleNewsRefresh() {
         log.info("=== 뉴스 자동 갱신 스케줄러 시작 ===");
         try {
