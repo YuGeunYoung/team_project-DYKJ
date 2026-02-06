@@ -182,7 +182,8 @@
 	<select id="selectMemberTitles" resultType="com.project.dykj.domain.game.dto.TitleDTO">
 		SELECT
 			t.TITLE_ID,
-			t.TITLE_NAME
+			t.TITLE_NAME,
+			t.TITLE_IMG_URL
 		FROM MEMBER_TITLES mt
 		JOIN TITLES t ON mt.TITLE_ID = t.TITLE_ID
 		WHERE mt.USER_ID = #{userId}
