@@ -22,6 +22,7 @@ public interface RankingMapper {
     public List<AllRankingRes> selectAllRanking(PageReq pageReq);
 
     public void updateSeasonRanking();
+    public void insertCurrentSeasonRanking(@Param("seasonPeriod") String seasonPeriod);
     public void insertNewSeasonRanking(@Param("seasonPeriod") String seasonPeriod);
     public int selectSeasonRankingCount(@Param("seasonPeriod") String seasonPeriod);
 }

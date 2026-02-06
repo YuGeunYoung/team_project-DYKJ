@@ -31,10 +31,11 @@ public class RankingScheduler {
     // 보유 현금은 회원 테이블에서 가져온다.
     // 랭킹 테이블에 업데이트한다.
     
-    @Scheduled(cron = "45 5 15 * * *", zone = "Asia/Seoul")
+    @Scheduled(cron = "30 56 11 * * *", zone = "Asia/Seoul")
     public void updateRanking() {
         stockInfoService.syncStockInfo();
         rankingService.updateRanking();
+        rankingService.insertCurrentSeasonRanking();
     }
 
     @Scheduled(cron = "0 0 1 * * *", zone = "Asia/Seoul")

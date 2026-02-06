@@ -135,6 +135,68 @@
                 S.RETURN_RATE = (T.TOTAL_ASSET - S.START_POINT) / S.START_POINT * 100
     </update>
 
+    <insert id="insertCurrentSeasonRanking" parameterType="string">
+        INSERT INTO SEASON_RANKINGS(RANKING_NO
+                                ,USER_ID
+                                ,START_POINT
+                                ,CURRENT_POINT
+                                ,RETURN_RATE
+                                ,SEASON_PERIOD
+                                ,SEASON_NO)
+        SELECT SEQ_RANKING_NO.NEXTVAL
+            ,T.USER_ID
+            ,10000000
+            ,T.TOTAL_ASSET
+            ,(T.TOTAL_ASSET - 10000000) / 10000000 * 100
+            ,#{seasonPeriod}
+            ,(
+            <choose>
+                <when test="seasonPeriod == 'WEEKLY'">
+                    SELECT LAST_NUMBER - 1 FROM USER_SEQUENCES WHERE SEQUENCE_NAME='SEQ_WEEKLY_SEASON_NO'
+                </when>
+                <when test="seasonPeriod == 'MONTHLY'">
+                    SELECT LAST_NUMBER - 1 FROM USER_SEQUENCES WHERE SEQUENCE_NAME='SEQ_MONTHLY_SEASON_NO'
+                </when>
+                <when test="seasonPeriod == 'YEARLY'">
+                    SELECT LAST_NUMBER - 1 FROM USER_SEQUENCES WHERE SEQUENCE_NAME='SEQ_YEARLY_SEASON_NO'
+                </when>
+                <when test="seasonPeriod == 'ALL'">
+                    SELECT 1 FROM DUAL
+                </when>
+            </choose>
+            )
+        FROM (
+            SELECT M.USER_ID, (M.POINTS + NVL(T.TOTAL_STOCK_PRICE, 0)) AS TOTAL_ASSET
+            FROM (
+                SELECT *
+                FROM MEMBERS
+                WHERE STATUS = 'Y'
+                AND USER_ID NOT IN (SELECT USER_ID FROM SEASON_RANKINGS WHERE SEASON_PERIOD = #{seasonPeriod} AND SEASON_NO = (
+                    <choose>
+                        <when test="seasonPeriod == 'WEEKLY'">
+                            SELECT LAST_NUMBER - 1 FROM USER_SEQUENCES WHERE SEQUENCE_NAME='SEQ_WEEKLY_SEASON_NO'
+                        </when>
+                        <when test="seasonPeriod == 'MONTHLY'">
+                            SELECT LAST_NUMBER - 1 FROM USER_SEQUENCES WHERE SEQUENCE_NAME='SEQ_MONTHLY_SEASON_NO'
+                        </when>
+                        <when test="seasonPeriod == 'YEARLY'">
+                            SELECT LAST_NUMBER - 1 FROM USER_SEQUENCES WHERE SEQUENCE_NAME='SEQ_YEARLY_SEASON_NO'
+                        </when>
+                        <when test="seasonPeriod == 'ALL'">
+                            SELECT 1 FROM DUAL
+                        </when>
+                    </choose>
+                    )
+                )
+            ) M
+            LEFT OUTER JOIN (SELECT USER_ID, SUM(H.TOTAL_COUNT * S.CURRENT_PRICE) AS TOTAL_STOCK_PRICE
+                            FROM HOLDINGS H
+                            JOIN STOCKS S ON (H.STOCK_ID = S.STOCK_ID)
+                            GROUP BY USER_ID) T
+            ON M.USER_ID = T.USER_ID
+        ) T
+    </insert>
+
     <insert id="insertNewSeasonRanking" parameterType="string">
         INSERT INTO SEASON_RANKINGS(RANKING_NO
                                 ,USER_ID
@@ -149,18 +211,19 @@
             ,T.TOTAL_ASSET
             ,0
             ,#{seasonPeriod}
-            ,
+            ,(
             <choose>
                 <when test="seasonPeriod == 'WEEKLY'">
-                    SEQ_WEEKLY_SEASON_NO.CURRVAL
+                    SELECT LAST_NUMBER - 1 FROM USER_SEQUENCES WHERE SEQUENCE_NAME='SEQ_WEEKLY_SEASON_NO'
                 </when>
                 <when test="seasonPeriod == 'MONTHLY'">
-                    SEQ_MONTHLY_SEASON_NO.CURRVAL
+                    SELECT LAST_NUMBER - 1 FROM USER_SEQUENCES WHERE SEQUENCE_NAME='SEQ_MONTHLY_SEASON_NO'
                 </when>
                 <when test="seasonPeriod == 'YEARLY'">
-                    SEQ_YEARLY_SEASON_NO.CURRVAL
+                    SELECT LAST_NUMBER - 1 FROM USER_SEQUENCES WHERE SEQUENCE_NAME='SEQ_YEARLY_SEASON_NO'
                 </when>
             </choose>
+            )
         FROM (
             SELECT M.USER_ID, (M.POINTS + NVL(T.TOTAL_STOCK_PRICE, 0)) AS TOTAL_ASSET
             FROM MEMBERS M

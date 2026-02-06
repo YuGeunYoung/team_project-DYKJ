@@ -87,6 +87,14 @@ public class RankingService {
     }
 
     @Transactional
+    public void insertCurrentSeasonRanking() {
+        rankingMapper.insertCurrentSeasonRanking("WEEKLY");
+        rankingMapper.insertCurrentSeasonRanking("MONTHLY");
+        rankingMapper.insertCurrentSeasonRanking("YEARLY");
+        rankingMapper.insertCurrentSeasonRanking("ALL");
+    }
+
+    @Transactional
     public void insertNewSeasonRanking() {
         LocalDateTime now = LocalDateTime.now();
 
