@@ -173,10 +173,10 @@
 	<update id="insertMemberTitle">
 		MERGE INTO MEMBER_TITLES mt
 		USING DUAL
-		ON (mt.USER_ID = #{userId} AND mt.TITLE_ID = #{titleId})
+		ON (mt.USER_ID = #{userId} AND mt.TITLE_ID = #{rewardTitleId})
 		WHEN NOT MATCHED THEN
-			INSERT(USER_ID, TITLE_ID, ACQUIRED_AT)
-			VALUES(#{userId}, #{titleId}, SYSDATE)
+			INSERT(USER_ID, TITLE_ID, GAINED_AT)
+			VALUES(#{userId}, #{rewardTitleId}, SYSDATE)
 	</update>
 	
 	<select id="selectMemberTitles" resultType="com.project.dykj.domain.game.dto.TitleDTO">
@@ -186,6 +186,6 @@
 		FROM MEMBER_TITLES mt
 		JOIN TITLES t ON mt.TITLE_ID = t.TITLE_ID
 		WHERE mt.USER_ID = #{userId}
-		ORDER BY mt.ACQUIRED_AT DESC
+		ORDER BY mt.GAINED_AT DESC
 	</select>
 </mapper>
