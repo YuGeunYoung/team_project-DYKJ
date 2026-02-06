@@ -21,6 +21,11 @@ public class NewsController {
         return newsService.getLatestNews();
     }
 
+    @GetMapping("/search")
+    public List<NewsVO> searchNews(@org.springframework.web.bind.annotation.RequestParam("keyword") String keyword) {
+        return newsService.searchNews(keyword);
+    }
+
     @PostMapping("/refresh")
     public String refresh() {
         newsService.refreshNews();
