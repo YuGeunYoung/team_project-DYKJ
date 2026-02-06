@@ -20,7 +20,7 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 public class RankingService {
 
-    private static final int GROUP_SIZE = 1;
+    private static final int GROUP_SIZE = 50;
     
     private final RankingMapper rankingMapper;
 
