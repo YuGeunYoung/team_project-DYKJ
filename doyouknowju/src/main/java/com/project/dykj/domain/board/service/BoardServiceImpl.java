@@ -1,5 +1,10 @@
 package com.project.dykj.domain.board.service;
 
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.temporal.ChronoUnit;
+import java.util.Date;
 import java.util.List;
 
 import org.springframework.stereotype.Service;
@@ -210,6 +215,35 @@ public class BoardServiceImpl implements BoardService {
         if (updated == 0) {
             throw new IllegalArgumentException("comment not found");
         }
+    }
+
+    /**
+     * 메인 페이지 인기글(실시간/주간) 조회
+     * - fromDate(기간 시작)는 서비스에서 계산 후 Mapper로 전달
+     * - 실제 SQL은 board-mapper.xml의 popularityBoard에서 구현
+     */
+    @Transactional(readOnly = true)
+    @Override
+    public List<Board> popularityBoard(String boardType, String range, int limit) {
+        String normalizedBoardType = normalizeBoardType(boardType);
+        if (normalizedBoardType == null) {
+            throw new IllegalArgumentException("boardType is required (FREE|STOCK)");
+        }
+
+        String normalizedRange = isBlank(range) ? "realtime" : range.trim().toLowerCase();
+        int days = switch (normalizedRange) {
+            case "weekly" -> 7;
+            case "realtime" -> 1;
+            default -> throw new IllegalArgumentException("range must be realtime|weekly");
+        };
+
+        int safeLimit = Math.min(50, Math.max(1, limit));
+
+        LocalDateTime from = LocalDateTime.now().minus(days, ChronoUnit.DAYS);
+        Instant instant = from.atZone(ZoneId.systemDefault()).toInstant();
+        Date fromDate = Date.from(instant);
+
+        return boardMapper.popularityBoard(normalizedBoardType, fromDate, safeLimit);
     }
 
     // 게시글 등록 시 입력값 검증 및 정규화
