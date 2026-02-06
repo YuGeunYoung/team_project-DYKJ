@@ -125,7 +125,7 @@ public class GameController {
 			return ResponseEntity.ok(list);
 		}catch(Exception e) {
 			log.error("도전과제 목록 조회 중 오류 발생: ", e);
-			return ResponseEntity.status(500).body("정보를 불러오는 데 실패했습니다.");
+			return ResponseEntity.status(500).body(Map.of("message", "정보를 불러오는 데 실패했습니다.", "success", false));
 		}
 	}
 	
@@ -150,7 +150,7 @@ public class GameController {
 				return ResponseEntity.badRequest().body(Map.of("message","이미 수령했거나 수령 조건이 맞지 않습니다.","success",false));
 			}
 		}catch(Exception e) {
-			return ResponseEntity.status(500).body("보상 처리 중 서버 오류가 발생했습니다.");
+			return ResponseEntity.status(500).body(Map.of("message", "보상 처리 중 서버 오류가 발생했습니다.", "success", false));
 		}
 	}
 	
@@ -165,7 +165,7 @@ public class GameController {
 			List<TitleDTO> titles = gameService.getMyTitles(loginUser.getUserId());
 			return ResponseEntity.ok(titles);
 		}catch(Exception e) {
-			return ResponseEntity.status(500).body("칭호 정보를 불러오는 데 실패했습니다.");
+			return ResponseEntity.status(500).body(Map.of("message", "칭호 정보를 불러오는 데 실패했습니다.", "success", false));
 		}
 	}
 }
