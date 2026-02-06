@@ -5,5 +5,8 @@ import com.project.dykj.domain.news.vo.NewsVO;
 
 public interface NewsService {
     List<NewsVO> getLatestNews();
+
     void refreshNews();
+
+    List<NewsVO> searchNews(String keyword);
 }

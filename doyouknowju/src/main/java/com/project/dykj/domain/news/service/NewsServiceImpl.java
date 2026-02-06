@@ -31,15 +31,64 @@ public class NewsServiceImpl implements NewsService {
     @Value("${gemini.api.key}")
     private String geminiKey;
 
+    @Value("${naver.client.id}")
+    private String naverClientId;
+
+    @Value("${naver.client.secret}")
+    private String naverClientSecret;
+
     @Override
     public List<NewsVO> getLatestNews() {
         return newsMapper.selectLatestNews();
     }
 
     @Override
+    public List<NewsVO> searchNews(String keyword) {
+        List<NewsVO> list = new ArrayList<>();
+        try {
+            String url = "https://openapi.naver.com/v1/search/news.json?query="
+                    + java.net.URLEncoder.encode("\"" + keyword + "\"", "UTF-8") + "&display=10&sort=date";
+
+            RestTemplate rt = new RestTemplate();
+            HttpHeaders headers = new HttpHeaders();
+            headers.set("X-Naver-Client-Id", naverClientId);
+            headers.set("X-Naver-Client-Secret", naverClientSecret);
+
+            HttpEntity<String> entity = new HttpEntity<>(headers);
+            ResponseEntity<Map> response = rt.exchange(url, HttpMethod.GET, entity, Map.class);
+
+            Map<String, Object> body = response.getBody();
+            if (body != null && body.containsKey("items")) {
+                List<Map<String, Object>> items = (List<Map<String, Object>>) body.get("items");
+                for (Map<String, Object> item : items) {
+                    NewsVO vo = new NewsVO();
+                    // 네이버 API는 HTML 태그가 포함되어 올 수 있으므로 제거 필요
+                    String title = (String) item.get("title");
+                    String link = (String) item.get("link"); // 원본 링크 or 네이버 뉴스 링크
+                    String pubDate = (String) item.get("pubDate");
+
+                    vo.setTitle(title.replaceAll("<[^>]*>", "").replaceAll("&quot;", "\"").replaceAll("&amp;", "&"));
+                    vo.setNewsUrl(link);
+                    vo.setPubDate(pubDate); // 형식이 다를 수 있으나 우선 그대로 저장
+                    vo.setNewsCategory("검색");
+
+                    // 이미지는 API에서 주지 않음 -> 비워두거나 기본 이미지 처리 프론트에서
+                    list.add(vo);
+                }
+            }
+        } catch (Exception e) {
+            log.error("네이버 뉴스 검색 API 호출 실패: {}", e.getMessage());
+        }
+        return list;
+    }
+
+    @Override
     public void refreshNews() {
+        log.info("뉴스 및 증시 정보 갱신 프로세스 시작");
+
         // 1. 네이버 금융 뉴스 크롤링 (JSoup)
         List<NewsVO> newsList = fetchNaverFinanceNews();
+        log.info("뉴스 가져오기 완료: {}건", newsList.size());
 
         // 2. 코스피/코스닥 지수 크롤링
         String marketIndex = fetchMarketIndex();
@@ -54,7 +103,9 @@ public class NewsServiceImpl implements NewsService {
         for (NewsVO vo : newsList)
             sb.append("- ").append(vo.getTitle()).append("\n");
 
+        log.info("Gemini 요약 요청 전송... (Input Length: {})", sb.length());
         String summary = fetchGeminiSummary(sb.toString());
+        log.info("Gemini 요약 응답 수신: {}", summary);
 
         // 4. 모든 뉴스 객체에 요약 정보 저장 (단순화를 위해 모든 row에 저장 또는 별도 관리)
         for (NewsVO vo : newsList) {
@@ -68,11 +119,15 @@ public class NewsServiceImpl implements NewsService {
             // 여기선 Mapper 로직(Sequence 사용) 그대로 사용
             try {
                 newsMapper.insertNewsList(newsList);
-                log.info("뉴스 {}건 갱신 완료", newsList.size());
+                log.info("DB 저장 성공: 뉴스 {}건 갱신 완료", newsList.size());
             } catch (Exception e) {
                 log.error("뉴스 DB 저장 실패", e);
             }
+        } else {
+            log.warn("뉴스 리스트가 비어 있어 DB 저장을 건너뜁니다.");
         }
+
+        log.info("갱신 프로세스 종료");
     }
 
     // 네이버 금융 > 뉴스 > 주요뉴스 > 경제 크롤링
@@ -80,6 +135,8 @@ public class NewsServiceImpl implements NewsService {
         List<NewsVO> list = new ArrayList<>();
         // 네이버 금융 뉴스 (경제 파트)
         String url = "https://finance.naver.com/news/mainnews.naver";
+
+        log.info("네이버 뉴스 크롤링 시작: {}", url);
 
         try {
             Document doc = Jsoup.connect(url)
@@ -89,6 +146,11 @@ public class NewsServiceImpl implements NewsService {
 
             // 뉴스 리스트 셀렉터 (네이버 금융 구조에 맞춤)
             Elements articles = doc.select(".newsList .block1");
+            log.info("크롤링 원본 개수 (block1): {}", articles.size());
+
+            if (articles.isEmpty()) {
+                log.warn("뉴스 리스트를 찾을 수 없습니다. CSS 셀렉터(.newsList .block1)를 확인해주세요.");
+            }
 
             for (Element article : articles) {
                 NewsVO vo = new NewsVO();
@@ -101,6 +163,8 @@ public class NewsServiceImpl implements NewsService {
                 if (titleEl != null) {
                     vo.setTitle(titleEl.text());
                     vo.setNewsUrl("https://finance.naver.com" + titleEl.attr("href"));
+                } else {
+                    log.warn("기사 제목 요소를 찾을 수 없음: {}", article.html());
                 }
 
                 // 썸네일
@@ -115,10 +179,6 @@ public class NewsServiceImpl implements NewsService {
                     vo.setPubDate(dateEl.text());
                 }
 
-                // 기사 요약 내용 (필요시)
-                // Element summaryEl = article.selectFirst("dd.articleSummary");
-                // if(summaryEl != null) String summaryText = summaryEl.ownText();
-
                 if (vo.getTitle() != null && !vo.getTitle().isEmpty()) {
                     list.add(vo);
                 }
@@ -126,6 +186,8 @@ public class NewsServiceImpl implements NewsService {
                 if (list.size() >= 10)
                     break; // 최대 10개만
             }
+
+            log.info("최종 파싱된 뉴스 개수: {}", list.size());
 
         } catch (IOException e) {
             log.error("네이버 금융 뉴스 크롤링 실패", e);
@@ -157,6 +219,8 @@ public class NewsServiceImpl implements NewsService {
                 idxInfo.append("코스닥: ").append(kosdaqNow.text()).append(" (").append(kosdaqRate.text()).append(" ")
                         .append(kosdaqPer.text()).append(")");
 
+            log.info("증시 지수 크롤링 결과: {}", idxInfo.toString());
+
         } catch (Exception e) {
             log.error("증시 지수 크롤링 실패", e);
             return "증시 정보 로드 실패";
@@ -165,8 +229,8 @@ public class NewsServiceImpl implements NewsService {
     }
 
     private String fetchGeminiSummary(String prompt) {
-        // 모델 변경: gemini-pro (안정성)
-        String url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key="
+        // 모델 변경: gemini-flash
+        String url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key="
                 + geminiKey;
 
         RestTemplate rt = new RestTemplate();
