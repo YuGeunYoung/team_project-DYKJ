@@ -13,12 +13,14 @@ import com.project.dykj.domain.ranking.mapper.RankingMapper;
 
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class RankingService {
 
-    private static final int GROUP_SIZE = 10;
+    private static final int GROUP_SIZE = 1;
     
     private final RankingMapper rankingMapper;
 
@@ -28,6 +30,9 @@ public class RankingService {
         pageReq.setGroupSize(GROUP_SIZE);
         pageReq.setStart((page - 1) * pageReq.getGroupSize() + 1);
         pageReq.setEnd(page * pageReq.getGroupSize());
+
+        log.info("pageReq: {}", pageReq);
+        log.info("seasonPeriod: {}", seasonPeriod);
 
         // DB에서 시즌 번호를 가져온다.
         int seasonNo = rankingMapper.getCurrentSeasonNo(seasonPeriod);

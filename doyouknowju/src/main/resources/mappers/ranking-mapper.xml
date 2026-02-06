@@ -7,19 +7,26 @@
     <!-- 시즌 번호를 가져오는 메소드 -->
     <!-- LAST_NUMBER의 값은 현재 시즌 번호보다 1 큰 값이므로 1을 빼준다. -->
     <select id="getCurrentSeasonNo" parameterType="string" resultType="_int">
-        SELECT LAST_NUMBER - 1
-        FROM USER_SEQUENCES
-        WHERE SEQUENCE_NAME = 
         <choose>
-            <when test="seasonPeriod == 'WEEKLY'">
-                'SEQ_WEEKLY_SEASON_NO'
+            <when test="seasonPeriod == 'ALL'">
+                SELECT 1 FROM DUAL
             </when>
-            <when test="seasonPeriod == 'MONTHLY'">
-                'SEQ_MONTHLY_SEASON_NO'
-            </when>
-            <when test="seasonPeriod == 'YEARLY'">
-                'SEQ_YEARLY_SEASON_NO'
-            </when>
+            <otherwise>
+                SELECT LAST_NUMBER - 1
+                FROM USER_SEQUENCES
+                WHERE SEQUENCE_NAME = 
+                <choose>
+                    <when test="seasonPeriod == 'WEEKLY'">
+                        'SEQ_WEEKLY_SEASON_NO'
+                    </when>
+                    <when test="seasonPeriod == 'MONTHLY'">
+                        'SEQ_MONTHLY_SEASON_NO'
+                    </when>
+                    <when test="seasonPeriod == 'YEARLY'">
+                        'SEQ_YEARLY_SEASON_NO'
+                    </when>
+                </choose>
+            </otherwise>
         </choose>
     </select>
 
@@ -41,18 +48,18 @@
     </select>
 
     <select id="selectSeasonRanking" resultType="RankingRes">
-        SELECT USER_ID, START_POINT, CURRENT_POINT, RETURN_RATE, RANK
-        FROM (SELECT ROWNUM,
-                     USER_ID,
-                     START_POINT,
-                     CURRENT_POINT,
-                     RETURN_RATE,
-                     RANK() OVER (ORDER BY CURRENT_POINT DESC) AS RANK
-              FROM SEASON_RANKINGS
-              WHERE SEASON_PERIOD = #{seasonPeriod}
-              AND SEASON_NO = #{seasonNo}
-              ORDER BY RETURN_RATE DESC)
-        WHERE ROWNUM BETWEEN #{pageReq.start} AND #{pageReq.end}
+        SELECT ROW_NUM, USER_ID, START_POINT, CURRENT_POINT, RETURN_RATE, "RANK"
+        FROM (SELECT ROWNUM AS ROW_NUM,
+                    USER_ID,
+                    START_POINT,
+                    CURRENT_POINT,
+                    RETURN_RATE,
+                    RANK() OVER (ORDER BY CURRENT_POINT DESC) AS "RANK"
+            FROM SEASON_RANKINGS
+            WHERE SEASON_PERIOD = #{seasonPeriod}
+            AND SEASON_NO = #{seasonNo}
+            ORDER BY RETURN_RATE DESC)
+        WHERE ROW_NUM BETWEEN #{pageReq.start} AND #{pageReq.end}
     </select>
 
     <select id="selectWeeklyRanking" resultType="RankingRes">
@@ -166,20 +173,20 @@
         ) T
     </insert>
 
-    <select id="selectSeasonRankingCount" resultType="_int">
+    <select id="selectSeasonRankingCount" parameterType="string" resultType="_int">
         SELECT COUNT(*)
         FROM SEASON_RANKINGS
         WHERE SEASON_PERIOD = #{seasonPeriod}
         AND SEASON_NO = (
             <choose>
                 <when test="seasonPeriod == 'WEEKLY'">
-                    SELECT LAST_NUMBER FROM USER_SEQUENCES WHERE SEQUENCE_NAME = 'SEQ_WEEKLY_SEASON_NO'
+                    SELECT LAST_NUMBER - 1 FROM USER_SEQUENCES WHERE SEQUENCE_NAME = 'SEQ_WEEKLY_SEASON_NO'
                 </when>
                 <when test="seasonPeriod == 'MONTHLY'">
-                    SELECT LAST_NUMBER FROM USER_SEQUENCES WHERE SEQUENCE_NAME = 'SEQ_MONTHLY_SEASON_NO'
+                    SELECT LAST_NUMBER - 1 FROM USER_SEQUENCES WHERE SEQUENCE_NAME = 'SEQ_MONTHLY_SEASON_NO'
                 </when>
                 <when test="seasonPeriod == 'YEARLY'">
-                    SELECT LAST_NUMBER FROM USER_SEQUENCES WHERE SEQUENCE_NAME = 'SEQ_YEARLY_SEASON_NO'
+                    SELECT LAST_NUMBER - 1 FROM USER_SEQUENCES WHERE SEQUENCE_NAME = 'SEQ_YEARLY_SEASON_NO'
                 </when>
                 <when test="seasonPeriod == 'ALL'">
                     SELECT 1 FROM DUAL
