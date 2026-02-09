@@ -37,7 +37,7 @@ public class BoardController {
                 .body(Map.of("boardId", boardId));
     }
 
-    /** 게시글 목록 조회 (페이지네이션) */
+    /** 게시글 목록 조회 (페이지네이션 포함) */
     @GetMapping("/list")
     public List<Board> listPosts(
             @RequestParam(required = false) String boardType,
@@ -51,7 +51,7 @@ public class BoardController {
     }
 
     /** 게시글 상세 조회 (view=true면 조회수 증가) */
-    @GetMapping( "/detail/{boardId}")
+    @GetMapping("/detail/{boardId}")
     public Board getPost(
             @PathVariable long boardId,
             @RequestParam(defaultValue = "true") boolean view
@@ -67,7 +67,7 @@ public class BoardController {
     }
 
     /** 게시글 삭제(소프트 삭제) */
-    @DeleteMapping( "/delete/{boardId}")
+    @DeleteMapping("/delete/{boardId}")
     public ResponseEntity<Void> deletePost(@PathVariable long boardId) {
         boardService.deletePost(boardId);
         return ResponseEntity.noContent().build();
@@ -128,7 +128,6 @@ public class BoardController {
     }
 
     /** 메인페이지 인기글 조회 */
-    
     @GetMapping("/popular")
     public List<Board> popularityBoard(
             @RequestParam(defaultValue = "realtime") String range,
