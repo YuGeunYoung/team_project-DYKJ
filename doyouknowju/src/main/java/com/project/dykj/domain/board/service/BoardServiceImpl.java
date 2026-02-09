@@ -22,7 +22,7 @@ public class BoardServiceImpl implements BoardService {
     private final ReplyMapper replyMapper;
     private final BadWordFilterService badWordFilterService;
 
-    // BoardMapper / ReplyMapper로 DB 접근을 수행
+    // Board/Reply Mapper를 통한 DB 접근
     public BoardServiceImpl(
             BoardMapper boardMapper,
             ReplyMapper replyMapper,
@@ -34,9 +34,9 @@ public class BoardServiceImpl implements BoardService {
     }
 
     // 게시글 등록
-    // - 필수값 검증(게시판 타입/작성자/제목/내용)
+    // - 필수값 검증: boardType, userId, title, content
     // - STOCK 게시판이면 stockId 필수
-    // - FREE 게시판이면 stockId는 항상 null로 저장
+    // - FREE 게시판이면 stockId 강제 null 처리
     @Transactional
     @Override
     public long createPost(Board board) {
@@ -48,8 +48,7 @@ public class BoardServiceImpl implements BoardService {
     }
 
     // 게시글 상세 조회
-    // - view=true면 조회수 1 증가
-    // - 존재하지 않으면 예외
+    // - incrementView=true면 조회수 증가
     @Transactional
     @Override
     public Board getPost(long postId, boolean incrementView) {
@@ -63,10 +62,7 @@ public class BoardServiceImpl implements BoardService {
         return board;
     }
 
-    // 게시글 목록 조회(페이징)
-    // - page/size를 안전하게 보정(page>=1, 1<=size<=50)
-    // - boardType은 FREE/STOCK만 허용(그 외는 전체 조회로 처리)
-    // - FREE면 stockId 필터는 강제로 무시(null)하여 "종목코드 없는 글"만 내려오도록 한다.
+    // 게시글 목록 조회(페이지네이션 + 조건/키워드 검색)
     @Transactional(readOnly = true)
     @Override
     public List<Board> listPosts(String boardType, String stockId, String condition, String keyword, int page, int size) {
@@ -92,8 +88,7 @@ public class BoardServiceImpl implements BoardService {
     }
 
     // 게시글 수정
-    // - 제목/내용 필수
-    // - UPDATE 결과가 0이면(없거나 삭제됨) 예외
+    // - FREE/STOCK 전환 규칙 검증
     @Transactional
     @Override
     public void updatePost(long postId, Board board) {
@@ -104,7 +99,7 @@ public class BoardServiceImpl implements BoardService {
             throw new IllegalArgumentException("title/content are required");
         }
 
-        // 기존 게시글을 조회해서, boardType/stockId를 변경할 때 정합성을 보장한다.
+        // 기존 게시글 조회 후 boardType/stockId 정합성 보장
         Board existing = boardMapper.selectPostDetail(postId);
         if (existing == null) {
             throw new IllegalArgumentException("post not found");
@@ -120,7 +115,6 @@ public class BoardServiceImpl implements BoardService {
 
         String nextStockId = blankToNull(board.getStockId());
 
-        // FREE <-> STOCK 전환 규칙
         if ("FREE".equals(nextBoardType)) {
             nextStockId = null;
         } else if ("STOCK".equals(nextBoardType)) {
@@ -142,7 +136,6 @@ public class BoardServiceImpl implements BoardService {
     }
 
     // 게시글 삭제(소프트 삭제)
-    // - DELETE_DATE를 현재시간으로 업데이트
     @Transactional
     @Override
     public void deletePost(long postId) {
@@ -153,8 +146,6 @@ public class BoardServiceImpl implements BoardService {
     }
 
     // 댓글 등록
-    // - 필수값 검증(userId, replyContent)
-    // - 대상 게시글 존재 여부 확인
     @Transactional
     @Override
     public long addReply(long postId, Reply reply) {
@@ -178,7 +169,7 @@ public class BoardServiceImpl implements BoardService {
         return replyMapper.selectReplies(postId);
     }
 
-    // 댓글 삭제(소프트 삭제)
+    // 사용자별 게시글 조회
     @Transactional(readOnly = true)
     @Override
     public List<Board> listPostsByUserId(String userId, int page, int size) {
@@ -191,6 +182,7 @@ public class BoardServiceImpl implements BoardService {
         return boardMapper.selectPostListByUserId(userId.trim(), offset, safeSize);
     }
 
+    // 사용자별 댓글 조회
     @Transactional(readOnly = true)
     @Override
     public List<Reply> listRepliesByUserId(String userId, int page, int size) {
@@ -203,6 +195,7 @@ public class BoardServiceImpl implements BoardService {
         return replyMapper.selectRepliesByUserId(userId.trim(), offset, safeSize);
     }
 
+    // 댓글 삭제(소프트 삭제)
     @Transactional
     @Override
     public void deleteReply(long replyId) {
@@ -213,8 +206,6 @@ public class BoardServiceImpl implements BoardService {
     }
 
     // 댓글 수정
-    // - replyContent 필수
-    // - UPDATE 결과가 0이면(없거나 삭제됨) 예외
     @Transactional
     @Override
     public void updateReply(long replyId, Reply reply) {
@@ -230,9 +221,9 @@ public class BoardServiceImpl implements BoardService {
     }
 
     /**
-     * 메인 페이지 인기글(실시간/주간) 조회
-     * - fromDate(기간 시작)는 서비스에서 계산 후 Mapper로 전달
-     * - 실제 SQL은 board-mapper.xml의 popularityBoard에서 구현
+     * 메인 페이지 인기글 조회
+     * - range: realtime(1일), weekly(7일)
+     * - limit: 1~5로 제한
      */
     @Transactional(readOnly = true)
     @Override
@@ -253,7 +244,7 @@ public class BoardServiceImpl implements BoardService {
         return boardMapper.popularityBoard(fromDate, safeLimit);
     }
 
-    // 게시글 등록 시 입력값 검증 및 정규화
+    // 게시글 생성 입력값 검증
     private void validateCreate(Board board) {
         if (board == null) {
             throw new IllegalArgumentException("body is required");
@@ -272,7 +263,7 @@ public class BoardServiceImpl implements BoardService {
         }
     }
 
-    // null/공백 문자열 체크 유틸
+    // null/공백 문자열 체크
     private static boolean isBlank(String v) {
         return v == null || v.trim().isEmpty();
     }
@@ -282,7 +273,7 @@ public class BoardServiceImpl implements BoardService {
         return isBlank(v) ? null : v.trim();
     }
 
-    // boardType 파라미터를 FREE/STOCK으로만 정규화(그 외는 null 반환 -> 전체 조회)
+    // boardType 정규화: FREE/STOCK만 허용
     private static String normalizeBoardType(String boardType) {
         if (isBlank(boardType)) {
             return null;
@@ -291,7 +282,7 @@ public class BoardServiceImpl implements BoardService {
         return ("FREE".equals(upper) || "STOCK".equals(upper)) ? upper : null;
     }
 
-    // 검색 조건 정규화: title | content | writer 만 허용 (그 외는 null -> 검색 미적용)
+    // 검색 조건 정규화: title/content/writer만 허용
     private static String normalizeCondition(String condition) {
         if (isBlank(condition)) {
             return null;

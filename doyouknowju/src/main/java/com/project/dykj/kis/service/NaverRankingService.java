@@ -20,14 +20,9 @@ import com.project.dykj.kis.model.vo.NaverStockListItem;
 import com.project.dykj.kis.model.vo.NaverTradeValueRankItem;
 
 /**
- * 네이버 증권(stock.naver.com) 내부 JSON API를 호출해서 랭킹 데이터를 만든다.
- *
- * 목적
- * - KIS API로 "시장 전체 거래대금 Top"을 맞추기 어려운 경우(표본/제한/필드) 대안으로 사용
- *
- * 주의
- * - 내부 API는 스펙이 바뀔 수 있음(장애 시 URL/파라미터 재확인 필요)
- * - 프론트 폴링이 잦으면 외부 호출이 폭발하므로 서버에서 캐시(TTL)를 둠
+ * 네이버 증권(stock.naver.com) JSON API를 호출해 거래대금 TOP10을 계산하는 서비스입니다.
+ * - KIS 데이터와 비교/보완 용도로 사용
+ * - 외부 API 호출량을 줄이기 위해 TTL 캐시 사용
  */
 @Service
 public class NaverRankingService {
@@ -55,8 +50,7 @@ public class NaverRankingService {
 	}
 
 	/**
-	 * 네이버 "priceTop" 표본(pageSize=100)에서 누적 거래대금(accAmount) 기준으로 Top10을 만든다.
-	 * - 네이버의 accAmount 집계 기준이 다른 서비스(토스/증권사 HTS)와 다를 수 있어 오차가 발생할 수 있음
+	 * 네이버 원본(pageSize=100)에서 누적 거래대금(accAmount) 기준 TOP10을 반환합니다.
 	 */
 	public List<NaverTradeValueRankItem> getTradeValueTop10() {
 		Cache cached = this.cache;

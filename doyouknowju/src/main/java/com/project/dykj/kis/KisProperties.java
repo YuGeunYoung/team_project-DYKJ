@@ -57,13 +57,9 @@ public class KisProperties {
 	public static class DailyChart {
 		private String path;
 		private String trId;
-		/**
-		 * D: 일, W: 주, M: 월
-		 */
+		/** D: 일, W: 주, M: 월 */
 		private String periodDivCode = "D";
-		/**
-		 * 0: 수정주가 반영, 1: 수정주가 미반영 (KIS 문서 기준)
-		 */
+		/** 0: 수정주가 반영, 1: 수정주가 미반영 */
 		private String orgAdjPrc = "0";
 	}
 
@@ -77,17 +73,11 @@ public class KisProperties {
 	public static class RiseFallRank {
 		private String path;
 		private String trId;
-		/**
-		 * 조건 화면 분류 코드 (KIS 문서 예: 20170)
-		 */
+		/** 조건 화면 분류 코드 (기본 20170) */
 		private String condScrDivCode = "20170";
-		/**
-		 * 조건 시장 분류 코드 (J:KRX, NX:NXT). 기본은 KRX(J)
-		 */
+		/** 조건 시장 분류 코드 (J: KRX, NX: NXT) */
 		private String condMrktDivCode = "J";
-		/**
-		 * 입력 종목코드(시장). 0000: 전체, 0001: 코스피, 1001: 코스닥 등(KIS 문서 기준)
-		 */
+		/** 입력 종목코드 (0000: 전체, 0001: 코스피, 1001: 코스닥) */
 		private String inputIscd = "0000";
 	}
 
@@ -95,18 +85,11 @@ public class KisProperties {
 	public static class MarketCapRank {
 		private String path;
 		private String trId;
-		/**
-		 * 조건 화면 분류 코드 (KIS 문서의 Unique key 값)
-		 * - 정확한 값은 문서 기준으로 세팅 필요
-		 */
+		/** 조건 화면 분류 코드 (기본 20174) */
 		private String condScrDivCode = "20174";
-		/**
-		 * 조건 시장 분류 코드 (J:KRX, NX:NXT). 기본은 KRX(J)
-		 */
+		/** 조건 시장 분류 코드 (J: KRX, NX: NXT) */
 		private String condMrktDivCode = "J";
-		/**
-		 * 입력 종목코드(시장). 0000: 전체, 0001: 코스피, 1001: 코스닥 등(KIS 문서 기준)
-		 */
+		/** 입력 종목코드 (0000: 전체, 0001: 코스피, 1001: 코스닥) */
 		private String inputIscd = "0000";
 	}
 }

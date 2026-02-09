@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -17,8 +18,10 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
+
 import com.project.dykj.domain.news.mapper.NewsMapper;
 import com.project.dykj.domain.news.vo.NewsVO;
+
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -45,39 +48,48 @@ public class NewsServiceImpl implements NewsService {
     @Override
     public List<NewsVO> searchNews(String keyword) {
         List<NewsVO> list = new ArrayList<>();
+
+        // 1. 네이버 금융 뉴스 검색 URL (여기는 진짜 주식 뉴스만 모아놓은 곳입니다)
+        // 예: https://finance.naver.com/news/news_search.naver?q=삼성전자
         try {
-            String url = "https://openapi.naver.com/v1/search/news.json?query="
-                    + java.net.URLEncoder.encode(keyword + " 주가", "UTF-8") + "&display=10&sort=sim";
+            // 1. 검색어를 네이버가 이해할 수 있는 방식으로 변환 (EUC-KR)
+            String encodedKeyword = java.net.URLEncoder.encode(keyword, "EUC-KR");
+            String url = "https://finance.naver.com/news/news_search.naver?q=" + encodedKeyword;
 
-            RestTemplate rt = new RestTemplate();
-            HttpHeaders headers = new HttpHeaders();
-            headers.set("X-Naver-Client-Id", naverClientId);
-            headers.set("X-Naver-Client-Secret", naverClientSecret);
-
-            HttpEntity<String> entity = new HttpEntity<>(headers);
-            ResponseEntity<Map> response = rt.exchange(url, HttpMethod.GET, entity, Map.class);
-
-            Map<String, Object> body = response.getBody();
-            if (body != null && body.containsKey("items")) {
-                List<Map<String, Object>> items = (List<Map<String, Object>>) body.get("items");
-                for (Map<String, Object> item : items) {
-                    NewsVO vo = new NewsVO();
-                    // 네이버 API는 HTML 태그가 포함되어 올 수 있으므로 제거 필요
-                    String title = (String) item.get("title");
-                    String link = (String) item.get("link"); // 원본 링크 or 네이버 뉴스 링크
-                    String pubDate = (String) item.get("pubDate");
-
-                    vo.setTitle(title.replaceAll("<[^>]*>", "").replaceAll("&quot;", "\"").replaceAll("&amp;", "&"));
+            // 2. Jsoup 접속
+            Document doc = Jsoup.connect(url)
+                    .userAgent(
+                            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
+                    .get();
+            // 3. 뉴스 리스트 덩어리 찾기 (개발자 도구로 확인한 태그 경로)
+            // dl.newsList 안에 있는 dd.articleSubject(제목), dd.articleSummary(내용/날짜) 등을 찾습니다.
+            Elements articles = doc.select(".newsSchResult dl.newsList .articleSubject");
+            for (Element titleElement : articles) {
+                NewsVO vo = new NewsVO();
+                // 4. 제목과 링크 추출
+                Element aTag = titleElement.selectFirst("a");
+                if (aTag != null) {
+                    String title = aTag.attr("title");
+                    if (title == null || title.isEmpty()) {
+                        title = aTag.text();
+                    }
+                    String link = "https://finance.naver.com" + aTag.attr("href"); // 기사 링크
+                    vo.setTitle(title);
                     vo.setNewsUrl(link);
-                    vo.setPubDate(pubDate); // 형식이 다를 수 있으나 우선 그대로 저장
-                    vo.setNewsCategory("검색");
+                    vo.setNewsCategory("금융뉴스"); // 카테고리 고정
 
-                    // 이미지는 API에서 주지 않음 -> 비워두거나 기본 이미지 처리 프론트에서
+                    // 5. 날짜 추출 (제목 태그 바로 형제 태그에 날짜가 숨어 있음)
+                    // (구조가 복잡해서 생략하거나, 추가 로직 필요하지만 일단 현재 날짜를 넣거나 할 수 있음)
+                    vo.setPubDate(java.time.LocalDate.now().toString());
                     list.add(vo);
                 }
+
+                // 10개만 가져오기
+                if (list.size() >= 10)
+                    break;
             }
-        } catch (Exception e) {
-            log.error("네이버 뉴스 검색 API 호출 실패: {}", e.getMessage());
+        } catch (IOException e) {
+            log.error("크롤링 중 오류 발생: {}", e.getMessage());
         }
         return list;
     }
