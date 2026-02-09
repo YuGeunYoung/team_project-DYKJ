@@ -47,7 +47,7 @@ public class NewsServiceImpl implements NewsService {
         List<NewsVO> list = new ArrayList<>();
         try {
             String url = "https://openapi.naver.com/v1/search/news.json?query="
-                    + java.net.URLEncoder.encode("\"" + keyword + "\"", "UTF-8") + "&display=10&sort=date";
+                    + java.net.URLEncoder.encode(keyword + " 주가", "UTF-8") + "&display=10&sort=sim";
 
             RestTemplate rt = new RestTemplate();
             HttpHeaders headers = new HttpHeaders();
