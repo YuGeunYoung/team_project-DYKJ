@@ -163,14 +163,6 @@
       ON S.STOCK_ID = B.STOCK_ID
     WHERE B.DELETE_DATE IS NULL
       AND B.CREATE_DATE &gt;= #{fromDate}
-      <choose>
-        <when test="boardType == 'FREE'">
-          AND B.STOCK_ID IS NULL
-        </when>
-        <when test="boardType == 'STOCK'">
-          AND B.STOCK_ID IS NOT NULL
-        </when>
-      </choose>
     ORDER BY (
       (B.VIEW_COUNT + (
         SELECT COUNT(*)
