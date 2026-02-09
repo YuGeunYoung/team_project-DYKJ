@@ -35,7 +35,6 @@ public interface BoardMapper {
 	int softDeletePost(@Param("boardId") long boardId);
 
 	List<Board> popularityBoard(
-		@Param("boardType") String boardType,
 		@Param("fromDate") Date fromDate,
 		@Param("limit") int limit
 	);

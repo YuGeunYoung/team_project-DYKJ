@@ -35,5 +35,5 @@ public interface BoardService {
      * @param range realtime|weekly (기간 구분)
      * @param limit 상위 N개
      */
-    List<Board> popularityBoard(String boardType, String range, int limit);
+    List<Board> popularityBoard(String range, int limit);
 }

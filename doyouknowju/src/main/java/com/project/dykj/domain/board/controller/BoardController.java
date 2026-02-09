@@ -131,10 +131,9 @@ public class BoardController {
     
     @GetMapping("/popular")
     public List<Board> popularityBoard(
-            @RequestParam String boardType,
             @RequestParam(defaultValue = "realtime") String range,
-            @RequestParam(defaultValue = "10") int limit
+            @RequestParam(defaultValue = "5") int limit
     ) {
-        return boardService.popularityBoard(boardType, range, limit);
+        return boardService.popularityBoard(range, limit);
     }
 }

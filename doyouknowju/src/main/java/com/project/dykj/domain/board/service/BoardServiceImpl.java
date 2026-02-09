@@ -20,11 +20,17 @@ public class BoardServiceImpl implements BoardService {
 
     private final BoardMapper boardMapper;
     private final ReplyMapper replyMapper;
+    private final BadWordFilterService badWordFilterService;
 
     // BoardMapper / ReplyMapper로 DB 접근을 수행
-    public BoardServiceImpl(BoardMapper boardMapper, ReplyMapper replyMapper) {
+    public BoardServiceImpl(
+            BoardMapper boardMapper,
+            ReplyMapper replyMapper,
+            BadWordFilterService badWordFilterService
+    ) {
         this.boardMapper = boardMapper;
         this.replyMapper = replyMapper;
+        this.badWordFilterService = badWordFilterService;
     }
 
     // 게시글 등록
@@ -35,6 +41,8 @@ public class BoardServiceImpl implements BoardService {
     @Override
     public long createPost(Board board) {
         validateCreate(board);
+        board.setBoardTitle(badWordFilterService.mask(board.getBoardTitle()));
+        board.setBoardContent(badWordFilterService.mask(board.getBoardContent()));
         boardMapper.insertPost(board);
         return board.getBoardId();
     }
@@ -124,6 +132,8 @@ public class BoardServiceImpl implements BoardService {
         board.setBoardId((int) postId);
         board.setBoardType(nextBoardType);
         board.setStockId(nextStockId);
+        board.setBoardTitle(badWordFilterService.mask(board.getBoardTitle()));
+        board.setBoardContent(badWordFilterService.mask(board.getBoardContent()));
 
         int updated = boardMapper.updatePost(board);
         if (updated == 0) {
@@ -156,6 +166,7 @@ public class BoardServiceImpl implements BoardService {
         }
 
         reply.setBoardId((int) postId);
+        reply.setReplyContent(badWordFilterService.mask(reply.getReplyContent()));
         replyMapper.insertReply(reply);
         return reply.getReplyId();
     }
@@ -211,6 +222,7 @@ public class BoardServiceImpl implements BoardService {
             throw new IllegalArgumentException("content is required");
         }
         reply.setReplyId((int) replyId);
+        reply.setReplyContent(badWordFilterService.mask(reply.getReplyContent()));
         int updated = replyMapper.updateReply(reply);
         if (updated == 0) {
             throw new IllegalArgumentException("comment not found");
@@ -224,12 +236,7 @@ public class BoardServiceImpl implements BoardService {
      */
     @Transactional(readOnly = true)
     @Override
-    public List<Board> popularityBoard(String boardType, String range, int limit) {
-        String normalizedBoardType = normalizeBoardType(boardType);
-        if (normalizedBoardType == null) {
-            throw new IllegalArgumentException("boardType is required (FREE|STOCK)");
-        }
-
+    public List<Board> popularityBoard(String range, int limit) {
         String normalizedRange = isBlank(range) ? "realtime" : range.trim().toLowerCase();
         int days = switch (normalizedRange) {
             case "weekly" -> 7;
@@ -237,13 +244,13 @@ public class BoardServiceImpl implements BoardService {
             default -> throw new IllegalArgumentException("range must be realtime|weekly");
         };
 
-        int safeLimit = Math.min(50, Math.max(1, limit));
+        int safeLimit = Math.min(5, Math.max(1, limit));
 
         LocalDateTime from = LocalDateTime.now().minus(days, ChronoUnit.DAYS);
         Instant instant = from.atZone(ZoneId.systemDefault()).toInstant();
         Date fromDate = Date.from(instant);
 
-        return boardMapper.popularityBoard(normalizedBoardType, fromDate, safeLimit);
+        return boardMapper.popularityBoard(fromDate, safeLimit);
     }
 
     // 게시글 등록 시 입력값 검증 및 정규화
