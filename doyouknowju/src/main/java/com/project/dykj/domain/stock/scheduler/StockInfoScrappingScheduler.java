@@ -15,7 +15,7 @@ public class StockInfoScrappingScheduler {
     
     private final StockInfoService stockInfoService;
 
-    @Scheduled(cron = "0 32 16 * * *", zone = "Asia/Seoul")
+    @Scheduled(cron = "0 57 15 * * *", zone = "Asia/Seoul")
     public void syncStockInfo() {
         log.info("===Syncing Stock Info===");
 

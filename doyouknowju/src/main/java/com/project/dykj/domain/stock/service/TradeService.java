@@ -7,6 +7,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.project.dykj.domain.game.service.GameService; //[taek]
 import com.project.dykj.domain.member.entity.Member;
 import com.project.dykj.domain.member.mapper.MemberMapper;
 import com.project.dykj.domain.stock.dto.req.TradeReq;
@@ -26,6 +27,7 @@ public class TradeService {
 
     private final MemberMapper memberMapper;
     private final TradeMapper tradeMapper;
+    private final GameService gameService; // [taek]
 
     public List<MyTradesRes> selectMyTrades(String userId) {
         return tradeMapper.selectMyTrades(userId);
@@ -88,6 +90,9 @@ public class TradeService {
         if (result3 == 0) {
             throw new BusinessException(ErrorCode.FAIL_TO_TRADE);
         }
+        
+        // [taek] : 도전과제 달성 체크
+        gameService.recordAchievement(tradeReq.getUserId(), 3);
 
         // 4. 결과 리턴
         return TradeRes.builder()

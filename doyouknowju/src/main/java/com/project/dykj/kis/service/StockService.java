@@ -11,6 +11,7 @@ import org.mybatis.spring.SqlSessionTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.project.dykj.domain.game.service.GameService;
 import com.project.dykj.kis.model.vo.KisDailyChartResponse;
 import com.project.dykj.kis.model.vo.StockSearchItem;
 import com.project.dykj.kis.model.vo.StockSuggestItem;
@@ -46,10 +47,12 @@ public class StockService {
 
 	private final SqlSessionTemplate sqlSession;
 	private final KisService kisService;
+	private final GameService gameService; //[taek]: 도전과제 달성 확인용
 
-	public StockService(SqlSessionTemplate sqlSession, KisService kisService) {
+	public StockService(SqlSessionTemplate sqlSession, KisService kisService, GameService gameService) {
 		this.sqlSession = sqlSession;
 		this.kisService = kisService;
+		this.gameService = gameService;
 	}
 
 	@Transactional(readOnly = true)
@@ -231,7 +234,7 @@ public class StockService {
 	 * Stock search (contains match by name/code) for search result page
 	 */
 	@Transactional(readOnly = true)
-	public List<StockSearchItem> search(String q, int page, int size) {
+	public List<StockSearchItem> search(String q, int page, int size, String userId) {
 		// 검색결과 페이지: contains 검색 + 페이지네이션
 		String query = q == null ? "" : q.trim();
 		if (query.isEmpty()) {
@@ -245,6 +248,11 @@ public class StockService {
 		params.put("q", query);
 		params.put("offset", offset);
 		params.put("size", safeSize);
+		
+		if (userId != null) {
+			gameService.recordAchievement(userId, 8);
+		}
+		
 		return sqlSession.selectList(NS_STOCK + "search", params);
 	}
 }
