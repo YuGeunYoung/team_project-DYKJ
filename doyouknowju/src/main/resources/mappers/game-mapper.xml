@@ -128,7 +128,9 @@
 		LEFT JOIN MEMBER_ACHIEVEMENTS ma 
 			ON a.ACHIEVEMENT_ID = ma.ACHIEVEMENT_ID 
 			AND ma.USER_ID = #{userId}
-		ORDER BY ma.ACHIEVED_AT DESC, a.ACHIEVEMENT_ID ASC
+		ORDER BY CASE WHEN ma.ACHIEVED_AT IS NOT NULL AND NVL(ma.IS_REWARDED, 'N') = 'N' THEN 0 ELSE 1 END ASC, 
+				 ma.ACHIEVED_AT DESC NULLS LAST, 
+				 a.ACHIEVEMENT_ID ASC
 	</select>
 	
 	<select id="getAchievementMasterInfo" resultType="com.project.dykj.domain.game.dto.AchievementDTO">

@@ -54,10 +54,10 @@ public class GameService {
 		int newLevel = previousLevel;
 		
 		// 레벨 정책 확인
-		for(LevelPolicy policy : policies) {
+		for (LevelPolicy policy : policies) {
 			//사용자 레벨보다 높은 레벨 정책만 고려
-			if(policy.getLevelId() > newLevel) {
-				if(totalExp >= policy.getRequiredExp()) {
+			if (policy.getLevelId() > newLevel) {
+				if (totalExp >= policy.getRequiredExp()) {
 					newLevel = policy.getLevelId();
 				}else {
 					break;
@@ -66,7 +66,7 @@ public class GameService {
 		}
 		
 		boolean isLevelUp = false;
-		if(newLevel > previousLevel) {
+		if (newLevel > previousLevel) {
 			gameMapper.updateMemberLevel(userId, newLevel);
 			isLevelUp = true;
 		}
@@ -98,7 +98,7 @@ public class GameService {
 		gameMapper.updateCumulativeDays(userId);
 		
 		int attendanceCount = gameMapper.selectAttendanceCount(userId);
-		if(attendanceCount == 1) {
+		if (attendanceCount == 1) {
 			recordAchievement(userId, ACHIEV_FIRST_ATTENDANCE);
 		}
 		
@@ -123,14 +123,14 @@ public class GameService {
 	}
 
 	public QuizDTO getTodayQuiz(String userId) {
-		if(gameMapper.checkTodaySolved(userId) > 0) {
+		if (gameMapper.checkTodaySolved(userId) > 0) {
 			return QuizDTO.builder()
 					.solved(true)
 					.build();
 		}
 		
 		Quiz quiz = gameMapper.selectTodayQuiz();
-		if(quiz == null) return null;
+		if (quiz == null) return null;
 		
 		return QuizDTO.builder()
 				.quizId(quiz.getQuizId())
@@ -148,9 +148,9 @@ public class GameService {
 		
 		gameMapper.insertMemberQuiz(userId, quizId, isCorrect ? "Y" : "N");
 		
-		if(isCorrect) {
+		if (isCorrect) {
 			int correctCount = gameMapper.selectCorrectQuizCount(userId);
-			if(correctCount == 1) {
+			if (correctCount == 1) {
 				recordAchievement(userId, ACHIEV_FIRST_QUIZ);
 			}
 		}
@@ -162,7 +162,7 @@ public class GameService {
 								.rewardExp(quiz.getQuizReward())
 								.build();
 		
-		if(isCorrect) {
+		if (isCorrect) {
 			ExpResultDTO expResult = gainExp(userId, quiz.getQuizReward(), "QUIZ");
 			result.setLevelUp(expResult.isLevelUp());
 			result.setCurrentLevel(expResult.getCurrentLevel());
@@ -180,7 +180,7 @@ public class GameService {
 		
 		int result = gameMapper.updateRewardStatus(userId, achievementId);
 		
-		if(result > 0 && achiev != null) {
+		if (result > 0 && achiev != null) {
 			gainExp(userId, achiev.getRewardExp(), "ACHIEV_"+achievementId);
 			
 			if(achiev.getRewardTitleId() != null && achiev.getRewardTitleId() > 0) {
@@ -192,8 +192,8 @@ public class GameService {
 	}
 	
 	@Transactional
-	public void recordAchievement(String userId, int achievementId) {
-		gameMapper.insertMemberAchievement(userId, achievementId);
+	public boolean recordAchievement(String userId, int achievementId) {
+		return gameMapper.insertMemberAchievement(userId, achievementId) > 0;
 	}
 
 	public List<TitleDTO> getMyTitles(String userId) {

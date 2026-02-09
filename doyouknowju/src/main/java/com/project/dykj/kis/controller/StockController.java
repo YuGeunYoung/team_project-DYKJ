@@ -12,6 +12,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.project.dykj.kis.model.vo.NaverTradeValueRankItem;
+import com.project.dykj.kis.service.NaverRankingService;
+import com.project.dykj.domain.member.entity.Member;
 import com.project.dykj.kis.model.vo.KisDailyChartResponse;
 import com.project.dykj.kis.model.vo.MarketCapRankItem;
 import com.project.dykj.kis.model.vo.NaverTradeValueRankItem;
@@ -23,6 +26,8 @@ import com.project.dykj.kis.model.vo.VolumeRankItem;
 import com.project.dykj.kis.ranking.MarketRankingService;
 import com.project.dykj.kis.service.NaverRankingService;
 import com.project.dykj.kis.service.StockService;
+
+import jakarta.servlet.http.HttpSession;
 
 @RestController
 @RequestMapping("/api/stocks")
@@ -74,9 +79,17 @@ public class StockController {
     public List<StockSearchItem> search(
             @RequestParam String q,
             @RequestParam(defaultValue = "1") int page,
-            @RequestParam(defaultValue = "30") int size
+            @RequestParam(defaultValue = "30") int size,
+            HttpSession session //[taek] : 로그인 정보 불러올 session 추가
     ) {
-        return stockService.search(q, page, size);
+    	//[taek] : 유저 아이디 불러오는 코드 추가
+    	String userId = null;
+    	Member loginUser = (Member)session.getAttribute("loginUser");
+    	
+    	if(loginUser != null) {
+    		userId = loginUser.getUserId();
+    	}
+        return stockService.search(q, page, size, userId);
     }
 
     /** 리스트 화면용 복수 현재가 조회 */
