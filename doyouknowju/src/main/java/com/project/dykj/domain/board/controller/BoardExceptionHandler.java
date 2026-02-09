@@ -7,7 +7,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
-@RestControllerAdvice
+@RestControllerAdvice(basePackages = "com.project.dykj.domain.board.controller")
 public class BoardExceptionHandler {
 
     @ExceptionHandler(IllegalArgumentException.class)
@@ -19,4 +19,3 @@ public class BoardExceptionHandler {
         );
     }
 }
-

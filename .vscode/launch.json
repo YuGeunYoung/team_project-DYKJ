@@ -1,0 +1,14 @@
+{
+    "configurations": [
+        {
+            "type": "java",
+            "name": "Spring Boot-DoyouknowjuApplication<doyouknowju>",
+            "request": "launch",
+            "cwd": "${workspaceFolder}",
+            "mainClass": "com.project.dykj.DoyouknowjuApplication",
+            "projectName": "doyouknowju",
+            "args": "",
+            "envFile": "${workspaceFolder}/.env"
+        }
+    ]
+}

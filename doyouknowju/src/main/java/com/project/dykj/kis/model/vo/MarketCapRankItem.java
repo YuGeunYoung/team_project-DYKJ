@@ -19,7 +19,8 @@ public class MarketCapRankItem {
 	private String changeSign;
 	private String changeValue;
 	private String changeRate;
+	private String volume;
 	private String marketCap;
+	private String marketShareRate;
 	private String dataRank;
 }
-
