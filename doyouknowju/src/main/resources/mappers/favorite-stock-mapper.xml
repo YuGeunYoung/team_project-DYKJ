@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.project.dykj.domain.stock.mapper.FavoriteStockMapper">
+
+    <insert id="addFavorite" parameterType="com.project.dykj.domain.stock.dto.req.UserIdAndStockIdReq">
+        INSERT INTO FAVORITE_STOCKS (USER_ID, STOCK_ID)
+        VALUES (#{userId}, #{stockId})
+    </insert>
+
+    <delete id="deleteFavorite" parameterType="com.project.dykj.domain.stock.dto.req.UserIdAndStockIdReq">
+        DELETE FROM FAVORITE_STOCKS
+        WHERE USER_ID = #{userId} AND STOCK_ID = #{stockId}
+    </delete>
+
+    <select id="getFavoriteStocks" resultType="com.project.dykj.domain.stock.dto.res.GetFavoriteStocksRes" parameterType="string">
+        SELECT F.STOCK_ID, S.STOCK_NAME
+        FROM FAVORITE_STOCKS F
+        JOIN STOCKS S ON F.STOCK_ID = S.STOCK_ID
+        WHERE F.USER_ID = #{userId}
+    </select>
+
+    <select id="isFavorite" resultType="int" parameterType="com.project.dykj.domain.stock.dto.req.UserIdAndStockIdReq">
+        SELECT COUNT(*)
+        FROM FAVORITE_STOCKS
+        WHERE USER_ID = #{userId} AND STOCK_ID = #{stockId}
+    </select>
+</mapper>
