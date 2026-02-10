@@ -15,6 +15,8 @@ import com.project.dykj.domain.board.mapper.ReplyMapper;
 import com.project.dykj.domain.board.model.vo.Board;
 import com.project.dykj.domain.board.model.vo.Reply;
 import com.project.dykj.domain.game.service.GameService;
+import com.project.dykj.domain.member.entity.Member;
+import com.project.dykj.domain.member.mapper.MemberMapper;
 
 @Service
 public class BoardServiceImpl implements BoardService {
@@ -22,6 +24,7 @@ public class BoardServiceImpl implements BoardService {
     private final BoardMapper boardMapper;
     private final ReplyMapper replyMapper;
     private final BadWordFilterService badWordFilterService;
+    private final MemberMapper memberMapper;
     private final GameService gameService; //[taek] 도전과제 달성 확인용
 
     // Board/Reply Mapper를 통한 DB 접근
@@ -29,12 +32,14 @@ public class BoardServiceImpl implements BoardService {
             BoardMapper boardMapper,
             ReplyMapper replyMapper,
             BadWordFilterService badWordFilterService,
-            GameService gameService
+            GameService gameService,
+            MemberMapper memberMapper
     ) {
         this.boardMapper = boardMapper;
         this.replyMapper = replyMapper;
         this.badWordFilterService = badWordFilterService;
         this.gameService = gameService;
+        this.memberMapper = memberMapper;
     }
 
     // 게시글 등록
@@ -45,6 +50,7 @@ public class BoardServiceImpl implements BoardService {
     @Override
     public long createPost(Board board) {
         validateCreate(board);
+        validateMemberWriteEligibility(board.getUserId());
         board.setBoardTitle(badWordFilterService.mask(board.getBoardTitle()));
         board.setBoardContent(badWordFilterService.mask(board.getBoardContent()));
         boardMapper.insertPost(board);
@@ -161,6 +167,7 @@ public class BoardServiceImpl implements BoardService {
         if (reply == null || isBlank(reply.getUserId()) || isBlank(reply.getReplyContent())) {
             throw new IllegalArgumentException("userId/content are required");
         }
+        validateMemberWriteEligibility(reply.getUserId());
         if (boardMapper.selectPostDetail(postId) == null) {
             throw new IllegalArgumentException("post not found");
         }
@@ -305,5 +312,21 @@ public class BoardServiceImpl implements BoardService {
         }
         String lower = condition.trim().toLowerCase();
         return (lower.equals("title") || lower.equals("content") || lower.equals("writer")) ? lower : null;
+    }
+
+    // 가입 7일 미만 회원의 게시글/댓글 작성을 차단
+    private void validateMemberWriteEligibility(String userId) {
+        Member member = memberMapper.findByUserId(userId);
+        if (member == null) {
+            throw new IllegalArgumentException("invalid userId");
+        }
+        if (member.getEnrollDate() == null) {
+            throw new IllegalArgumentException("member enrollDate is missing");
+        }
+
+        LocalDateTime availableAt = member.getEnrollDate().toLocalDate().plusDays(7).atStartOfDay();
+        if (LocalDateTime.now().isBefore(availableAt)) {
+            throw new IllegalArgumentException("가입 후 7일이 지나야 작성할 수 있습니다.");
+        }
     }
 }
