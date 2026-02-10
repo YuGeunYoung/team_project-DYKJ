@@ -50,4 +50,8 @@ public interface GameMapper {
 
 	List<TitleDTO> selectMemberTitles(String userId);
 
+	int selectTotalQuizCount(String userId);
+
+	int selectPostCount(String userId);
+
 }

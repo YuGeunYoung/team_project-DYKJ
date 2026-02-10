@@ -49,10 +49,14 @@ public class BoardServiceImpl implements BoardService {
         board.setBoardContent(badWordFilterService.mask(board.getBoardContent()));
         boardMapper.insertPost(board);
         
-        //[taek] 도전과제 6번 달성 확인
+        // [taek] 도전과제 6번 달성 확인
         if(board.getBoardType().equals("FREE")) {
         	gameService.recordAchievement(board.getUserId(), 6);
         }
+        
+        // [taek] 게시글 작성 횟수 도전과제 확인
+        gameService.checkBoardAchievements(board.getUserId());
+        
         return board.getBoardId();
     }
 

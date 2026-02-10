@@ -49,6 +49,11 @@ public class MemberController {
 		Member loginMember = memberService.login(loginRequest);
 		
 		if(loginMember != null) {
+			if(loginMember.getStatus().equals("N")) {
+				Map<String, String> result = new HashMap<>();
+				result.put("message", "탈퇴한 회원입니다.");
+				return ResponseEntity.status(HttpStatus.FORBIDDEN).body(result);
+			}
 			HttpSession session = request.getSession();
 			session.setAttribute("loginUser", loginMember);
 	        
@@ -82,5 +87,23 @@ public class MemberController {
 		
 		Member member = memberService.getMemberById(loginUser.getUserId());
 		return ResponseEntity.ok(member);
+	}
+	
+	@PostMapping("/withdraw")
+	public ResponseEntity<?> withdraw(@RequestBody Map<String, String> request, HttpSession session){
+		Member loginUser = (Member)session.getAttribute("loginUser");
+		if(loginUser == null) {
+			return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("로그인이 필요합니다.");
+		}
+		
+		String password = request.get("password");
+		boolean result = memberService.withdraw(loginUser.getUserId(), password);
+		
+		if(result) {
+			session.invalidate();
+			return ResponseEntity.ok("WITHDRAW_SUCCESS");
+		} else {
+			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("비밀번호가 일치하지 않거나 탈퇴 처리에 실패했습니다.");
+		}
 	}
 }

@@ -34,4 +34,6 @@ public interface TradeMapper {
     public int reduceHolding(TradeReq tradeReq); // HOLDINGS 테이블에서 (아이디, 종목코드) 쌍의 totalCount와 totalPrice 업데이트
 
     public int updateBalance(TradeReq tradeReq); // MEMBERS 테이블에서 userId의 points 업데이트
+
+	public int selectTradeCount(String userId); //[taek] 누적 거래 횟수 확인용
 }

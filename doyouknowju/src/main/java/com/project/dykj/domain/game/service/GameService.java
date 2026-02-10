@@ -16,6 +16,7 @@ import com.project.dykj.domain.game.entity.Quiz;
 import com.project.dykj.domain.game.mapper.GameMapper;
 import com.project.dykj.domain.member.entity.Member;
 import com.project.dykj.domain.member.mapper.MemberMapper;
+import com.project.dykj.domain.stock.mapper.TradeMapper;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -26,22 +27,36 @@ import lombok.extern.slf4j.Slf4j;
 public class GameService {
 	private final GameMapper gameMapper;
 	private final MemberMapper memberMapper;
+	private final TradeMapper tradeMapper;
 	
 	private static final int ACHIEV_FIRST_ATTENDANCE = 1;
 	private static final int ACHIEV_FIRST_QUIZ = 2;
-	
 	// 누적 출석 도전과제 ID
 	private static final int ACHIEV_ATTENDANCE_7 = 9;
 	private static final int ACHIEV_ATTENDANCE_30 = 10;
 	private static final int ACHIEV_ATTENDANCE_100 = 11;
 	private static final int ACHIEV_ATTENDANCE_365 = 12;
 	private static final int ACHIEV_ATTENDANCE_1000 = 13;
-	
 	// 레벨업 도전과제 ID
 	private static final int ACHIEV_LEVEL_10 = 14;
 	private static final int ACHIEV_LEVEL_30 = 15;
 	private static final int ACHIEV_LEVEL_50 = 16;
 	private static final int ACHIEV_LEVEL_100 = 17;
+	// 누적 매매 도전과제 ID
+    private static final int ACHIEV_TRADE_50 = 18;
+    private static final int ACHIEV_TRADE_100 = 19;
+    private static final int ACHIEV_TRADE_500 = 20;
+    private static final int ACHIEV_TRADE_1000 = 21;
+    // 퀴즈 참여 도전과제 ID
+    private static final int ACHIEV_QUIZ_JOIN_10 = 26;
+    private static final int ACHIEV_QUIZ_JOIN_50 = 27;
+    private static final int ACHIEV_QUIZ_JOIN_100 = 28;
+    private static final int ACHIEV_QUIZ_JOIN_500 = 29;
+    // 게시글 작성 도전과제 ID
+    private static final int ACHIEV_BOARD_5 = 30;
+    private static final int ACHIEV_BOARD_20 = 31;
+    private static final int ACHIEV_BOARD_50 = 32;
+    private static final int ACHIEV_BOARD_100 = 33;
 	
 	@Transactional
 	public ExpResultDTO gainExp(String userId, int amount, String source) {
@@ -200,6 +215,10 @@ public class GameService {
 			result.setLevelUp(expResult.isLevelUp());
 			result.setCurrentLevel(expResult.getCurrentLevel());
 		}
+		
+		//퀴즈 참여 횟수 체크
+		checkQuizParticipationAchievements(userId);
+		
 		return result;
 	}
 
@@ -208,20 +227,20 @@ public class GameService {
 	}
 
 	@Transactional
-	public boolean processRewardClaim(String userId, int achievementId) {
+	public ExpResultDTO processRewardClaim(String userId, int achievementId) {
 		AchievementDTO achiev = gameMapper.getAchievementMasterInfo(achievementId);
 		
 		int result = gameMapper.updateRewardStatus(userId, achievementId);
 		
 		if (result > 0 && achiev != null) {
-			gainExp(userId, achiev.getRewardExp(), "ACHIEV_"+achievementId);
+			ExpResultDTO expResult = gainExp(userId, achiev.getRewardExp(), "ACHIEV_"+achievementId);
 			
 			if(achiev.getRewardTitleId() != null && achiev.getRewardTitleId() > 0) {
 				gameMapper.insertMemberTitle(userId, achiev.getRewardTitleId());
 			}
-			return true;
+			return expResult;
 		}
-		return false;
+		return null;
 	}
 	
 	@Transactional
@@ -231,5 +250,47 @@ public class GameService {
 
 	public List<TitleDTO> getMyTitles(String userId) {
 		return gameMapper.selectMemberTitles(userId);
+	}
+
+	@Transactional
+	public void checkTradeAchievements(String userId) {
+		int tradeCount = tradeMapper.selectTradeCount(userId);
+		
+		if(tradeCount >= 50)
+			recordAchievement(userId, ACHIEV_TRADE_50);
+		if(tradeCount >= 100)
+			recordAchievement(userId, ACHIEV_TRADE_100);
+		if(tradeCount >= 500)
+			recordAchievement(userId, ACHIEV_TRADE_500);
+		if(tradeCount >= 1000)
+			recordAchievement(userId, ACHIEV_TRADE_1000);
+	}
+	
+	@Transactional
+	public void checkQuizParticipationAchievements(String userId) {
+		int totalQuizCount = gameMapper.selectTotalQuizCount(userId);
+		
+		if(totalQuizCount >= 10)
+			recordAchievement(userId, ACHIEV_QUIZ_JOIN_10);
+		if(totalQuizCount >= 50)
+			recordAchievement(userId, ACHIEV_QUIZ_JOIN_50);
+		if(totalQuizCount >= 100)
+			recordAchievement(userId, ACHIEV_QUIZ_JOIN_100);
+		if(totalQuizCount >= 500)
+			recordAchievement(userId, ACHIEV_QUIZ_JOIN_500);
+	}
+	
+	@Transactional
+	public void checkBoardAchievements(String userId) {
+		int postCount = gameMapper.selectPostCount(userId);
+		
+		if (postCount >= 5)
+			recordAchievement(userId, ACHIEV_BOARD_5);
+		if (postCount >= 20)
+			recordAchievement(userId, ACHIEV_BOARD_20);
+		if (postCount >= 50)
+			recordAchievement(userId, ACHIEV_BOARD_50);
+		if (postCount >= 100)
+			recordAchievement(userId, ACHIEV_BOARD_100);
 	}
 }
