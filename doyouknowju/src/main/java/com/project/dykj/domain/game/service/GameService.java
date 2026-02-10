@@ -30,6 +30,19 @@ public class GameService {
 	private static final int ACHIEV_FIRST_ATTENDANCE = 1;
 	private static final int ACHIEV_FIRST_QUIZ = 2;
 	
+	// 누적 출석 도전과제 ID
+	private static final int ACHIEV_ATTENDANCE_7 = 9;
+	private static final int ACHIEV_ATTENDANCE_30 = 10;
+	private static final int ACHIEV_ATTENDANCE_100 = 11;
+	private static final int ACHIEV_ATTENDANCE_365 = 12;
+	private static final int ACHIEV_ATTENDANCE_1000 = 13;
+	
+	// 레벨업 도전과제 ID
+	private static final int ACHIEV_LEVEL_10 = 14;
+	private static final int ACHIEV_LEVEL_30 = 15;
+	private static final int ACHIEV_LEVEL_50 = 16;
+	private static final int ACHIEV_LEVEL_100 = 17;
+	
 	@Transactional
 	public ExpResultDTO gainExp(String userId, int amount, String source) {
 		
@@ -69,6 +82,16 @@ public class GameService {
 		if (newLevel > previousLevel) {
 			gameMapper.updateMemberLevel(userId, newLevel);
 			isLevelUp = true;
+			
+			// [도전과제] 레벨업 달성 처리 (>= 체크로 누락 방지)
+			if (newLevel >= 100)
+				recordAchievement(userId, ACHIEV_LEVEL_100);
+			if (newLevel >= 50)
+				recordAchievement(userId, ACHIEV_LEVEL_50);
+			if (newLevel >= 30)
+				recordAchievement(userId, ACHIEV_LEVEL_30);
+			if (newLevel >= 10)
+				recordAchievement(userId, ACHIEV_LEVEL_10);
 		}
 		
 		return ExpResultDTO.builder()
@@ -98,9 +121,19 @@ public class GameService {
 		gameMapper.updateCumulativeDays(userId);
 		
 		int attendanceCount = gameMapper.selectAttendanceCount(userId);
-		if (attendanceCount == 1) {
+		// 누적 출석 도전과제 달성 처리 (>= 체크로 누락 방지)
+		if (attendanceCount >= 1000)
+			recordAchievement(userId, ACHIEV_ATTENDANCE_1000);
+		if (attendanceCount >= 365)
+			recordAchievement(userId, ACHIEV_ATTENDANCE_365);
+		if (attendanceCount >= 100)
+			recordAchievement(userId, ACHIEV_ATTENDANCE_100);
+		if (attendanceCount >= 30)
+			recordAchievement(userId, ACHIEV_ATTENDANCE_30);
+		if (attendanceCount >= 7)
+			recordAchievement(userId, ACHIEV_ATTENDANCE_7);
+		if (attendanceCount >= 1)
 			recordAchievement(userId, ACHIEV_FIRST_ATTENDANCE);
-		}
 		
 		//보상 경험치
 		int rewardExp = 50;
@@ -192,8 +225,8 @@ public class GameService {
 	}
 	
 	@Transactional
-	public boolean recordAchievement(String userId, int achievementId) {
-		return gameMapper.insertMemberAchievement(userId, achievementId) > 0;
+	public void recordAchievement(String userId, int achievementId) {
+		gameMapper.insertMemberAchievement(userId, achievementId);
 	}
 
 	public List<TitleDTO> getMyTitles(String userId) {

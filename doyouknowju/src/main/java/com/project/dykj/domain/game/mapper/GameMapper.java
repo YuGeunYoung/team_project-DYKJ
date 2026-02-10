@@ -40,7 +40,7 @@ public interface GameMapper {
 
 	int updateRewardStatus(String userId, int achievementId);
 
-	int insertMemberAchievement(String userId, int achievementId);
+	void insertMemberAchievement(String userId, int achievementId);
 
 	int selectAttendanceCount(String userId);
 

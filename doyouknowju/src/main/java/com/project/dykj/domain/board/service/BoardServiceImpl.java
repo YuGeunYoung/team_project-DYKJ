@@ -14,6 +14,7 @@ import com.project.dykj.domain.board.mapper.BoardMapper;
 import com.project.dykj.domain.board.mapper.ReplyMapper;
 import com.project.dykj.domain.board.model.vo.Board;
 import com.project.dykj.domain.board.model.vo.Reply;
+import com.project.dykj.domain.game.service.GameService;
 
 @Service
 public class BoardServiceImpl implements BoardService {
@@ -21,16 +22,19 @@ public class BoardServiceImpl implements BoardService {
     private final BoardMapper boardMapper;
     private final ReplyMapper replyMapper;
     private final BadWordFilterService badWordFilterService;
+    private final GameService gameService; //[taek] 도전과제 달성 확인용
 
     // Board/Reply Mapper를 통한 DB 접근
     public BoardServiceImpl(
             BoardMapper boardMapper,
             ReplyMapper replyMapper,
-            BadWordFilterService badWordFilterService
+            BadWordFilterService badWordFilterService,
+            GameService gameService
     ) {
         this.boardMapper = boardMapper;
         this.replyMapper = replyMapper;
         this.badWordFilterService = badWordFilterService;
+        this.gameService = gameService;
     }
 
     // 게시글 등록
@@ -44,6 +48,11 @@ public class BoardServiceImpl implements BoardService {
         board.setBoardTitle(badWordFilterService.mask(board.getBoardTitle()));
         board.setBoardContent(badWordFilterService.mask(board.getBoardContent()));
         boardMapper.insertPost(board);
+        
+        //[taek] 도전과제 6번 달성 확인
+        if(board.getBoardType().equals("FREE")) {
+        	gameService.recordAchievement(board.getUserId(), 6);
+        }
         return board.getBoardId();
     }
 
@@ -159,6 +168,13 @@ public class BoardServiceImpl implements BoardService {
         reply.setBoardId((int) postId);
         reply.setReplyContent(badWordFilterService.mask(reply.getReplyContent()));
         replyMapper.insertReply(reply);
+        
+        //[taek] 도전과제 7번 달성 확인
+        Board post = boardMapper.selectPostDetail(postId);
+        if(!reply.getUserId().equals(post.getUserId())) {
+        	gameService.recordAchievement(reply.getUserId(), 7);
+        }
+        
         return reply.getReplyId();
     }
 
