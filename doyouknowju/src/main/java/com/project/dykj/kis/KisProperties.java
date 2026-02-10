@@ -1,4 +1,4 @@
-package com.project.dykj.kis;
+﻿package com.project.dykj.kis;
 
 import java.time.Duration;
 
@@ -23,6 +23,7 @@ public class KisProperties {
 	private MultiPrice multiPrice = new MultiPrice();
 	private RiseFallRank riseFallRank = new RiseFallRank();
 	private MarketCapRank marketCapRank = new MarketCapRank();
+	private Top10WebSocket top10WebSocket = new Top10WebSocket();
 
 	@Data
 	public static class VolumeRank {
@@ -91,5 +92,21 @@ public class KisProperties {
 		private String condMrktDivCode = "J";
 		/** 입력 종목코드 (0000: 전체, 0001: 코스피, 1001: 코스닥) */
 		private String inputIscd = "0000";
+	}
+
+	@Data
+	public static class Top10WebSocket {
+		/** WebSocket Top10 사용 여부 */
+		private boolean enabled = false;
+		/** Approval key 발급 경로 */
+		private String approvalPath = "/oauth2/Approval";
+		/** KIS WebSocket URL (wss://...) */
+		private String wsUrl;
+		/** 접속 후 전송할 구독 전문 메시지(JSON 문자열) */
+		private String subscribeMessage;
+		/** 재연결 지연(초) */
+		private long reconnectDelaySeconds = 3;
+		/** stale 기준 시간(초): 해당 시간 동안 미수신 시 stale로 간주 */
+		private long staleAfterSeconds = 20;
 	}
 }
