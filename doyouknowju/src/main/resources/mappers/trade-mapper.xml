@@ -115,5 +115,12 @@
         SET POINTS = #{afterBalance}
         WHERE USER_ID = #{userId}
     </update>
+    
+    <!-- [taek] 사용자 별 누적 거래 횟수 조회 -->
+    <select id="selectTradeCount" parameterType="String" resultType="int">
+    	SELECT COUNT(*)
+    	FROM TRADE_HISTORIES
+    	WHERE USER_ID = #{userId}
+    </select>
 </mapper>
 

@@ -93,6 +93,7 @@ public class TradeService {
         
         // [taek] : 도전과제 달성 체크
         gameService.recordAchievement(tradeReq.getUserId(), 3);
+        gameService.checkTradeAchievements(tradeReq.getUserId());
 
         // 4. 결과 리턴
         return TradeRes.builder()
@@ -153,6 +154,9 @@ public class TradeService {
         if (result3 == 0) {
             throw new BusinessException(ErrorCode.FAIL_TO_TRADE);
         }
+        
+        //[taek] : 누적 매매 도전과제 달성 확인
+        gameService.checkTradeAchievements(tradeReq.getUserId());
 
         // 결과 리턴
         return TradeRes.builder()

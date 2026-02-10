@@ -57,5 +57,11 @@
         FROM MEMBERS
         WHERE USER_ID = #{userId}
     </select>
+    
+    <update id="updateMemberStatus">
+    	UPDATE MEMBERS
+    	SET STATUS = #{status}
+    	WHERE USER_ID = #{userId}
+    </update>
 
 </mapper>

@@ -191,4 +191,17 @@
 		WHERE mt.USER_ID = #{userId}
 		ORDER BY mt.GAINED_AT DESC
 	</select>
+	
+	<select id="selectTotalQuizCount" resultType="_int">
+		SELECT COUNT(*)
+		FROM MEMBER_QUIZZES
+		WHERE USER_ID = #{userId}
+	</select>
+	
+	<select id="selectPostCount" resultType="_int">
+		SELECT COUNT(*)
+		FROM BOARD
+		WHERE USER_ID = #{userId}
+			AND DELETE_DATE IS NULL
+	</select>
 </mapper>

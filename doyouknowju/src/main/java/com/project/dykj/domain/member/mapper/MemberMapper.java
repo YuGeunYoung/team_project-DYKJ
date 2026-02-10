@@ -15,4 +15,6 @@ public interface MemberMapper {
 	Member findByUserId(String userId);
 
 	List<String> selectAllMemberIds(); // 전체회원 조회해서 알림 보내기 주식장 닫,열
+
+	int updateMemberStatus(String userId, String status);
 }

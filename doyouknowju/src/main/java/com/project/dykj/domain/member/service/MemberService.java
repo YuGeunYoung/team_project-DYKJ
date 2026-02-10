@@ -48,4 +48,15 @@ public class MemberService {
 	public boolean checkId(String userId) {
 		return memberMapper.checkId(userId) > 0;
 	}
+	
+	@Transactional
+	public boolean withdraw(String userId, String password) {
+		Member member = memberMapper.findByUserId(userId);
+		if(member == null) return false;
+		
+		if(passwordEncoder.matches(password, member.getUserPwd())) {
+			return memberMapper.updateMemberStatus(userId, "N") > 0;
+		}
+		return false;
+	}
 }

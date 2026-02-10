@@ -139,13 +139,13 @@ public class GameController {
 		try {
 			int achievementId = ((Number)request.get("achievementId")).intValue();
 			
-			boolean success = gameService.processRewardClaim(loginUser.getUserId(), achievementId);
+			ExpResultDTO expResult = gameService.processRewardClaim(loginUser.getUserId(), achievementId);
 			
-			if(success) {
+			if(expResult != null) {
 				Member updateMember = gameService.getMemberById(loginUser.getUserId());
 				session.setAttribute("loginUser", updateMember);
 				
-				return ResponseEntity.ok(Map.of("message","보상이 수령되었습니다.","success", true));
+				return ResponseEntity.ok(Map.of("message","보상이 수령되었습니다.","success", true, "expResult", expResult));
 			}else {
 				return ResponseEntity.badRequest().body(Map.of("message","이미 수령했거나 수령 조건이 맞지 않습니다.","success",false));
 			}
