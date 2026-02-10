@@ -1,14 +1,17 @@
 package com.project.dykj.domain.chat.util;
 
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 import org.springframework.stereotype.Component;
 import org.springframework.web.socket.*;
 import org.springframework.web.socket.handler.TextWebSocketHandler;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.project.dykj.domain.chat.dto.ChatMessageVO;
 import com.project.dykj.domain.chat.service.ChatService;
+import com.project.dykj.domain.member.entity.Member;
+import com.project.dykj.domain.member.service.MemberService;
 import com.project.dykj.kis.service.StockService;
-import com.project.dykj.kis.model.vo.StockSuggestItem; // [추가] 검색 결과 객체
+import com.project.dykj.kis.model.vo.StockSuggestItem;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -18,6 +21,7 @@ import lombok.extern.slf4j.Slf4j;
 public class ChatHandler extends TextWebSocketHandler {
 
     private final ChatService chatService;
+    private final MemberService memberService; // 유저 정보 조회를 위해 주입
     private final StockService stockService;
     private final ObjectMapper objectMapper;
     private static List<WebSocketSession> sessionList = new ArrayList<>();
@@ -32,6 +36,24 @@ public class ChatHandler extends TextWebSocketHandler {
         try {
             String payload = message.getPayload();
             ChatMessageVO chatMessage = objectMapper.readValue(payload, ChatMessageVO.class);
+            
+            // [추가] 가입 7일 제한 로직 (한국식: 가입일 = 1일차)
+            Member sender = memberService.getMemberById(chatMessage.getUserId());
+            if (sender != null && !"ADMIN".equals(sender.getUserRole())) { // 관리자는 제외 가능
+                long diffInMillies = Math.abs(new Date().getTime() - sender.getEnrollDate().getTime());
+                long diffInDays = TimeUnit.DAYS.convert(diffInMillies, TimeUnit.MILLISECONDS) + 1; // 당일 1일차 적용
+
+                if (diffInDays < 7) {
+                    ChatMessageVO systemMsg = new ChatMessageVO();
+                    systemMsg.setUserId("시스템🤖");
+                    systemMsg.setChatContent("신규 회원은 가입 7일 후부터 채팅이 가능합니다. (현재 " + diffInDays + "일차)");
+                    systemMsg.setSendTime(new Date());
+                    
+                    session.sendMessage(new TextMessage(objectMapper.writeValueAsString(systemMsg)));
+                    return; // 로직 종료: 저장 및 브로드캐스트 안 함
+                }
+            }
+
             chatMessage.setSendTime(new Date());
 
             // 1. 일반 채팅 메시지 저장 및 전송
@@ -50,7 +72,6 @@ public class ChatHandler extends TextWebSocketHandler {
 
     private void handleStockBot(String query) {
         try {
-            // [추가] 점심 메뉴 추천 기능
             if ("점심메뉴".equals(query)) {
                 String[] menus = { "제육볶음", "돈까스", "김치찌개", "국밥", "짜장면", "초밥", "햄버거", "백반", "칼국수", "비빔밥" };
                 int randomIndex = (int) (Math.random() * menus.length);
@@ -62,40 +83,23 @@ public class ChatHandler extends TextWebSocketHandler {
                 botMsg.setSendTime(new Date());
 
                 broadcastMessage(botMsg);
-                return; // 여기서 함수 종료 (주식 검색 안 함)
-            }
-            // [검증 단계] 팀장님 제안: suggest()로 종목 찾기
-            List<StockSuggestItem> candidates = stockService.suggest(query, 1);
-
-            // 검색 결과가 없으면 (예: !ㅋㅋㅋ, !!!) 응답하지 않고 종료
-            if (candidates == null || candidates.isEmpty()) {
                 return;
             }
+            List<StockSuggestItem> candidates = stockService.suggest(query, 1);
+            if (candidates == null || candidates.isEmpty()) return;
 
-            // 검색된 첫 번째 종목 정보 추출
             StockSuggestItem target = candidates.get(0);
-            String realStockId = target.getStockId();
-            String realStockName = target.getStockName();
-
-            // [조회 단계] KIS API에서 실시간 가격 조회
-            Map<?, ?> priceData = stockService.getCurrentPrice(realStockId);
+            Map<?, ?> priceData = stockService.getCurrentPrice(target.getStockId());
 
             if (priceData != null && priceData.containsKey("output")) {
-                // "output" 포장지를 뜯어 내용물 꺼내기
                 Map<String, Object> output = (Map<String, Object>) priceData.get("output");
-
-                String price = String.valueOf(output.get("stck_prpr")); // 현재가
-                String rate = String.valueOf(output.get("prdy_ctrt")); // 등락률
-
-                // 봇 메시지 구성
                 String botReply = String.format("🤖 [%s] %s\n현재가: %s원 (등락률: %s%%)",
-                        realStockId, realStockName, price, rate);
+                        target.getStockId(), target.getStockName(), output.get("stck_prpr"), output.get("prdy_ctrt"));
 
                 ChatMessageVO botMsg = new ChatMessageVO();
                 botMsg.setUserId("주식봇🤖");
                 botMsg.setChatContent(botReply);
                 botMsg.setSendTime(new Date());
-
                 broadcastMessage(botMsg);
             }
         } catch (Exception e) {
@@ -107,8 +111,7 @@ public class ChatHandler extends TextWebSocketHandler {
         String json = objectMapper.writeValueAsString(vo);
         TextMessage tm = new TextMessage(json);
         for (WebSocketSession sess : sessionList) {
-            if (sess.isOpen())
-                sess.sendMessage(tm);
+            if (sess.isOpen()) sess.sendMessage(tm);
         }
     }
 
