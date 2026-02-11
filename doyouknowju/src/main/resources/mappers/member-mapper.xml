@@ -44,7 +44,9 @@
             M.IS_RECEIVE_NOTIFICATION, 
             M.EXPERIENCE, 
             M.USER_LEVEL,
-            T.TITLE_NAME AS equippedTitleName
+            T.TITLE_NAME AS equippedTitleName,
+            T.TITLE_IMG_URL AS equippedTitleImgUrl,
+            T.TITLE_COLOR AS equippedTitleColor
  		FROM MEMBERS M
         LEFT JOIN MEMBER_TITLES MT ON M.USER_ID = MT.USER_ID AND MT.IS_EQUIPPED = 'Y'
         LEFT JOIN TITLES T ON MT.TITLE_ID = T.TITLE_ID

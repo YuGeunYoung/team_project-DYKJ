@@ -190,4 +190,16 @@ public class GameController {
 			return ResponseEntity.status(500).body(Map.of("message", "칭호 장착에 실패했습니다.", "success", false));
 		}
 	}
+	
+	@PostMapping("/titles/equipped-list")
+	public ResponseEntity<?> getEquippedTitleList(@RequestBody Map<String, List<String>> request){
+		try {
+			List<String> userIds = request.get("userIds");
+			List<TitleDTO> list = gameService.getEquippedTitlesForUsers(userIds);
+			return ResponseEntity.ok(list);
+		}catch(Exception e) {
+			log.error("착용한 칭호 목록 조회 중 오류 발생: ", e);
+			return ResponseEntity.status(500).body(Map.of("message", "칭호 정보를 불러오는 데 실패했습니다.", "success", false));
+		}
+	}
 }
