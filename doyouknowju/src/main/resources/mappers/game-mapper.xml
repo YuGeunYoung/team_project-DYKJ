@@ -235,4 +235,10 @@
 		WHERE USER_ID = #{userId}
 		AND DELETE_DATE IS NULL
 	</select>
+	
+	<select id="selectFavoriteStockCount" resultType="_int">
+		SELECT COUNT(*)
+		FROM FAVORITE_STOCK
+		WHERE USER_ID = #{userId}
+	</select>
 </mapper>

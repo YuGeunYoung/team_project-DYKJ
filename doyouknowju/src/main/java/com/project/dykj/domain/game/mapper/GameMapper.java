@@ -60,4 +60,6 @@ public interface GameMapper {
 
 	List<TitleDTO> selectEquippedTitlesByUsers(List<String> userIds);
 
+	int selectFavoriteStockCount(String userId);
+
 }
