@@ -15,4 +15,7 @@ public class RankingRes {
     private long currentPoint;
     private long rank;
     private double returnRate;
+    private String titleImgUrl;
+    private String titleColor;
+    private String titleName;
 }

@@ -3,9 +3,11 @@ package com.project.dykj.domain.ranking.service;
 import java.time.DayOfWeek;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 
+import com.project.dykj.domain.game.dto.TitleDTO;
 import com.project.dykj.domain.game.service.GameService;
 import com.project.dykj.domain.ranking.dto.req.PageReq;
 import com.project.dykj.domain.ranking.dto.res.AllRankingRes;
@@ -38,7 +40,20 @@ public class RankingService {
 
         // DB에서 시즌 번호를 가져온다.
         int seasonNo = rankingMapper.getCurrentSeasonNo(seasonPeriod);
-        List<RankingRes> rankingResList = rankingMapper.selectSeasonRanking(seasonPeriod, seasonNo, pageReq); 
+        List<RankingRes> rankingResList = rankingMapper.selectSeasonRanking(seasonPeriod, seasonNo, pageReq);
+        
+        List<String> userIds = rankingResList.stream().map(RankingRes::getUserId).collect(Collectors.toList());
+        List<TitleDTO> titleDTOList = gameService.getEquippedTitlesForUsers(userIds);
+
+        for (RankingRes res : rankingResList) {
+            for (TitleDTO titleDTO : titleDTOList) {
+                if (res.getUserId().equals(titleDTO.getUserId())) {
+                    res.setTitleImgUrl(titleDTO.getTitleImgUrl());
+                    res.setTitleColor(titleDTO.getTitleColor());
+                    res.setTitleName(titleDTO.getTitleName());
+                }
+            }
+        }
 
         return rankingResList;      
     }
