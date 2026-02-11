@@ -16,6 +16,7 @@ public interface RankingMapper {
     public int getCurrentSeasonNo(@Param("seasonPeriod") String seasonPeriod);
     public int increaseCurrentSeasonNo(@Param("seasonPeriod") String seasonPeriod);
     public List<RankingRes> selectSeasonRanking(@Param("seasonPeriod") String seasonPeriod, @Param("seasonNo") int seasonNo, @Param("pageReq") PageReq pageReq);
+    public List<RankingRes> selectSeasonTop100Ranking(@Param("seasonPeriod") String seasonPeriod, @Param("seasonNo") int seasonNo);
     public List<RankingRes> selectWeeklyRanking(PageReq pageReq);
     public List<RankingRes> selectMonthlyRanking(PageReq pageReq);
     public List<RankingRes> selectYearlyRanking(PageReq pageReq);

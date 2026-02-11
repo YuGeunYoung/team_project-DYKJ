@@ -6,6 +6,7 @@ import java.util.List;
 
 import org.springframework.stereotype.Service;
 
+import com.project.dykj.domain.game.service.GameService;
 import com.project.dykj.domain.ranking.dto.req.PageReq;
 import com.project.dykj.domain.ranking.dto.res.AllRankingRes;
 import com.project.dykj.domain.ranking.dto.res.RankingRes;
@@ -23,6 +24,7 @@ public class RankingService {
     private static final int GROUP_SIZE = 50;
     
     private final RankingMapper rankingMapper;
+    private final GameService gameService;
 
     public List<RankingRes> getSeasonRanking(String seasonPeriod, int page) {
         PageReq pageReq = new PageReq();
@@ -102,22 +104,58 @@ public class RankingService {
         int day = now.getDayOfMonth();
         DayOfWeek dayOfWeek = now.getDayOfWeek();
 
-        if (dayOfWeek == DayOfWeek.MONDAY) {
+        PageReq req = new PageReq();
+        req.setPage(1);
+        req.setGroupSize(100);
+        req.setStart(1);
+        req.setEnd(100);
+
+        if (true) {
             // 주간 시즌 시작
+            // 이전 시즌 상위 100명에게 경험치를 지급한다.
+            // 이전 시즌 상위 100명의 아이디를 가져온다.
+            int currentWeeklySeasonNo = rankingMapper.getCurrentSeasonNo("WEEKLY");
+            List<RankingRes> rankingResList = rankingMapper.selectSeasonTop100Ranking("WEEKLY", currentWeeklySeasonNo);
+
+            for (RankingRes rankingRes : rankingResList) {
+                int gainExp = Math.max((100 - (int)rankingRes.getRank() + 1) * 10, 0);
+                gameService.gainExp(rankingRes.getUserId(), gainExp, "WEEKLY_RANKING");
+            }
+        
             // SEQ_WEEKLY_SEASON_NO을 1 상승시킨다.   
             rankingMapper.increaseCurrentSeasonNo("WEEKLY");
             rankingMapper.insertNewSeasonRanking("WEEKLY");         
         }
 
-        if (day == 1) {
+        if (true) {
             // 월간 시즌 시작
+            // 이전 시즌 상위 100명에게 경험치를 지급한다.
+            // 이전 시즌 상위 100명의 아이디를 가져온다.
+            int currentMonthlySeasonNo = rankingMapper.getCurrentSeasonNo("MONTHLY");
+            List<RankingRes> rankingResList = rankingMapper.selectSeasonTop100Ranking("MONTHLY", currentMonthlySeasonNo);
+
+            for (RankingRes rankingRes : rankingResList) {
+                int gainExp = Math.max((100 - (int)rankingRes.getRank() + 1) * 100, 0);
+                gameService.gainExp(rankingRes.getUserId(), gainExp, "MONTHLY_RANKING");
+            }
+
             // SEQ_MONTHLY_SEASON_NO을 1 상승시킨다.
             rankingMapper.increaseCurrentSeasonNo("MONTHLY");
             rankingMapper.insertNewSeasonRanking("MONTHLY");
         }
 
-        if (month == 1 && day == 1) {
+        if (true) {
             // 연간 시즌 시작
+            // 이전 시즌 상위 100명에게 경험치를 지급한다.
+            // 이전 시즌 상위 100명의 아이디를 가져온다.
+            int currentYearlySeasonNo = rankingMapper.getCurrentSeasonNo("YEARLY");
+            List<RankingRes> rankingResList = rankingMapper.selectSeasonTop100Ranking("YEARLY", currentYearlySeasonNo);
+
+            for (RankingRes rankingRes : rankingResList) {
+                int gainExp = Math.max((100 - (int)rankingRes.getRank() + 1) * 1000, 0);
+                gameService.gainExp(rankingRes.getUserId(), gainExp, "YEARLY_RANKING");
+            }
+
             // SEQ_YEARLY_SEASON_NO을 1 상승시킨다.
             rankingMapper.increaseCurrentSeasonNo("YEARLY");
             rankingMapper.insertNewSeasonRanking("YEARLY");
