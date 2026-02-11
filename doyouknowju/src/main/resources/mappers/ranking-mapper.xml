@@ -54,12 +54,27 @@
                     START_POINT,
                     CURRENT_POINT,
                     RETURN_RATE,
-                    RANK() OVER (ORDER BY CURRENT_POINT DESC) AS "RANK"
+                    RANK() OVER (ORDER BY RETURN_RATE DESC) AS "RANK"
             FROM SEASON_RANKINGS
             WHERE SEASON_PERIOD = #{seasonPeriod}
             AND SEASON_NO = #{seasonNo}
-            ORDER BY RETURN_RATE DESC)
+            ORDER BY "RANK" ASC)
         WHERE ROW_NUM BETWEEN #{pageReq.start} AND #{pageReq.end}
+    </select>
+
+    <select id="selectSeasonTop100Ranking" resultType="RankingRes">
+        SELECT ROW_NUM, USER_ID, START_POINT, CURRENT_POINT, RETURN_RATE, "RANK"
+        FROM (SELECT ROWNUM AS ROW_NUM,
+                    USER_ID,
+                    START_POINT,
+                    CURRENT_POINT,
+                    RETURN_RATE,
+                    RANK() OVER (ORDER BY RETURN_RATE DESC) AS "RANK"
+            FROM SEASON_RANKINGS
+            WHERE SEASON_PERIOD = #{seasonPeriod}
+            AND SEASON_NO = #{seasonNo}
+            ORDER BY "RANK" ASC)
+        WHERE RANK BETWEEN 1 AND 100    
     </select>
 
     <select id="selectWeeklyRanking" resultType="RankingRes">
