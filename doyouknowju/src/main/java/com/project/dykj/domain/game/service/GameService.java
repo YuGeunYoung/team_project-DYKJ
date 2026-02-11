@@ -31,6 +31,7 @@ public class GameService {
 	
 	private static final int ACHIEV_FIRST_ATTENDANCE = 1;
 	private static final int ACHIEV_FIRST_QUIZ = 2;
+	private static final int ACHIEV_FIRST_FAVORITE = 4;
 	// 누적 출석 도전과제 ID
 	private static final int ACHIEV_ATTENDANCE_7 = 9;
 	private static final int ACHIEV_ATTENDANCE_30 = 10;
@@ -293,11 +294,19 @@ public class GameService {
 		if (postCount >= 100)
 			recordAchievement(userId, ACHIEV_BOARD_100);
 	}
+	
+	@Transactional
+	public void checkFavoriteStockAchievements(String userId) {
+		int favoriteCount = gameMapper.selectFavoriteStockCount(userId);
+		
+		if(favoriteCount >= 1) {
+			recordAchievement(userId, ACHIEV_FIRST_FAVORITE);
+		}
+	}
 
 	public void equipTitle(String userId, int titleId) {
 		gameMapper.resetEquippedTitles(userId);
 		gameMapper.updateEquippedTitle(userId, titleId);
-		
 	}
 
 	public List<TitleDTO> getEquippedTitlesForUsers(List<String> userIds) {
