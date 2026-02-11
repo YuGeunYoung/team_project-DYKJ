@@ -10,4 +10,7 @@ public class ChatMessageVO {
     private String userId;
     private String chatContent;
     private Date sendTime;
+
+    private String userTitle; // 칭호 이름
+    private String userTitleColor; // 칭호 색상
 }

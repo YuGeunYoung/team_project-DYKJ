@@ -1,6 +1,6 @@
 package com.project.dykj.domain.ranking.service;
 
-import java.time.DayOfWeek;
+import java.time.DayOfWeek; 
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;

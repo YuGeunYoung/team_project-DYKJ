@@ -1,17 +1,25 @@
 package com.project.dykj.domain.chat.util;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
+
 import org.springframework.stereotype.Component;
-import org.springframework.web.socket.*;
+import org.springframework.web.socket.CloseStatus;
+import org.springframework.web.socket.TextMessage;
+import org.springframework.web.socket.WebSocketSession;
 import org.springframework.web.socket.handler.TextWebSocketHandler;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.project.dykj.domain.chat.dto.ChatMessageVO;
 import com.project.dykj.domain.chat.service.ChatService;
 import com.project.dykj.domain.member.entity.Member;
 import com.project.dykj.domain.member.service.MemberService;
-import com.project.dykj.kis.service.StockService;
 import com.project.dykj.kis.model.vo.StockSuggestItem;
+import com.project.dykj.kis.service.StockService;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -36,7 +44,7 @@ public class ChatHandler extends TextWebSocketHandler {
         try {
             String payload = message.getPayload();
             ChatMessageVO chatMessage = objectMapper.readValue(payload, ChatMessageVO.class);
-            
+
             // [추가] 가입 7일 제한 로직 (한국식: 가입일 = 1일차)
             Member sender = memberService.getMemberById(chatMessage.getUserId());
             if (sender != null && !"ADMIN".equals(sender.getUserRole())) { // 관리자는 제외 가능
@@ -48,10 +56,15 @@ public class ChatHandler extends TextWebSocketHandler {
                     systemMsg.setUserId("시스템🤖");
                     systemMsg.setChatContent("신규 회원은 가입 7일 후부터 채팅이 가능합니다. (현재 " + diffInDays + "일차)");
                     systemMsg.setSendTime(new Date());
-                    
+
                     session.sendMessage(new TextMessage(objectMapper.writeValueAsString(systemMsg)));
                     return; // 로직 종료: 저장 및 브로드캐스트 안 함
                 }
+
+                // [추가] 칭호 정보 설정
+                chatMessage.setUserTitle(sender.getEquippedTitleName());
+                chatMessage.setUserTitleColor(sender.getEquippedTitleColor());
+                chatMessage.setUserTitleImgUrl(sender.getEquippedTitleImgUrl());
             }
 
             chatMessage.setSendTime(new Date());
@@ -86,7 +99,8 @@ public class ChatHandler extends TextWebSocketHandler {
                 return;
             }
             List<StockSuggestItem> candidates = stockService.suggest(query, 1);
-            if (candidates == null || candidates.isEmpty()) return;
+            if (candidates == null || candidates.isEmpty())
+                return;
 
             StockSuggestItem target = candidates.get(0);
             Map<?, ?> priceData = stockService.getCurrentPrice(target.getStockId());
@@ -111,7 +125,8 @@ public class ChatHandler extends TextWebSocketHandler {
         String json = objectMapper.writeValueAsString(vo);
         TextMessage tm = new TextMessage(json);
         for (WebSocketSession sess : sessionList) {
-            if (sess.isOpen()) sess.sendMessage(tm);
+            if (sess.isOpen())
+                sess.sendMessage(tm);
         }
     }
 
