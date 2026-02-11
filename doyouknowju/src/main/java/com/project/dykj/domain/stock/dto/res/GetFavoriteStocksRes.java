@@ -12,4 +12,7 @@ import lombok.NoArgsConstructor;
 public class GetFavoriteStocksRes {
     private String stockId;
     private String stockName;
+    private int stockPrice;
+    private int stockPriceChange;
+    private double stockPriceChangeRate;
 }

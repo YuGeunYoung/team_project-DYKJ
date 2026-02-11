@@ -26,10 +26,10 @@ public class RankingService {
     private final RankingMapper rankingMapper;
     private final GameService gameService;
 
-    public List<RankingRes> getSeasonRanking(String seasonPeriod, int page) {
+    public List<RankingRes> getSeasonRanking(String seasonPeriod, int page, int groupSize) {
         PageReq pageReq = new PageReq();
         pageReq.setPage(page);
-        pageReq.setGroupSize(GROUP_SIZE);
+        pageReq.setGroupSize(groupSize > 0 ? groupSize : GROUP_SIZE);
         pageReq.setStart((page - 1) * pageReq.getGroupSize() + 1);
         pageReq.setEnd(page * pageReq.getGroupSize());
 
@@ -110,7 +110,7 @@ public class RankingService {
         req.setStart(1);
         req.setEnd(100);
 
-        if (true) {
+        if (dayOfWeek == DayOfWeek.MONDAY) {
             // 주간 시즌 시작
             // 이전 시즌 상위 100명에게 경험치를 지급한다.
             // 이전 시즌 상위 100명의 아이디를 가져온다.
@@ -127,7 +127,7 @@ public class RankingService {
             rankingMapper.insertNewSeasonRanking("WEEKLY");         
         }
 
-        if (true) {
+        if (day == 1) {
             // 월간 시즌 시작
             // 이전 시즌 상위 100명에게 경험치를 지급한다.
             // 이전 시즌 상위 100명의 아이디를 가져온다.
@@ -144,7 +144,7 @@ public class RankingService {
             rankingMapper.insertNewSeasonRanking("MONTHLY");
         }
 
-        if (true) {
+        if (month == 1 && day == 1) {
             // 연간 시즌 시작
             // 이전 시즌 상위 100명에게 경험치를 지급한다.
             // 이전 시즌 상위 100명의 아이디를 가져온다.
