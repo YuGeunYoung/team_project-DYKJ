@@ -186,6 +186,7 @@
 			t.TITLE_ID,
 			t.TITLE_NAME,
 			t.TITLE_IMG_URL,
+			t.TITLE_COLOR,
 			mt.IS_EQUIPPED
 		FROM MEMBER_TITLES mt
 		JOIN TITLES t ON mt.TITLE_ID = t.TITLE_ID
@@ -210,6 +211,22 @@
 		SELECT COUNT(*)
 		FROM MEMBER_QUIZZES
 		WHERE USER_ID = #{userId}
+	</select>
+	
+	<select id="selectEquippedTitlesByUsers" resultType="TitleDTO">
+		SELECT
+			mt.USER_ID,
+			t.TITLE_ID,
+			t.TITLE_NAME,
+			t.TITLE_IMG_URL,
+			t.TITLE_COLOR
+		FROM MEMBER_TITLES mt
+		JOIN TITLES t ON mt.TITLE_ID = t.TITLE_ID
+		WHERE mt.IS_EQUIPPED = 'Y'
+		AND mt.USER_ID IN
+			<foreach item="userId" collection="userIds" open="(" separator="," close=")">
+				#{userId}
+			</foreach>
 	</select>
 	
 	<select id="selectPostCount" resultType="_int">

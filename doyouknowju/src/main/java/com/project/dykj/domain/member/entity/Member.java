@@ -27,4 +27,6 @@ public class Member {
 	private int experience;
 	private int userLevel;
 	private String equippedTitleName;
+	private String equippedTitleImgUrl;
+	private String equippedTitleColor;
 }

@@ -58,4 +58,6 @@ public interface GameMapper {
 
 	void updateEquippedTitle(String userId, int titleId);
 
+	List<TitleDTO> selectEquippedTitlesByUsers(List<String> userIds);
+
 }

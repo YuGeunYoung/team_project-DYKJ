@@ -299,4 +299,11 @@ public class GameService {
 		gameMapper.updateEquippedTitle(userId, titleId);
 		
 	}
+
+	public List<TitleDTO> getEquippedTitlesForUsers(List<String> userIds) {
+		if(userIds == null || userIds.isEmpty()) {
+			return List.of();
+		}
+		return gameMapper.selectEquippedTitlesByUsers(userIds);
+	}
 }
