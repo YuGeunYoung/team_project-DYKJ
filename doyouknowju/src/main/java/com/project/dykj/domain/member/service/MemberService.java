@@ -1,13 +1,10 @@
 package com.project.dykj.domain.member.service;
 
-import java.util.Optional;
-
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.project.dykj.domain.member.dto.LoginRequestDTO;
-import com.project.dykj.domain.member.dto.MemberRequestDTO;
 import com.project.dykj.domain.member.entity.Member;
 import com.project.dykj.domain.member.mapper.MemberMapper;
 
