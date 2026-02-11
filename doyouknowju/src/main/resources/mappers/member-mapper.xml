@@ -33,19 +33,22 @@
 
     <select id="findByUserId" resultType="Member">
     	SELECT
- 			USER_ID,
- 			USER_PWD, 
- 			PHONE, 
- 			POINTS, 
- 			STATUS, 
-            USER_ROLE, 
-            ENROLL_DATE, 
-            CONSEC_DAYS, 
-            IS_RECEIVE_NOTIFICATION, 
-            EXPERIENCE, 
-            USER_LEVEL
- 		FROM MEMBERS
- 		WHERE USER_ID = #{userId}
+ 			M.USER_ID,
+ 			M.USER_PWD, 
+ 			M.PHONE, 
+ 			M.POINTS, 
+ 			M.STATUS, 
+            M.USER_ROLE, 
+            M.ENROLL_DATE, 
+            M.CONSEC_DAYS, 
+            M.IS_RECEIVE_NOTIFICATION, 
+            M.EXPERIENCE, 
+            M.USER_LEVEL,
+            T.TITLE_NAME AS equippedTitleName
+ 		FROM MEMBERS M
+        LEFT JOIN MEMBER_TITLES MT ON M.USER_ID = MT.USER_ID AND MT.IS_EQUIPPED = 'Y'
+        LEFT JOIN TITLES T ON MT.TITLE_ID = T.TITLE_ID
+ 		WHERE M.USER_ID = #{userId}
     </select>
 
     <select id="selectAllMemberIds" resultType="string">

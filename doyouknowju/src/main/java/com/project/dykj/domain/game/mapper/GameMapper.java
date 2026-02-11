@@ -54,4 +54,8 @@ public interface GameMapper {
 
 	int selectPostCount(String userId);
 
+	void resetEquippedTitles(String userId);
+
+	void updateEquippedTitle(String userId, int titleId);
+
 }

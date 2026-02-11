@@ -48,7 +48,7 @@
 		SELECT COUNT(*)
 		FROM ATTENDANCES
 		WHERE USER_ID = #{userId}
-			AND TRUNC(ATTENDANCE_DATE) = TRUNC(SYSDATE)
+		AND TRUNC(ATTENDANCE_DATE) = TRUNC(SYSDATE)
 	</select>
 	
 	<!-- 출석 체크 기록 -->
@@ -97,7 +97,7 @@
 		SELECT COUNT(*)
 		FROM MEMBER_QUIZZES
 		WHERE USER_ID = #{userId}
-		  AND TRUNC(SOLVED_AT) = TRUNC(SYSDATE)
+		 AND TRUNC(SOLVED_AT) = TRUNC(SYSDATE)
 	</select>
 
 	<!-- 퀴즈 풀이 기록 저장 -->
@@ -146,8 +146,8 @@
 		UPDATE MEMBER_ACHIEVEMENTS
 		SET IS_REWARDED = 'Y'
 		WHERE USER_ID = #{userId}
-			AND ACHIEVEMENT_ID = #{achievementId}
-			AND IS_REWARDED = 'N'
+		AND ACHIEVEMENT_ID = #{achievementId}
+		AND IS_REWARDED = 'N'
 	</update>
 	
 	<insert id="insertMemberAchievement">
@@ -169,7 +169,7 @@
 		SELECT COUNT(*)
 		FROM MEMBER_QUIZZES
 		WHERE USER_ID = #{userId}
-			AND IS_CORRECT = 'Y'
+		AND IS_CORRECT = 'Y'
 	</select>
 	
 	<update id="insertMemberTitle">
@@ -185,12 +185,26 @@
 		SELECT
 			t.TITLE_ID,
 			t.TITLE_NAME,
-			t.TITLE_IMG_URL
+			t.TITLE_IMG_URL,
+			mt.IS_EQUIPPED
 		FROM MEMBER_TITLES mt
 		JOIN TITLES t ON mt.TITLE_ID = t.TITLE_ID
 		WHERE mt.USER_ID = #{userId}
 		ORDER BY mt.GAINED_AT DESC
 	</select>
+	
+	<update id="resetEquippedTitles">
+		UPDATE MEMBER_TITLES
+		SET IS_EQUIPPED = 'N'
+		WHERE USER_ID = #{userId}
+	</update>
+	
+	<update id="updateEquippedTitle">
+		UPDATE MEMBER_TITLES
+		SET IS_EQUIPPED = 'Y'
+		WHERE USER_ID = #{userId}
+		AND TITLE_ID = #{titleId}
+	</update>
 	
 	<select id="selectTotalQuizCount" resultType="_int">
 		SELECT COUNT(*)
@@ -202,6 +216,6 @@
 		SELECT COUNT(*)
 		FROM BOARD
 		WHERE USER_ID = #{userId}
-			AND DELETE_DATE IS NULL
+		AND DELETE_DATE IS NULL
 	</select>
 </mapper>

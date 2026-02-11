@@ -293,4 +293,10 @@ public class GameService {
 		if (postCount >= 100)
 			recordAchievement(userId, ACHIEV_BOARD_100);
 	}
+
+	public void equipTitle(String userId, int titleId) {
+		gameMapper.resetEquippedTitles(userId);
+		gameMapper.updateEquippedTitle(userId, titleId);
+		
+	}
 }

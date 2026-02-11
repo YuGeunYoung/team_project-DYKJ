@@ -26,4 +26,5 @@ public class Member {
 	private Date banLimitDate;
 	private int experience;
 	private int userLevel;
+	private String equippedTitleName;
 }
