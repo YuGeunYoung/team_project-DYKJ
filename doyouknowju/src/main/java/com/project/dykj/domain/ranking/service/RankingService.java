@@ -152,7 +152,7 @@ public class RankingService {
             List<RankingRes> rankingResList = rankingMapper.selectSeasonTop100Ranking("YEARLY", currentYearlySeasonNo);
 
             for (RankingRes rankingRes : rankingResList) {
-                int gainExp = Math.max((100 - (int)rankingRes.getRank() + 1) * 100, 0);
+                int gainExp = Math.max((100 - (int)rankingRes.getRank() + 1) * 1000, 0);
                 gameService.gainExp(rankingRes.getUserId(), gainExp, "YEARLY_RANKING");
             }
 
