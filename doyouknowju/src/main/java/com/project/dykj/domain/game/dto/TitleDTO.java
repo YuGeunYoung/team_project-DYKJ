@@ -15,4 +15,5 @@ public class TitleDTO {
 	private int titleId;
 	private String titleName;
 	private String titleImgUrl;
+	private String isEquipped;
 }

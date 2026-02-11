@@ -168,4 +168,26 @@ public class GameController {
 			return ResponseEntity.status(500).body(Map.of("message", "칭호 정보를 불러오는 데 실패했습니다.", "success", false));
 		}
 	}
+	
+	@PostMapping("/titles/equip")
+	public ResponseEntity<?> equipTitle(@RequestBody Map<String, Object> request, HttpSession session){
+		Member loginUser = (Member) session.getAttribute("loginUser");
+		if(loginUser == null) {
+			return ResponseEntity.status(401).body("로그인이 필요합니다.");
+		}
+		
+		try {
+			int titleId = ((Number) request.get("titleId")).intValue();
+			gameService.equipTitle(loginUser.getUserId(), titleId);
+			
+			//세션 정보 갱신
+			Member updateMember = gameService.getMemberById(loginUser.getUserId());
+			session.setAttribute("loginUser", updateMember);
+			
+			return ResponseEntity.ok(Map.of("message", "칭호가 장착되었습니다.", "success", true));
+		}catch(Exception e) {
+			log.error("칭호 장착 중 오류 발생: ", e);
+			return ResponseEntity.status(500).body(Map.of("message", "칭호 장착에 실패했습니다.", "success", false));
+		}
+	}
 }
