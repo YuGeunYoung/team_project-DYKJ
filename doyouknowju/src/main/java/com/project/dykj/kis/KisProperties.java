@@ -20,6 +20,7 @@ public class KisProperties {
 	private Fid fid = new Fid();
 	private StockInfo stockInfo = new StockInfo();
 	private DailyChart dailyChart = new DailyChart();
+	private IndexChart indexChart = new IndexChart();
 	private MultiPrice multiPrice = new MultiPrice();
 	private RiseFallRank riseFallRank = new RiseFallRank();
 	private MarketCapRank marketCapRank = new MarketCapRank();
@@ -62,6 +63,16 @@ public class KisProperties {
 		private String periodDivCode = "D";
 		/** 0: 수정주가 반영, 1: 수정주가 미반영 */
 		private String orgAdjPrc = "0";
+	}
+
+	@Data
+	public static class IndexChart {
+		private String path;
+		private String trId;
+		/** U: 업종/지수 */
+		private String condMrktDivCode = "U";
+		/** 1: 1분봉(기본) */
+		private String periodDivCode = "1";
 	}
 
 	@Data

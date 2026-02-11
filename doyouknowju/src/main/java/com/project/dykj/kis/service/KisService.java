@@ -7,6 +7,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import io.netty.channel.ChannelOption;
 import io.netty.handler.timeout.ReadTimeoutHandler;
@@ -41,14 +42,17 @@ public class KisService {
 	private final WebClient webClient;
 
 	private static final Duration RANK_CACHE_TTL = Duration.ofSeconds(10);
+	private static final Duration INDEX_CHART_CACHE_TTL = Duration.ofSeconds(20);
 	private final Object volumeRankLock = new Object();
 	private final Object riseFallRankLock = new Object();
 	private final Object marketCapRankLock = new Object();
+	private final Object indexChartLock = new Object();
 	private volatile Cache<KisVolumeRankResponse> volumeRankResponseCache = Cache.empty();
 	private volatile Cache<List<VolumeRankItem>> volumeTop10Cache = Cache.empty();
 	private volatile Cache<List<RiseFallRankItem>> riseRateTop10Cache = Cache.empty();
 	private volatile Cache<List<RiseFallRankItem>> fallRateTop10Cache = Cache.empty();
 	private volatile Cache<List<MarketCapRankItem>> marketCapTop10Cache = Cache.empty();
+	private final Map<String, Cache<Map<?, ?>>> indexChartCache = new ConcurrentHashMap<>();
 
 	/** 메모리 캐시용 Access Token */
 	private volatile String accessToken;
@@ -508,6 +512,55 @@ public class KisService {
 		return response;
 	}
 
+	/** 지수 차트 조회 (코스피=0001, 코스닥=1001) */
+	public Map<?, ?> fetchIndexChart(String indexCode, String start, String end, String periodDivCode) {
+		requireBasicConfig();
+		requireIndexChartConfig();
+
+		if (indexCode == null || indexCode.isBlank()) {
+			throw new IllegalArgumentException("indexCode is required");
+		}
+
+		String token = requireValidAccessToken();
+		String safePeriod = (periodDivCode == null || periodDivCode.isBlank())
+				? properties.getIndexChart().getPeriodDivCode()
+				: periodDivCode;
+		String safeStart = start == null ? "" : start;
+		String safeEnd = end == null ? "" : end;
+		String cacheKey = String.join("|", indexCode.trim(), safeStart, safeEnd, safePeriod);
+
+		Cache<Map<?, ?>> cached = indexChartCache.get(cacheKey);
+		if (cached != null && cached.isValid()) {
+			return cached.value;
+		}
+
+		String uri = UriComponentsBuilder.fromPath(properties.getIndexChart().getPath())
+				.queryParam("FID_COND_MRKT_DIV_CODE", properties.getIndexChart().getCondMrktDivCode())
+				.queryParam("FID_INPUT_ISCD", indexCode)
+				.queryParam("FID_INPUT_DATE_1", safeStart)
+				.queryParam("FID_INPUT_DATE_2", safeEnd)
+				.queryParam("FID_PERIOD_DIV_CODE", safePeriod)
+				.build(true)
+				.toUriString();
+
+		try {
+			Map<?, ?> response = prepareGetRequest(uri, token, properties.getIndexChart().getTrId())
+					.retrieve()
+					.bodyToMono(Map.class)
+					.block(timeout());
+			synchronized (indexChartLock) {
+				indexChartCache.put(cacheKey, new Cache<>(response, Instant.now().plus(INDEX_CHART_CACHE_TTL)));
+			}
+			return response;
+		} catch (WebClientResponseException e) {
+			if (cached != null && cached.value != null) {
+				return cached.value;
+			}
+			logKisError("index-chart", uri, properties.getIndexChart().getTrId(), e);
+			throw e;
+		}
+	}
+
 	/** 복수 종목 현재가 조회 */
 	// 복수 종목 현재가를 한 번에 조회합니다.
 	public Map<?, ?> fetchMultiplePrices(List<String> stockIds) {
@@ -634,6 +687,19 @@ public class KisService {
 		}
 	}
 
+	// 지수 차트 API 설정 유효성 검증
+	private void requireIndexChartConfig() {
+		if (properties.getIndexChart() == null) {
+			throw new IllegalStateException("kis.index-chart is required");
+		}
+		if (properties.getIndexChart().getPath() == null || properties.getIndexChart().getPath().isBlank()) {
+			throw new IllegalStateException("kis.index-chart.path is required");
+		}
+		if (properties.getIndexChart().getTrId() == null || properties.getIndexChart().getTrId().isBlank()) {
+			throw new IllegalStateException("kis.index-chart.tr-id is required");
+		}
+	}
+
 	// 등락률 랭킹 API 설정 유효성 검증
 	private void requireRiseFallRankConfig() {
 		if (properties.getRiseFallRank() == null) {
@@ -731,6 +797,4 @@ public class KisService {
 		}
 	}
 }
-
-
 

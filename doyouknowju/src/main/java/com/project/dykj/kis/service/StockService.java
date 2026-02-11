@@ -67,6 +67,18 @@ public class StockService {
 		return kisService.fetchDailyChart(id, start, end, periodDivCode);
 	}
 
+	@Transactional(readOnly = true)
+	public Map<?, ?> getKospiChart(String start, String end, String periodDivCode) {
+		String period = (periodDivCode == null || periodDivCode.isBlank()) ? "1" : periodDivCode;
+		return kisService.fetchIndexChart("0001", start, end, period);
+	}
+
+	@Transactional(readOnly = true)
+	public Map<?, ?> getKosdaqChart(String start, String end, String periodDivCode) {
+		String period = (periodDivCode == null || periodDivCode.isBlank()) ? "1" : periodDivCode;
+		return kisService.fetchIndexChart("1001", start, end, period);
+	}
+
 	/**
 	 * 리스트 화면용 복수 현재가 조회
 	 */

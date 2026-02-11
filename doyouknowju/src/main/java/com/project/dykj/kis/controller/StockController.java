@@ -151,6 +151,26 @@ public class StockController {
     }
 
     /** 종목 상세 묶음 조회 (master + price + chart) */
+    /** 코스피 지수 차트 조회 (0001) */
+    @GetMapping("/index/kospi/chart")
+    public Map<?, ?> getKospiChart(
+            @RequestParam(required = false) String start,
+            @RequestParam(required = false) String end,
+            @RequestParam(required = false) String period
+    ) {
+        return stockService.getKospiChart(start, end, period);
+    }
+
+    /** 코스닥 지수 차트 조회 (1001) */
+    @GetMapping("/index/kosdaq/chart")
+    public Map<?, ?> getKosdaqChart(
+            @RequestParam(required = false) String start,
+            @RequestParam(required = false) String end,
+            @RequestParam(required = false) String period
+    ) {
+        return stockService.getKosdaqChart(start, end, period);
+    }
+
     @GetMapping("/{stockId}/detail")
     public Map<String, Object> getDetail(
             @PathVariable String stockId,
