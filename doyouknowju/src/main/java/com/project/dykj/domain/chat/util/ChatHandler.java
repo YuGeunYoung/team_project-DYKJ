@@ -64,7 +64,7 @@ public class ChatHandler extends TextWebSocketHandler {
                 // [추가] 칭호 정보 설정
                 chatMessage.setUserTitle(sender.getEquippedTitleName());
                 chatMessage.setUserTitleColor(sender.getEquippedTitleColor());
-                chatMessage.setUserTitleImgUrl(sender.getEquippedTitleImgUrl());
+                // chatMessage.setUserTitleImgUrl(sender.getEquippedTitleImgUrl());
             }
 
             chatMessage.setSendTime(new Date());

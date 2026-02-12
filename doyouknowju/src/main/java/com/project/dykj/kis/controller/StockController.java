@@ -12,8 +12,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.project.dykj.kis.model.vo.NaverTradeValueRankItem;
-import com.project.dykj.kis.service.NaverRankingService;
 import com.project.dykj.domain.member.entity.Member;
 import com.project.dykj.kis.model.vo.KisDailyChartResponse;
 import com.project.dykj.kis.model.vo.MarketCapRankItem;
@@ -24,6 +22,7 @@ import com.project.dykj.kis.model.vo.StockSuggestItem;
 import com.project.dykj.kis.model.vo.StockUpsertRequest;
 import com.project.dykj.kis.model.vo.VolumeRankItem;
 import com.project.dykj.kis.ranking.MarketRankingService;
+import com.project.dykj.kis.service.NaverIndexChartService;
 import com.project.dykj.kis.service.NaverRankingService;
 import com.project.dykj.kis.service.StockService;
 
@@ -36,15 +35,18 @@ public class StockController {
     private final StockService stockService;
     private final MarketRankingService marketRankingService;
     private final NaverRankingService naverRankingService;
+    private final NaverIndexChartService naverIndexChartService;
 
     public StockController(
             StockService stockService,
             MarketRankingService marketRankingService,
-            NaverRankingService naverRankingService
+            NaverRankingService naverRankingService,
+            NaverIndexChartService naverIndexChartService
     ) {
         this.stockService = stockService;
         this.marketRankingService = marketRankingService;
         this.naverRankingService = naverRankingService;
+        this.naverIndexChartService = naverIndexChartService;
     }
 
     /** 거래량 TOP10 조회 */
@@ -153,22 +155,22 @@ public class StockController {
     /** 종목 상세 묶음 조회 (master + price + chart) */
     /** 코스피 지수 차트 조회 (0001) */
     @GetMapping("/index/kospi/chart")
-    public Map<?, ?> getKospiChart(
-            @RequestParam(required = false) String start,
-            @RequestParam(required = false) String end,
-            @RequestParam(required = false) String period
-    ) {
-        return stockService.getKospiChart(start, end, period);
+    public Map<?, ?> getKospiChart() {
+        Map<String, Object> naver = naverIndexChartService.getKospiChart();
+        if (naver != null && !naver.isEmpty()) {
+            return naver;
+        }
+        return Map.of("rt_cd", "1", "msg_cd", "NO_DATA", "msg1", "코스피 차트 데이터가 없습니다.", "output", List.of());
     }
 
     /** 코스닥 지수 차트 조회 (1001) */
     @GetMapping("/index/kosdaq/chart")
-    public Map<?, ?> getKosdaqChart(
-            @RequestParam(required = false) String start,
-            @RequestParam(required = false) String end,
-            @RequestParam(required = false) String period
-    ) {
-        return stockService.getKosdaqChart(start, end, period);
+    public Map<?, ?> getKosdaqChart() {
+        Map<String, Object> naver = naverIndexChartService.getKosdaqChart();
+        if (naver != null && !naver.isEmpty()) {
+            return naver;
+        }
+        return Map.of("rt_cd", "1", "msg_cd", "NO_DATA", "msg1", "코스닥 차트 데이터가 없습니다.", "output", List.of());
     }
 
     @GetMapping("/{stockId}/detail")

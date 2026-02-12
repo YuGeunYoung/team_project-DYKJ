@@ -1,4 +1,4 @@
-package com.project.dykj.kis;
+﻿package com.project.dykj.kis;
 
 import java.time.Duration;
 
@@ -20,7 +20,6 @@ public class KisProperties {
 	private Fid fid = new Fid();
 	private StockInfo stockInfo = new StockInfo();
 	private DailyChart dailyChart = new DailyChart();
-	private IndexChart indexChart = new IndexChart();
 	private MultiPrice multiPrice = new MultiPrice();
 	private RiseFallRank riseFallRank = new RiseFallRank();
 	private MarketCapRank marketCapRank = new MarketCapRank();
@@ -59,20 +58,10 @@ public class KisProperties {
 	public static class DailyChart {
 		private String path;
 		private String trId;
-		/** D: 일, W: 주, M: 월 */
+		/** D: ?? W: 二? M: ??*/
 		private String periodDivCode = "D";
-		/** 0: 수정주가 반영, 1: 수정주가 미반영 */
-		private String orgAdjPrc = "0";
-	}
-
-	@Data
-	public static class IndexChart {
-		private String path;
-		private String trId;
-		/** U: 업종/지수 */
-		private String condMrktDivCode = "U";
-		/** 1: 1분봉(기본) */
-		private String periodDivCode = "1";
+	/** 0: ?섏젙二쇨? 諛섏쁺, 1: ?섏젙二쇨? 誘몃컲??*/
+	private String orgAdjPrc = "0";
 	}
 
 	@Data
@@ -85,11 +74,11 @@ public class KisProperties {
 	public static class RiseFallRank {
 		private String path;
 		private String trId;
-		/** 조건 화면 분류 코드 (기본 20170) */
+		/** 議곌굔 ?붾㈃ 遺꾨쪟 肄붾뱶 (湲곕낯 20170) */
 		private String condScrDivCode = "20170";
-		/** 조건 시장 분류 코드 (J: KRX, NX: NXT) */
+		/** 議곌굔 ?쒖옣 遺꾨쪟 肄붾뱶 (J: KRX, NX: NXT) */
 		private String condMrktDivCode = "J";
-		/** 입력 종목코드 (0000: 전체, 0001: 코스피, 1001: 코스닥) */
+		/** ?낅젰 醫낅ぉ肄붾뱶 (0000: ?꾩껜, 0001: 肄붿뒪?? 1001: 肄붿뒪?? */
 		private String inputIscd = "0000";
 	}
 
@@ -97,27 +86,28 @@ public class KisProperties {
 	public static class MarketCapRank {
 		private String path;
 		private String trId;
-		/** 조건 화면 분류 코드 (기본 20174) */
+		/** 議곌굔 ?붾㈃ 遺꾨쪟 肄붾뱶 (湲곕낯 20174) */
 		private String condScrDivCode = "20174";
-		/** 조건 시장 분류 코드 (J: KRX, NX: NXT) */
+		/** 議곌굔 ?쒖옣 遺꾨쪟 肄붾뱶 (J: KRX, NX: NXT) */
 		private String condMrktDivCode = "J";
-		/** 입력 종목코드 (0000: 전체, 0001: 코스피, 1001: 코스닥) */
+		/** ?낅젰 醫낅ぉ肄붾뱶 (0000: ?꾩껜, 0001: 肄붿뒪?? 1001: 肄붿뒪?? */
 		private String inputIscd = "0000";
 	}
 
 	@Data
 	public static class Top10WebSocket {
-		/** WebSocket Top10 사용 여부 */
+		/** WebSocket Top10 ?ъ슜 ?щ? */
 		private boolean enabled = false;
-		/** Approval key 발급 경로 */
+		/** Approval key 諛쒓툒 寃쎈줈 */
 		private String approvalPath = "/oauth2/Approval";
 		/** KIS WebSocket URL (wss://...) */
 		private String wsUrl;
-		/** 접속 후 전송할 구독 전문 메시지(JSON 문자열) */
+		/** ?묒냽 ???꾩넚??援щ룆 ?꾨Ц 硫붿떆吏(JSON 臾몄옄?? */
 		private String subscribeMessage;
-		/** 재연결 지연(초) */
+		/** ?ъ뿰寃?吏??珥? */
 		private long reconnectDelaySeconds = 3;
-		/** stale 기준 시간(초): 해당 시간 동안 미수신 시 stale로 간주 */
+		/** stale 湲곗? ?쒓컙(珥?: ?대떦 ?쒓컙 ?숈븞 誘몄닔????stale濡?媛꾩＜ */
 		private long staleAfterSeconds = 20;
 	}
 }
+
