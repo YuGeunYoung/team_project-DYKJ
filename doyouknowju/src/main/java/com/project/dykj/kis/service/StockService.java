@@ -1,4 +1,4 @@
-package com.project.dykj.kis.service;
+﻿package com.project.dykj.kis.service;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -21,10 +21,10 @@ import com.project.dykj.kis.model.vo.StockUpsertRequest;
 public class StockService {
 
 	/**
-	 * STOCKS(DB)와 KIS API를 연결하는 서비스입니다.
-	 * - 자동완성/검색/마스터 조회
-	 * - 단건 현재가/일봉 차트 조회
-	 * - 복수 현재가 조회(리스트 화면 최적화)
+	 * STOCKS(DB)? KIS API瑜??곌껐?섎뒗 ?쒕퉬?ㅼ엯?덈떎.
+	 * - ?먮룞?꾩꽦/寃??留덉뒪??議고쉶
+	 * - ?④굔 ?꾩옱媛/?쇰큺 李⑦듃 議고쉶
+	 * - 蹂듭닔 ?꾩옱媛 議고쉶(由ъ뒪???붾㈃ 理쒖쟻??
 	 */
 	private static final Pattern STOCK_CODE_PATTERN = Pattern.compile("^(?:A)?\\d{6}$");
 
@@ -32,7 +32,7 @@ public class StockService {
 
 	private final SqlSessionTemplate sqlSession;
 	private final KisService kisService;
-	private final GameService gameService; //[taek]: 도전과제 달성 확인용
+	private final GameService gameService; //[taek]: ?꾩쟾怨쇱젣 ?ъ꽦 ?뺤씤??
 
 	public StockService(SqlSessionTemplate sqlSession, KisService kisService, GameService gameService) {
 		this.sqlSession = sqlSession;
@@ -67,20 +67,8 @@ public class StockService {
 		return kisService.fetchDailyChart(id, start, end, periodDivCode);
 	}
 
-	@Transactional(readOnly = true)
-	public Map<?, ?> getKospiChart(String start, String end, String periodDivCode) {
-		String period = (periodDivCode == null || periodDivCode.isBlank()) ? "1" : periodDivCode;
-		return kisService.fetchIndexChart("0001", start, end, period);
-	}
-
-	@Transactional(readOnly = true)
-	public Map<?, ?> getKosdaqChart(String start, String end, String periodDivCode) {
-		String period = (periodDivCode == null || periodDivCode.isBlank()) ? "1" : periodDivCode;
-		return kisService.fetchIndexChart("1001", start, end, period);
-	}
-
 	/**
-	 * 리스트 화면용 복수 현재가 조회
+	 * 由ъ뒪???붾㈃??蹂듭닔 ?꾩옱媛 議고쉶
 	 */
 	@Transactional(readOnly = true)
 	public Map<String, Object> getMultiplePrices(List<String> stockIds) {
@@ -198,7 +186,7 @@ public class StockService {
 	}
 
 	/**
-	 * 자동완성(prefix 검색)
+	 * ?먮룞?꾩꽦(prefix 寃??
 	 */
 	@Transactional(readOnly = true)
 	public List<StockSuggestItem> suggest(String q, int limit) {
@@ -214,11 +202,11 @@ public class StockService {
 	}
 
 	/**
-	 * 검색 결과(contains 검색)
+	 * 寃??寃곌낵(contains 寃??
 	 */
 	@Transactional(readOnly = true)
 	public List<StockSearchItem> search(String q, int page, int size, String userId) {
-		// 검색결과 페이지: contains 검색 + 페이지네이션
+		// 寃?됯껐怨??섏씠吏: contains 寃??+ ?섏씠吏?ㅼ씠??
 		String query = q == null ? "" : q.trim();
 		if (query.isEmpty()) {
 			return List.of();
@@ -239,3 +227,5 @@ public class StockService {
 		return sqlSession.selectList(NS_STOCK + "search", params);
 	}
 }
+
+

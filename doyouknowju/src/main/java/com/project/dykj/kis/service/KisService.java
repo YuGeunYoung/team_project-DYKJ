@@ -1,4 +1,4 @@
-package com.project.dykj.kis.service;
+﻿package com.project.dykj.kis.service;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -7,7 +7,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
 import io.netty.channel.ChannelOption;
 import io.netty.handler.timeout.ReadTimeoutHandler;
@@ -37,27 +36,24 @@ public class KisService {
 
 	private static final Logger log = LoggerFactory.getLogger(KisService.class);
 
-	/** KIS API 설정/요청을 담당하는 코어 서비스 */
+	/** KIS API 요청/응답을 처리하는 코어 서비스 */
 	private final KisProperties properties;
 	private final WebClient webClient;
 
 	private static final Duration RANK_CACHE_TTL = Duration.ofSeconds(10);
-	private static final Duration INDEX_CHART_CACHE_TTL = Duration.ofSeconds(20);
 	private final Object volumeRankLock = new Object();
 	private final Object riseFallRankLock = new Object();
 	private final Object marketCapRankLock = new Object();
-	private final Object indexChartLock = new Object();
 	private volatile Cache<KisVolumeRankResponse> volumeRankResponseCache = Cache.empty();
 	private volatile Cache<List<VolumeRankItem>> volumeTop10Cache = Cache.empty();
 	private volatile Cache<List<RiseFallRankItem>> riseRateTop10Cache = Cache.empty();
 	private volatile Cache<List<RiseFallRankItem>> fallRateTop10Cache = Cache.empty();
 	private volatile Cache<List<MarketCapRankItem>> marketCapTop10Cache = Cache.empty();
-	private final Map<String, Cache<Map<?, ?>>> indexChartCache = new ConcurrentHashMap<>();
 
-	/** 메모리 캐시용 Access Token */
+	/** 메모리 캐시 Access Token */
 	private volatile String accessToken;
 
-	// 생성자: WebClient 타임아웃/커넥터를 초기화합니다.
+	// WebClient(타임아웃 포함) 초기화
 	public KisService(KisProperties properties) {
 		this.properties = properties;
 
@@ -75,7 +71,6 @@ public class KisService {
 	}
 
 	/** KIS access_token 발급/갱신 (client_credentials) */
-	// KIS OAuth 토큰을 발급(재발급)합니다.
 	private synchronized void refreshAccessToken() {
 		requireBasicConfig();
 
@@ -97,8 +92,7 @@ public class KisService {
 		}
 	}
 
-	/** accessToken이 없으면 자동 발급 후 반환 */
-	// 현재 토큰을 반환하고 없으면 refreshAccessToken()으로 발급합니다.
+	/** accessToken이 없으면 발급 후 반환 */
 	private String getValidAccessToken() {
 		String token = this.accessToken;
 		if (token == null || token.isBlank()) {
@@ -113,8 +107,7 @@ public class KisService {
 		return token;
 	}
 
-	/** 거래량 Top10 조회 */
-	// 거래량 랭킹 Top10을 반환합니다(짧은 TTL 캐시 사용).
+	/** 거래량 Top10 조회 (TTL 캐시 사용) */
 	public List<VolumeRankItem> getVolumeTop10() {
 		Cache<List<VolumeRankItem>> cached = this.volumeTop10Cache;
 		if (cached.isValid()) return cached.value;
@@ -148,7 +141,7 @@ public class KisService {
 		}
 	}
 
-	// 거래량 원본 응답 캐시를 조회/갱신합니다.(10초)
+	// 거래량 원본 응답 캐시 조회/갱신 (10초)
 	private KisVolumeRankResponse getVolumeRankResponseCached() {
 		Cache<KisVolumeRankResponse> cached = this.volumeRankResponseCache;
 		if (cached.isValid()) return cached.value;
@@ -163,7 +156,7 @@ public class KisService {
 		}
 	}
 
-	// KIS 거래량 순위 API를 호출해 원본 응답을 가져옵니다.
+	// KIS 거래량 순위 API 원본 응답 조회
 	private KisVolumeRankResponse fetchVolumeRank() {
 		requireBasicConfig();
 		requireVolumeRankConfig();
@@ -206,8 +199,7 @@ public class KisService {
 		return response;
 	}
 
-	/** 상승률 Top10 조회 (종가 대비) */
-	// 상승률 랭킹 Top10을 반환합니다.
+	/** 상승률 Top10 조회 */
 	public List<RiseFallRankItem> getRiseRateTop10() {
 		Cache<List<RiseFallRankItem>> cached = this.riseRateTop10Cache;
 		if (cached.isValid()) return cached.value;
@@ -227,8 +219,7 @@ public class KisService {
 		}
 	}
 
-	/** 하락률 Top10 조회 (종가 대비) */
-	// 하락률 랭킹 Top10을 반환합니다.
+	/** 하락률 Top10 조회 */
 	public List<RiseFallRankItem> getFallRateTop10() {
 		Cache<List<RiseFallRankItem>> cached = this.fallRateTop10Cache;
 		if (cached.isValid()) return cached.value;
@@ -248,8 +239,7 @@ public class KisService {
 		}
 	}
 
-	/** 상승/하락 랭킹 공통 조회 */
-	// KIS 등락률 순위 API 호출 후 서버 기준으로 다시 정렬해 Top10 반환합니다.
+	/** 상승/하락 공통 랭킹 조회 */
 	private List<RiseFallRankItem> fetchRiseFallTop10(String rankSortClsCode, String prcClsCode) {
 		requireBasicConfig();
 		requireRiseFallRankConfig();
@@ -297,7 +287,7 @@ public class KisService {
 			Comparator<KisRiseFallRankResponse.OutputItem> bySignedRate = Comparator
 					.comparingDouble(it -> parseDoubleSafe(normalizeSignedChangeRate(it.getPrdyCtrt(), it.getPrdyVrssSign())));
 			if ("0".equals(rankSortClsCode)) {
-				bySignedRate = bySignedRate.reversed(); // 상승률 Top
+				bySignedRate = bySignedRate.reversed(); // 상승률 내림차순
 			}
 
 			return output.stream()
@@ -326,7 +316,6 @@ public class KisService {
 	}
 
 	/** 시가총액 Top10 조회 */
-	// 시가총액 랭킹 Top10을 반환합니다.
 	public List<MarketCapRankItem> getMarketCapTop10() {
 		Cache<List<MarketCapRankItem>> cached = this.marketCapTop10Cache;
 		if (cached.isValid()) return cached.value;
@@ -346,7 +335,7 @@ public class KisService {
 		}
 	}
 
-	// KIS 시가총액 순위 API를 호출해 Top10을 반환합니다.
+	// KIS 시가총액 순위 API 조회 후 Top10 반환
 	private List<MarketCapRankItem> fetchMarketCapTop10() {
 		requireBasicConfig();
 		requireMarketCapRankConfig();
@@ -429,7 +418,7 @@ public class KisService {
 		}
 	}
 
-	// 여러 후보 키 중 첫 번째 유효 문자열 값을 반환합니다.
+	// 여러 후보 중 첫 번째 유효 문자열 반환
 	private static String pick(Map<?, ?> map, String... keys) {
 		if (map == null || keys == null) return null;
 		for (String key : keys) {
@@ -442,7 +431,7 @@ public class KisService {
 		return null;
 	}
 
-	// 단건 종목 현재가를 조회합니다.
+	// 단건 현재가 조회
 	public Map<?, ?> getStockPrice(String stockCode) {
 		requireBasicConfig();
 
@@ -466,8 +455,7 @@ public class KisService {
 		}
 	}
 
-	/** 차트 조회 (start/end: YYYYMMDD) */
-	// 일/주/월 차트 데이터를 조회합니다.
+	/** 일봉 차트 조회 (start/end: YYYYMMDD) */
 	public KisDailyChartResponse fetchDailyChart(String stockId, String start, String end, String periodDivCode) {
 		requireBasicConfig();
 		requireDailyChartConfig();
@@ -512,57 +500,7 @@ public class KisService {
 		return response;
 	}
 
-	/** 지수 차트 조회 (코스피=0001, 코스닥=1001) */
-	public Map<?, ?> fetchIndexChart(String indexCode, String start, String end, String periodDivCode) {
-		requireBasicConfig();
-		requireIndexChartConfig();
-
-		if (indexCode == null || indexCode.isBlank()) {
-			throw new IllegalArgumentException("indexCode is required");
-		}
-
-		String token = requireValidAccessToken();
-		String safePeriod = (periodDivCode == null || periodDivCode.isBlank())
-				? properties.getIndexChart().getPeriodDivCode()
-				: periodDivCode;
-		String safeStart = start == null ? "" : start;
-		String safeEnd = end == null ? "" : end;
-		String cacheKey = String.join("|", indexCode.trim(), safeStart, safeEnd, safePeriod);
-
-		Cache<Map<?, ?>> cached = indexChartCache.get(cacheKey);
-		if (cached != null && cached.isValid()) {
-			return cached.value;
-		}
-
-		String uri = UriComponentsBuilder.fromPath(properties.getIndexChart().getPath())
-				.queryParam("FID_COND_MRKT_DIV_CODE", properties.getIndexChart().getCondMrktDivCode())
-				.queryParam("FID_INPUT_ISCD", indexCode)
-				.queryParam("FID_INPUT_DATE_1", safeStart)
-				.queryParam("FID_INPUT_DATE_2", safeEnd)
-				.queryParam("FID_PERIOD_DIV_CODE", safePeriod)
-				.build(true)
-				.toUriString();
-
-		try {
-			Map<?, ?> response = prepareGetRequest(uri, token, properties.getIndexChart().getTrId())
-					.retrieve()
-					.bodyToMono(Map.class)
-					.block(timeout());
-			synchronized (indexChartLock) {
-				indexChartCache.put(cacheKey, new Cache<>(response, Instant.now().plus(INDEX_CHART_CACHE_TTL)));
-			}
-			return response;
-		} catch (WebClientResponseException e) {
-			if (cached != null && cached.value != null) {
-				return cached.value;
-			}
-			logKisError("index-chart", uri, properties.getIndexChart().getTrId(), e);
-			throw e;
-		}
-	}
-
 	/** 복수 종목 현재가 조회 */
-	// 복수 종목 현재가를 한 번에 조회합니다.
 	public Map<?, ?> fetchMultiplePrices(List<String> stockIds) {
 		requireBasicConfig();
 		requireMultiPriceConfig();
@@ -597,7 +535,7 @@ public class KisService {
 		}
 	}
 
-	// KIS API 오류를 공통 포맷으로 로깅합니다.
+	// KIS API 오류 공통 로깅
 	private void logKisError(String apiName, String uri, String trId, WebClientResponseException e) {
 		String body = e.getResponseBodyAsString();
 		if (body != null && body.length() > 2000) {
@@ -613,7 +551,7 @@ public class KisService {
 		);
 	}
 
-	// GET 요청 공통 헤더(appkey/appsecret/tr_id 등)를 세팅합니다.
+	// GET 요청 공통 헤더(appkey/appsecret/tr_id 등) 세팅
 	private WebClient.RequestHeadersSpec<?> prepareGetRequest(String uri, String token, String trId) {
 		return webClient.get()
 				.uri(uri)
@@ -626,7 +564,7 @@ public class KisService {
 				.header("custtype", properties.getCusttype());
 	}
 
-	// 토큰이 비어있으면 예외를 던지고, 아니면 토큰을 반환합니다.
+	// 토큰이 비어 있으면 예외 발생
 	private String requireValidAccessToken() {
 		String token = getValidAccessToken();
 		if (token == null || token.isBlank()) {
@@ -635,7 +573,7 @@ public class KisService {
 		return token;
 	}
 
-	// KIS 공통 설정(base-url/appkey/appsecret) 유효성 검증
+	// KIS 공통 설정(base-url/appkey/appsecret) 검증
 	private void requireBasicConfig() {
 		if (properties.getBaseUrl() == null || properties.getBaseUrl().isBlank()) {
 			throw new IllegalStateException("kis.base-url is required");
@@ -648,7 +586,7 @@ public class KisService {
 		}
 	}
 
-	// 거래량 랭킹 API 설정 유효성 검증
+	// 거래량 랭킹 API 설정 검증
 	private void requireVolumeRankConfig() {
 		if (properties.getVolumeRank() == null) {
 			throw new IllegalStateException("kis.volume-rank is required");
@@ -661,7 +599,7 @@ public class KisService {
 		}
 	}
 
-	// 차트 API 설정 유효성 검증
+	// 일봉 차트 API 설정 검증
 	private void requireDailyChartConfig() {
 		if (properties.getDailyChart() == null) {
 			throw new IllegalStateException("kis.daily-chart is required");
@@ -674,7 +612,7 @@ public class KisService {
 		}
 	}
 
-	// 복수 현재가 API 설정 유효성 검증
+	// 다중 현재가 API 설정 검증
 	private void requireMultiPriceConfig() {
 		if (properties.getMultiPrice() == null) {
 			throw new IllegalStateException("kis.multi-price is required");
@@ -687,20 +625,7 @@ public class KisService {
 		}
 	}
 
-	// 지수 차트 API 설정 유효성 검증
-	private void requireIndexChartConfig() {
-		if (properties.getIndexChart() == null) {
-			throw new IllegalStateException("kis.index-chart is required");
-		}
-		if (properties.getIndexChart().getPath() == null || properties.getIndexChart().getPath().isBlank()) {
-			throw new IllegalStateException("kis.index-chart.path is required");
-		}
-		if (properties.getIndexChart().getTrId() == null || properties.getIndexChart().getTrId().isBlank()) {
-			throw new IllegalStateException("kis.index-chart.tr-id is required");
-		}
-	}
-
-	// 등락률 랭킹 API 설정 유효성 검증
+	// 등락률 랭킹 API 설정 검증
 	private void requireRiseFallRankConfig() {
 		if (properties.getRiseFallRank() == null) {
 			throw new IllegalStateException("kis.rise-fall-rank is required");
@@ -713,7 +638,7 @@ public class KisService {
 		}
 	}
 
-	// 시가총액 랭킹 API 설정 유효성 검증
+	// 시가총액 랭킹 API 설정 검증
 	private void requireMarketCapRankConfig() {
 		if (properties.getMarketCapRank() == null) {
 			throw new IllegalStateException("kis.market-cap-rank is required");
@@ -726,13 +651,13 @@ public class KisService {
 		}
 	}
 
-	// 랭킹 요청 타임아웃 기본값(없으면 5초)
+	// 요청 타임아웃 기본값(5초)
 	private Duration timeout() {
 		Duration t = properties.getVolumeRank().getTimeout();
 		return t == null ? Duration.ofSeconds(5) : t;
 	}
 
-	// 문자열을 int로 변환(실패 시 MAX_VALUE)
+	// 문자열 → int 변환(실패 시 MAX_VALUE)
 	private static int parseIntSafe(String value) {
 		try {
 			return Integer.parseInt(value);
@@ -741,7 +666,7 @@ public class KisService {
 		}
 	}
 
-	// 문자열을 double로 변환(실패 시 음의 무한대)
+	// 문자열 → double 변환(실패 시 음의 무한대)
 	private static double parseDoubleSafe(String value) {
 		try {
 			if (value == null) return Double.NEGATIVE_INFINITY;
@@ -753,18 +678,17 @@ public class KisService {
 		}
 	}
 
-	// 상승 부호 여부 판별
+	// 상승 부호 여부 확인
 	private static boolean isRiseSign(String signCode) {
 		return "1".equals(signCode) || "2".equals(signCode);
 	}
 
-	// 하락 부호 여부 판별
+	// 하락 부호 여부 확인
 	private static boolean isFallSign(String signCode) {
 		return "4".equals(signCode) || "5".equals(signCode);
 	}
 
-	/** 등락 부호(sign) 기준으로 등락률 부호를 정규화 */
-	// 등락률 문자열에 sign 코드를 반영해 부호를 정규화합니다.
+	/** sign 코드 기준으로 등락률 부호를 정규화 */
 	private static String normalizeSignedChangeRate(String rawRate, String signCode) {
 		if (rawRate == null) return null;
 		String cleaned = rawRate.trim();
@@ -797,4 +721,5 @@ public class KisService {
 		}
 	}
 }
+
 
