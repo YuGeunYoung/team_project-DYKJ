@@ -21,4 +21,11 @@
         WHERE USER_ID = #{userId}
     </select>
 
+    <select id="getHoldingTotalCountByUserIdAndStockId" resultType="long" parameterType="string">
+        SELECT 
+            NVL(SUM(TOTAL_COUNT), 0)
+        FROM HOLDINGS
+        WHERE USER_ID = #{userId}
+        AND STOCK_ID = #{stockId}
+    </select>
 </mapper>

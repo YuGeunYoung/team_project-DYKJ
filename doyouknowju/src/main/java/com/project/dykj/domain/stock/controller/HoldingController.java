@@ -21,4 +21,10 @@ public class HoldingController {
     public ResponseEntity<?> getHoldingsByUserId(@PathVariable String userId) {
         return ResponseEntity.ok(holdingService.getHoldingsByUserId(userId));
     }
+
+    // 특정 유저의 특정 종목 보유 주식 현황 가져오기
+    @GetMapping("/{userId}/{stockId}")
+    public ResponseEntity<?> getHoldingByUserIdAndStockId(@PathVariable String userId, @PathVariable String stockId) {
+        return ResponseEntity.ok(holdingService.getHoldingTotalCountByUserIdAndStockId(userId, stockId));
+    }
 }
