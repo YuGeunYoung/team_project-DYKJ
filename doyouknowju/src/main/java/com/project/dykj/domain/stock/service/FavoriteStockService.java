@@ -6,6 +6,7 @@ import java.util.Map;
 
 import org.springframework.stereotype.Service;
 
+import com.project.dykj.domain.game.service.GameService;
 import com.project.dykj.domain.stock.dto.req.UserIdAndStockIdReq;
 import com.project.dykj.domain.stock.dto.res.GetFavoriteStocksRes;
 import com.project.dykj.domain.stock.mapper.FavoriteStockMapper;
@@ -19,9 +20,19 @@ public class FavoriteStockService {
 
     private final StockService stockService;
     private final FavoriteStockMapper favoriteStockMapper;
+    private final GameService gameService;
 
     public int addFavorite(UserIdAndStockIdReq req) {
-        return favoriteStockMapper.addFavorite(req);
+    	//[taek] 관심 등록 도전과제 확인
+    	int result = favoriteStockMapper.addFavorite(req);
+    	if(result > 0) {
+    		try {
+    			gameService.checkFavoriteStockAchievements(req.getUserId());
+    		}catch(Exception e) {
+    			e.printStackTrace();
+    		}
+    	}
+    	return result;
     }
 
     public int deleteFavorite(UserIdAndStockIdReq req) {

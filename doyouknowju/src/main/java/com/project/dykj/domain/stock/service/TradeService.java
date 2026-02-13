@@ -3,7 +3,6 @@ package com.project.dykj.domain.stock.service;
 import java.util.List;
 import java.util.Optional;
 
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -92,9 +91,15 @@ public class TradeService {
         }
         
         // [taek] : 도전과제 달성 체크
-        gameService.recordAchievement(tradeReq.getUserId(), 3);
-        gameService.checkTradeAchievements(tradeReq.getUserId());
-
+        try {
+            gameService.checkFirstTradeAchievement(tradeReq.getUserId());
+            gameService.checkTradeAchievements(tradeReq.getUserId());
+            gameService.checkTransactionAmountAchievements(tradeReq.getUserId(),
+                    tradeReq.getStockPrice() * tradeReq.getTradeCount());
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        
         // 4. 결과 리턴
         return TradeRes.builder()
                     .afterBalance(tradeReq.getAfterBalance())
@@ -120,6 +125,17 @@ public class TradeService {
         // 만약 주식 보유 개수가 판매하고자 하는 개수보다 적다면 NOT_ENOUGH_STOCK 에러 발생
         if (holding.isEmpty() || tradeReq.getTradeCount() > holding.get().getTotalCount()) {
             throw new BusinessException(ErrorCode.NOT_ENOUGH_HOLDING);
+        }
+        
+        // [taek] 수익률 1% 이상 매도 도전과제 확인
+        try {
+            gameService.checkProfitAchievement(
+                    tradeReq.getUserId(),
+                    holding.get().getTotalPrice(),
+                    holding.get().getTotalCount(),
+                    tradeReq.getStockPrice());
+        } catch (Exception e) {
+            e.printStackTrace();
         }
 
         // 거래 내역 추가
@@ -147,7 +163,6 @@ public class TradeService {
             throw new BusinessException(ErrorCode.FAIL_TO_TRADE);
         }
 
-
         // 잔액 업데이트
         int result3 = tradeMapper.updateBalance(tradeReq);
 
@@ -155,9 +170,16 @@ public class TradeService {
             throw new BusinessException(ErrorCode.FAIL_TO_TRADE);
         }
         
-        //[taek] : 누적 매매 도전과제 달성 확인
-        gameService.checkTradeAchievements(tradeReq.getUserId());
-
+        // [taek] : 누적 매매, 보유 포인트, 거래 금액 도전과제 달성 확인
+        try {
+            gameService.checkTradeAchievements(tradeReq.getUserId());
+            gameService.checkWealthAchievements(tradeReq.getUserId(), tradeReq.getAfterBalance());
+            gameService.checkTransactionAmountAchievements(tradeReq.getUserId(),
+                    tradeReq.getStockPrice() * tradeReq.getTradeCount());
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        
         // 결과 리턴
         return TradeRes.builder()
                     .afterBalance(tradeReq.getAfterBalance())

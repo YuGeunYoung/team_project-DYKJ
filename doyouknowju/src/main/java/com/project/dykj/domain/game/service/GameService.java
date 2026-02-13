@@ -31,7 +31,9 @@ public class GameService {
 	
 	private static final int ACHIEV_FIRST_ATTENDANCE = 1;
 	private static final int ACHIEV_FIRST_QUIZ = 2;
+	private static final int ACHIEV_FIRST_TRADE = 3;
 	private static final int ACHIEV_FIRST_FAVORITE = 4;
+	private static final int ACHIEV_PROFIT_1 = 5;
 	// 누적 출석 도전과제 ID
 	private static final int ACHIEV_ATTENDANCE_7 = 9;
 	private static final int ACHIEV_ATTENDANCE_30 = 10;
@@ -48,6 +50,11 @@ public class GameService {
     private static final int ACHIEV_TRADE_100 = 19;
     private static final int ACHIEV_TRADE_500 = 20;
     private static final int ACHIEV_TRADE_1000 = 21;
+    // 관심 등록 도전과제 ID
+    private static final int ACHIEV_FAVORITE_5 = 22;
+    private static final int ACHIEV_FAVORITE_20 = 23;
+    private static final int ACHIEV_FAVORITE_50 = 24;
+    private static final int ACHIEV_FAVORITE_100 = 25;
     // 퀴즈 참여 도전과제 ID
     private static final int ACHIEV_QUIZ_JOIN_10 = 26;
     private static final int ACHIEV_QUIZ_JOIN_50 = 27;
@@ -58,6 +65,18 @@ public class GameService {
     private static final int ACHIEV_BOARD_20 = 31;
     private static final int ACHIEV_BOARD_50 = 32;
     private static final int ACHIEV_BOARD_100 = 33;
+    // 보유 포인트 도전과제 ID
+    private static final int ACHIEV_WEALTH_20M = 34;
+    private static final int ACHIEV_WEALTH_50M = 35;
+    private static final int ACHIEV_WEALTH_100M = 36;
+    private static final int ACHIEV_WEALTH_1B = 37;
+    // 거래 금액 도전과제 ID
+    private static final int ACHIEV_TX_10M = 38;
+    private static final int ACHIEV_TX_50M = 39;
+    private static final int ACHIEV_TX_100M = 40;
+    private static final int ACHIEV_TX_1B = 41;
+    
+    
 	
 	@Transactional
 	public ExpResultDTO gainExp(String userId, int amount, String source) {
@@ -84,11 +103,11 @@ public class GameService {
 		
 		// 레벨 정책 확인
 		for (LevelPolicy policy : policies) {
-			//사용자 레벨보다 높은 레벨 정책만 고려
+			// 사용자 레벨보다 높은 레벨 정책만 고려
 			if (policy.getLevelId() > newLevel) {
 				if (totalExp >= policy.getRequiredExp()) {
 					newLevel = policy.getLevelId();
-				}else {
+				} else {
 					break;
 				}
 			}
@@ -151,7 +170,7 @@ public class GameService {
 		if (attendanceCount >= 1)
 			recordAchievement(userId, ACHIEV_FIRST_ATTENDANCE);
 		
-		//보상 경험치
+		// 보상 경험치
 		int rewardExp = 50;
 		
 		ExpResultDTO expResult = gainExp(userId, rewardExp, "ATTENDANCE");
@@ -217,7 +236,7 @@ public class GameService {
 			result.setCurrentLevel(expResult.getCurrentLevel());
 		}
 		
-		//퀴즈 참여 횟수 체크
+		// 퀴즈 참여 횟수 체크
 		checkQuizParticipationAchievements(userId);
 		
 		return result;
@@ -302,6 +321,18 @@ public class GameService {
 		if(favoriteCount >= 1) {
 			recordAchievement(userId, ACHIEV_FIRST_FAVORITE);
 		}
+		if(favoriteCount >= 5) {
+			recordAchievement(userId, ACHIEV_FAVORITE_5);
+		}
+		if(favoriteCount >= 20) {
+			recordAchievement(userId, ACHIEV_FAVORITE_20);
+		}
+		if(favoriteCount >= 50) {
+			recordAchievement(userId, ACHIEV_FAVORITE_50);
+		}
+		if(favoriteCount >= 100) {
+			recordAchievement(userId, ACHIEV_FAVORITE_100);
+		}
 	}
 
 	public void equipTitle(String userId, int titleId) {
@@ -314,5 +345,56 @@ public class GameService {
 			return List.of();
 		}
 		return gameMapper.selectEquippedTitlesByUsers(userIds);
+	}
+	
+	public void checkProfitAchievement(String userId, long totalPrice, long totalCount, long sellPrice) {
+		if(totalCount == 0 || totalPrice == 0) {
+			return;
+		}
+		long avgPrice = totalPrice / totalCount;
+		
+		if(avgPrice == 0) {
+			return;
+		}
+		
+		double profitRate = (double)(sellPrice - avgPrice) / avgPrice * 100;
+		
+		if(profitRate >= 1.0) {
+			recordAchievement(userId, ACHIEV_PROFIT_1);
+		}
+	}
+	
+	public void checkWealthAchievements (String userId, long currentPoints) {
+		if (currentPoints >= 20000000L) {
+			recordAchievement(userId, ACHIEV_WEALTH_20M);
+		}
+		if (currentPoints >= 50000000L) {
+			recordAchievement(userId, ACHIEV_WEALTH_50M);
+		}
+		if (currentPoints >= 100000000L) {
+			recordAchievement(userId, ACHIEV_WEALTH_100M);
+		}
+		if (currentPoints >= 1000000000L) {
+			recordAchievement(userId, ACHIEV_WEALTH_1B);
+		}
+	}
+	
+	public void checkTransactionAmountAchievements(String userId, long tradeAmount) {
+		if (tradeAmount >= 10000000L) {
+			recordAchievement(userId, ACHIEV_TX_10M);
+		}
+		if (tradeAmount >= 50000000L) {
+			recordAchievement(userId, ACHIEV_TX_50M);
+		}
+		if (tradeAmount >= 100000000L) {
+			recordAchievement(userId, ACHIEV_TX_100M);
+		}
+		if (tradeAmount >= 1000000000L) {
+			recordAchievement(userId, ACHIEV_TX_1B);
+		}
+	}
+	
+	public void checkFirstTradeAchievement(String userId) {
+		recordAchievement(userId, ACHIEV_FIRST_TRADE);
 	}
 }
