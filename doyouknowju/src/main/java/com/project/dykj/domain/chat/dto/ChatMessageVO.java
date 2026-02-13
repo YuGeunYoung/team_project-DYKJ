@@ -13,4 +13,5 @@ public class ChatMessageVO {
 
     private String userTitle; // 칭호 이름
     private String userTitleColor; // 칭호 색상
+    private String userTitleImgUrl; //[taek] ChatHanler 오류 수정
 }
