@@ -76,8 +76,6 @@ public class GameService {
     private static final int ACHIEV_TX_100M = 40;
     private static final int ACHIEV_TX_1B = 41;
     
-    
-	
 	@Transactional
 	public ExpResultDTO gainExp(String userId, int amount, String source) {
 		
@@ -339,6 +337,10 @@ public class GameService {
 		gameMapper.resetEquippedTitles(userId);
 		gameMapper.updateEquippedTitle(userId, titleId);
 	}
+	
+	public void unequipTitle(String userId) {
+		gameMapper.resetEquippedTitles(userId);
+	}
 
 	public List<TitleDTO> getEquippedTitlesForUsers(List<String> userIds) {
 		if(userIds == null || userIds.isEmpty()) {
@@ -397,4 +399,5 @@ public class GameService {
 	public void checkFirstTradeAchievement(String userId) {
 		recordAchievement(userId, ACHIEV_FIRST_TRADE);
 	}
+
 }
