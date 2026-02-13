@@ -191,6 +191,26 @@ public class GameController {
 		}
 	}
 	
+	@PostMapping("/titles/unequip")
+	public ResponseEntity<?> unequipTitle(HttpSession session){
+		Member loginUser = (Member) session.getAttribute("loginUser");
+		if(loginUser == null) {
+			return ResponseEntity.status(401).body("로그인이 필요합니다.");
+		}
+		
+		try {
+			gameService.unequipTitle(loginUser.getUserId());
+			
+			Member updateMember = gameService.getMemberById(loginUser.getUserId());
+			session.setAttribute("loginUser", updateMember);
+			
+			return ResponseEntity.ok(Map.of("message", "칭호 장착이 해제되었습니다.", "success", true));
+		}catch(Exception e) {
+			log.error("칭호 장착 해제 중 오류 발생: ", e);
+			return ResponseEntity.status(500).body(Map.of("message", "칭호 장착 해제에 실패했습니다.", "success", false));
+		}
+	}
+	
 	@PostMapping("/titles/equipped-list")
 	public ResponseEntity<?> getEquippedTitleList(@RequestBody Map<String, List<String>> request){
 		try {

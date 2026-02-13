@@ -23,5 +23,19 @@
             'PENDING'
         )
     </insert>
+    
+    <select id="selectReportList" resultType="com.project.dykj.domain.report.vo.ReportVo">
+    	SELECT
+	    	REPORT_ID,
+	    	REPORT_TYPE,
+	    	CONTENT_ID,
+	    	REPORTER_ID,
+	    	TARGET_ID,
+	    	REPORT_REASON,
+	    	REPORT_DATE,
+	    	STATUS
+	    FROM REPORTS
+	    ORDER BY REPORT_DATE DESC
+    </select>
 
 </mapper>

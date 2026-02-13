@@ -17,6 +17,8 @@ public class AchievementDTO {
 	private String achievDesc;
 	private int rewardExp;
 	private Integer rewardTitleId;
+	private String rewardTitleImgUrl;
+	private String rewardTitleName;
 	
 	private String achievedAt;
 	private String isRewarded;
