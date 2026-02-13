@@ -24,7 +24,7 @@
         )
     </insert>
     
-    <select id="selectReportList" resultType="com.project.dykj.domain.report.vo.RepoertVo">
+    <select id="selectReportList" resultType="com.project.dykj.domain.report.vo.ReportVo">
     	SELECT
 	    	REPORT_ID,
 	    	REPORT_TYPE,
