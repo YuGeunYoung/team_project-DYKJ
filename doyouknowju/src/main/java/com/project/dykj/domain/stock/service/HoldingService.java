@@ -73,4 +73,8 @@ public class HoldingService {
         
         return result;
     }
+
+    public long getHoldingTotalCountByUserIdAndStockId(String userId, String stockId) {
+        return holdingMapper.getHoldingTotalCountByUserIdAndStockId(userId, stockId);
+    }
 }
