@@ -24,4 +24,13 @@ public class ReportService {
 	public List<ReportVo> getReportList() {
 		return reportMapper.selectReportList();
 	}
+
+	public ReportVo getReportById(long reportId) {
+		return reportMapper.selectReportById(reportId);
+	}
+
+	@Transactional
+	public boolean updateReportStatus(long reportId, String status) {
+		return reportMapper.updateReportStatus(reportId, status) > 0;
+	}
 }

@@ -44,6 +44,7 @@
             M.IS_RECEIVE_NOTIFICATION, 
             M.EXPERIENCE, 
             M.USER_LEVEL,
+            M.BAN_LIMIT_DATE,
             T.TITLE_NAME AS equippedTitleName,
             T.TITLE_IMG_URL AS equippedTitleImgUrl,
             T.TITLE_COLOR AS equippedTitleColor
@@ -52,7 +53,7 @@
         LEFT JOIN TITLES T ON MT.TITLE_ID = T.TITLE_ID
  		WHERE M.USER_ID = #{userId}
     </select>
-
+    
     <select id="selectAllMemberIds" resultType="string">
         SELECT USER_ID FROM MEMBERS
     </select>
@@ -62,6 +63,37 @@
         FROM MEMBERS
         WHERE USER_ID = #{userId}
     </select>
+    
+    <!-- 전체 회원 목록 -->
+    <select id="selectAllMembers" resultType="Member">
+    	SELECT * FROM (
+    		SELECT ROWNUM AS RN, A.* FROM(
+    			SELECT
+    				USER_ID,
+    				PHONE,
+    				POINTS,
+    				ENROLL_DATE,
+    				BAN_LIMIT_DATE,
+    				STATUS,
+    				USER_ROLE
+    			FROM MEMBERS
+    			ORDER BY ENROLL_DATE DESC
+    		) A
+    		WHERE ROWNUM &lt; = #{offset} + #{size}
+    	)
+    	WHERE RN &gt; #{offset}
+    </select>
+    
+    <select id="selectTotalMemberCount" resultType="_int">
+    	SELECT COUNT(*) FROM MEMBERS
+    </select>
+    
+    <!-- 제재 기한 업데이트 -->
+    <update id="updateBanLimitDate">
+    	UPDATE MEMBERS
+    	SET BAN_LIMIT_DATE = #{banLimitDate, jdbcType=DATE}
+    	WHERE USER_ID = #{userId}
+    </update>
     
     <update id="updateMemberStatus">
     	UPDATE MEMBERS
