@@ -17,6 +17,9 @@ public class Reply {
     private LocalDateTime createDate;
     private int boardId;
     private String userId;
+    private String userTitle;
+    private String userTitleImgUrl;
+    private String userColor;
     private LocalDateTime deleteDate;
     private LocalDateTime modifyDate;
 }

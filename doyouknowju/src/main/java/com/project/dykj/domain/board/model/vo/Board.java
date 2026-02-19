@@ -23,4 +23,7 @@ public class Board {
     private String stockName;
     private String boardType;
     private String userId;
+    private String userTitle;
+    private String userTitleImgUrl;
+    private String userColor;
 }

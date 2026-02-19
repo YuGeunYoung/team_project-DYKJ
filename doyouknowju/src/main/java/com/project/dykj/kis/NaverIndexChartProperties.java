@@ -14,4 +14,3 @@ public class NaverIndexChartProperties {
 	private Duration timeout = Duration.ofSeconds(5);
 	private Duration cacheTtl = Duration.ofSeconds(20);
 }
-

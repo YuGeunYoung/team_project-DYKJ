@@ -1,4 +1,4 @@
-package com.project.dykj.kis.controller;
+﻿package com.project.dykj.kis.controller;
 
 import java.util.List;
 import java.util.Map;
@@ -49,25 +49,25 @@ public class StockController {
         this.naverIndexChartService = naverIndexChartService;
     }
 
-    /** 거래량 TOP10 조회 */
+    /** 嫄곕옒??TOP10 議고쉶 */
     @GetMapping("/top10")
     public List<VolumeRankItem> volumeTop10() {
         return marketRankingService.getVolumeTop10();
     }
 
-    /** 네이버 거래대금 TOP10 조회 */
+    /** ?ㅼ씠踰?嫄곕옒?湲?TOP10 議고쉶 */
     @GetMapping("/top10/trade-value/naver")
     public List<NaverTradeValueRankItem> naverTradeValueTop10() {
         return naverRankingService.getTradeValueTop10();
     }
 
-    /** 시가총액 TOP10 조회 */
+    /** ?쒓?珥앹븸 TOP10 議고쉶 */
     @GetMapping("/top10/market-cap")
     public List<MarketCapRankItem> marketCapTop10() {
         return marketRankingService.getMarketCapTop10();
     }
 
-    /** 자동완성 목록 조회 */
+    /** ?먮룞?꾩꽦 紐⑸줉 議고쉶 */
     @GetMapping("/suggest")
     public List<StockSuggestItem> suggest(
             @RequestParam String q,
@@ -76,15 +76,15 @@ public class StockController {
         return stockService.suggest(q, limit);
     }
 
-    /** 검색 결과 목록 조회 */
+    /** 寃??寃곌낵 紐⑸줉 議고쉶 */
     @GetMapping("/search")
     public List<StockSearchItem> search(
             @RequestParam String q,
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "30") int size,
-            HttpSession session //[taek] : 로그인 정보 불러올 session 추가
+            HttpSession session //[taek] : 濡쒓렇???뺣낫 遺덈윭??session 異붽?
     ) {
-    	//[taek] : 유저 아이디 불러오는 코드 추가
+    	//[taek] : ?좎? ?꾩씠??遺덈윭?ㅻ뒗 肄붾뱶 異붽?
     	String userId = null;
     	Member loginUser = (Member)session.getAttribute("loginUser");
     	
@@ -94,7 +94,7 @@ public class StockController {
         return stockService.search(q, page, size, userId);
     }
 
-    /** 리스트 화면용 복수 현재가 조회 */
+    /** 由ъ뒪???붾㈃??蹂듭닔 ?꾩옱媛 議고쉶 */
     @PostMapping("/prices")
     public Map<String, Object> getMultiplePrices(@RequestBody(required = false) Object body) {
         List<String> ids = extractStockIds(body);
@@ -125,7 +125,7 @@ public class StockController {
                 .toList();
     }
 
-    /** 종목 마스터(DB) 단건 조회 */
+    /** 醫낅ぉ 留덉뒪??DB) ?④굔 議고쉶 */
     @GetMapping("/{stockId}/master")
     public ResponseEntity<StockUpsertRequest> getMaster(@PathVariable String stockId) {
         StockUpsertRequest master = stockService.findById(stockId);
@@ -135,13 +135,13 @@ public class StockController {
         return ResponseEntity.ok(master);
     }
 
-    /** 실시간 현재가 조회 */
+    /** ?ㅼ떆媛??꾩옱媛 議고쉶 */
     @GetMapping("/{stockId}/price")
     public Map<?, ?> getPrice(@PathVariable String stockId) {
         return stockService.getCurrentPrice(stockId);
     }
 
-    /** 일/주/월 차트 조회 */
+    /** ??二???李⑦듃 議고쉶 */
     @GetMapping("/{stockId}/chart/daily")
     public KisDailyChartResponse getDailyChart(
             @PathVariable String stockId,
@@ -152,25 +152,25 @@ public class StockController {
         return stockService.getDailyChart(stockId, start, end, period);
     }
 
-    /** 종목 상세 묶음 조회 (master + price + chart) */
-    /** 코스피 지수 차트 조회 (0001) */
+    /** 醫낅ぉ ?곸꽭 臾띠쓬 議고쉶 (master + price + chart) */
+    /** 肄붿뒪??吏??李⑦듃 議고쉶 (0001) */
     @GetMapping("/index/kospi/chart")
     public Map<?, ?> getKospiChart() {
         Map<String, Object> naver = naverIndexChartService.getKospiChart();
         if (naver != null && !naver.isEmpty()) {
             return naver;
         }
-        return Map.of("rt_cd", "1", "msg_cd", "NO_DATA", "msg1", "코스피 차트 데이터가 없습니다.", "output", List.of());
+        return Map.of("rt_cd", "1", "msg_cd", "NO_DATA", "msg1", "肄붿뒪??李⑦듃 ?곗씠?곌? ?놁뒿?덈떎.", "output", List.of());
     }
 
-    /** 코스닥 지수 차트 조회 (1001) */
+    /** 肄붿뒪??吏??李⑦듃 議고쉶 (1001) */
     @GetMapping("/index/kosdaq/chart")
     public Map<?, ?> getKosdaqChart() {
         Map<String, Object> naver = naverIndexChartService.getKosdaqChart();
         if (naver != null && !naver.isEmpty()) {
             return naver;
         }
-        return Map.of("rt_cd", "1", "msg_cd", "NO_DATA", "msg1", "코스닥 차트 데이터가 없습니다.", "output", List.of());
+        return Map.of("rt_cd", "1", "msg_cd", "NO_DATA", "msg1", "肄붿뒪??李⑦듃 ?곗씠?곌? ?놁뒿?덈떎.", "output", List.of());
     }
 
     @GetMapping("/{stockId}/detail")
@@ -190,15 +190,16 @@ public class StockController {
         );
     }
 
-    /** 등락률 상승 TOP10 조회 */
+    /** ?깅씫瑜??곸듅 TOP10 議고쉶 */
     @GetMapping("/top10/rise-rate")
     public List<RiseFallRankItem> riseRateTop10() {
         return marketRankingService.getRiseRateTop10();
     }
 
-    /** 등락률 하락 TOP10 조회 */
+    /** ?깅씫瑜??섎씫 TOP10 議고쉶 */
     @GetMapping("/top10/fall-rate")
     public List<RiseFallRankItem> fallRateTop10() {
         return marketRankingService.getFallRateTop10();
     }
 }
+
