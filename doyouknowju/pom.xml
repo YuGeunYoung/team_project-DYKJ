@@ -177,6 +177,14 @@
 			<artifactId>jsoup</artifactId>
 			<version>1.17.2</version>
 		</dependency>
+		<!-- Dong : Jackson XML (2026.02.19)-->
+		<!-- Source: https://mvnrepository.com/artifact/tools.jackson.dataformat/jackson-dataformat-xml -->
+		<dependency>
+		    <groupId>tools.jackson.dataformat</groupId>
+		    <artifactId>jackson-dataformat-xml</artifactId>
+		    <version>3.0.3</version>
+		    <scope>compile</scope>
+		</dependency>
 	</dependencies>
 
 	<build>
