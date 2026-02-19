@@ -43,10 +43,18 @@
       B.STOCK_ID      AS stockId,
       S.STOCK_NAME  AS stockName,
       B.BOARD_TYPE    AS boardType,
-      B.USER_ID       AS userId
+      B.USER_ID       AS userId,
+      T.TITLE_NAME    AS userTitle,
+      T.TITLE_IMG_URL AS userTitleImgUrl,
+      T.TITLE_COLOR   AS userColor
     FROM BOARD B
     LEFT JOIN STOCKS S
       ON S.STOCK_ID = B.STOCK_ID
+    LEFT JOIN MEMBER_TITLES MT
+      ON B.USER_ID = MT.USER_ID
+     AND MT.IS_EQUIPPED = 'Y'
+    LEFT JOIN TITLES T
+      ON MT.TITLE_ID = T.TITLE_ID
     WHERE B.BOARD_ID = #{boardId}
       AND B.DELETE_DATE IS NULL
   </select>
@@ -63,10 +71,18 @@
       B.STOCK_ID      AS stockId,
       S.STOCK_NAME  AS stockName,
       B.BOARD_TYPE    AS boardType,
-      B.USER_ID       AS userId
+      B.USER_ID       AS userId,
+      T.TITLE_NAME    AS userTitle,
+      T.TITLE_IMG_URL AS userTitleImgUrl,
+      T.TITLE_COLOR   AS userColor
     FROM BOARD B
     LEFT JOIN STOCKS S
       ON S.STOCK_ID = B.STOCK_ID
+    LEFT JOIN MEMBER_TITLES MT
+      ON B.USER_ID = MT.USER_ID
+     AND MT.IS_EQUIPPED = 'Y'
+    LEFT JOIN TITLES T
+      ON MT.TITLE_ID = T.TITLE_ID
     WHERE B.DELETE_DATE IS NULL
       <if test="boardType != null and boardType != ''">
         AND B.BOARD_TYPE = #{boardType}
@@ -116,10 +132,18 @@
       B.STOCK_ID      AS stockId,
       S.STOCK_NAME    AS stockName,
       B.BOARD_TYPE    AS boardType,
-      B.USER_ID       AS userId
+      B.USER_ID       AS userId,
+      T.TITLE_NAME    AS userTitle,
+      T.TITLE_IMG_URL AS userTitleImgUrl,
+      T.TITLE_COLOR   AS userColor
     FROM BOARD B
     LEFT JOIN STOCKS S
       ON S.STOCK_ID = B.STOCK_ID
+    LEFT JOIN MEMBER_TITLES MT
+      ON B.USER_ID = MT.USER_ID
+     AND MT.IS_EQUIPPED = 'Y'
+    LEFT JOIN TITLES T
+      ON MT.TITLE_ID = T.TITLE_ID
     WHERE B.DELETE_DATE IS NULL
       AND B.USER_ID = #{userId}
     ORDER BY B.CREATE_DATE DESC
@@ -157,10 +181,18 @@
       B.STOCK_ID      AS stockId,
       S.STOCK_NAME    AS stockName,
       B.BOARD_TYPE    AS boardType,
-      B.USER_ID       AS userId
+      B.USER_ID       AS userId,
+      T.TITLE_NAME    AS userTitle,
+      T.TITLE_IMG_URL AS userTitleImgUrl,
+      T.TITLE_COLOR   AS userColor
     FROM BOARD B
     LEFT JOIN STOCKS S
       ON S.STOCK_ID = B.STOCK_ID
+    LEFT JOIN MEMBER_TITLES MT
+      ON B.USER_ID = MT.USER_ID
+     AND MT.IS_EQUIPPED = 'Y'
+    LEFT JOIN TITLES T
+      ON MT.TITLE_ID = T.TITLE_ID
     WHERE B.DELETE_DATE IS NULL
       AND B.CREATE_DATE &gt;= #{fromDate}
     ORDER BY (
@@ -176,3 +208,4 @@
   </select>
 
 </mapper>
+

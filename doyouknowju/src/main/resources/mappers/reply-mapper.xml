@@ -23,32 +23,48 @@
 
   <select id="selectReplies" resultType="Reply">
     SELECT
-      REPLY_ID      AS replyId,
-      REPLY_CONTENT AS replyContent,
-      CREATE_DATE   AS createDate,
-      BOARD_ID      AS boardId,
-      USER_ID       AS userId,
-      DELETE_DATE   AS deleteDate,
-      MODIFY_DATE   AS modifyDate
-    FROM REPLY
-    WHERE BOARD_ID = #{boardId}
-      AND DELETE_DATE IS NULL
-    ORDER BY CREATE_DATE ASC
+      R.REPLY_ID      AS replyId,
+      R.REPLY_CONTENT AS replyContent,
+      R.CREATE_DATE   AS createDate,
+      R.BOARD_ID      AS boardId,
+      R.USER_ID       AS userId,
+      T.TITLE_NAME    AS userTitle,
+      T.TITLE_IMG_URL AS userTitleImgUrl,
+      T.TITLE_COLOR   AS userColor,
+      R.DELETE_DATE   AS deleteDate,
+      R.MODIFY_DATE   AS modifyDate
+    FROM REPLY R
+    LEFT JOIN MEMBER_TITLES MT
+      ON R.USER_ID = MT.USER_ID
+     AND MT.IS_EQUIPPED = 'Y'
+    LEFT JOIN TITLES T
+      ON MT.TITLE_ID = T.TITLE_ID
+    WHERE R.BOARD_ID = #{boardId}
+      AND R.DELETE_DATE IS NULL
+    ORDER BY R.CREATE_DATE ASC
   </select>
 
   <select id="selectRepliesByUserId" resultType="Reply">
     SELECT
-      REPLY_ID      AS replyId,
-      REPLY_CONTENT AS replyContent,
-      CREATE_DATE   AS createDate,
-      BOARD_ID      AS boardId,
-      USER_ID       AS userId,
-      DELETE_DATE   AS deleteDate,
-      MODIFY_DATE   AS modifyDate
-    FROM REPLY
-    WHERE USER_ID = #{userId}
-      AND DELETE_DATE IS NULL
-    ORDER BY CREATE_DATE DESC
+      R.REPLY_ID      AS replyId,
+      R.REPLY_CONTENT AS replyContent,
+      R.CREATE_DATE   AS createDate,
+      R.BOARD_ID      AS boardId,
+      R.USER_ID       AS userId,
+      T.TITLE_NAME    AS userTitle,
+      T.TITLE_IMG_URL AS userTitleImgUrl,
+      T.TITLE_COLOR   AS userColor,
+      R.DELETE_DATE   AS deleteDate,
+      R.MODIFY_DATE   AS modifyDate
+    FROM REPLY R
+    LEFT JOIN MEMBER_TITLES MT
+      ON R.USER_ID = MT.USER_ID
+     AND MT.IS_EQUIPPED = 'Y'
+    LEFT JOIN TITLES T
+      ON MT.TITLE_ID = T.TITLE_ID
+    WHERE R.USER_ID = #{userId}
+      AND R.DELETE_DATE IS NULL
+    ORDER BY R.CREATE_DATE DESC
     OFFSET #{offset} ROWS FETCH NEXT #{size} ROWS ONLY
   </select>
 
@@ -69,3 +85,4 @@
   </update>
 
 </mapper>
+
