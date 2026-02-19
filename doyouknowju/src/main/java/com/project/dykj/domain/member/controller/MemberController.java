@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.project.dykj.domain.member.dto.LoginRequestDTO;
@@ -104,6 +105,36 @@ public class MemberController {
 			return ResponseEntity.ok("WITHDRAW_SUCCESS");
 		} else {
 			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("비밀번호가 일치하지 않거나 탈퇴 처리에 실패했습니다.");
+		}
+	}
+	
+	// 관리자 전체 회원 목록
+	@GetMapping("/list")
+	public ResponseEntity<?> getMemberList(
+			@RequestParam(defaultValue = "1") int page,
+			@RequestParam(defaultValue = "10") int size,
+			HttpSession session){
+		Member loginUser = (Member) session.getAttribute("loginUser");
+		if(loginUser == null || !"ADMIN".equals(loginUser.getUserRole())) {
+			return ResponseEntity.status(HttpStatus.FORBIDDEN).body("관리자 권한이 필요합니다.");
+		}
+		return ResponseEntity.ok(memberService.getAllMembers(page, size));
+	}
+	
+	// 관리자 회원 제재
+	@PostMapping("/ban")
+	public ResponseEntity<?> banMember(@RequestBody Map<String, Object> request, HttpSession session){
+		Member loginUser = (Member) session.getAttribute("loginUser");
+		if(loginUser == null || !"ADMIN".equals(loginUser.getUserRole())) {
+			return ResponseEntity.status(HttpStatus.FORBIDDEN).body("관리자 권한이 필요합니다.");
+		}
+		String userId = (String) request.get("userId");
+		int banDays = (int) request.get("banDays");
+		boolean result = memberService.banMember(userId, banDays);
+		if(result) {
+			return ResponseEntity.ok("BAN_SUCCESS");
+		}else {
+			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("제재 처리에 실패했습니다.");
 		}
 	}
 }

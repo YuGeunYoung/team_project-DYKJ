@@ -37,5 +37,27 @@
 	    FROM REPORTS
 	    ORDER BY REPORT_DATE DESC
     </select>
+    
+    <!-- 단건 신고 조회 -->
+    <select id="selectReportById" resultType="com.project.dykj.domain.report.vo.ReportVo">
+        SELECT
+            REPORT_ID,
+            REPORT_TYPE,
+            CONTENT_ID,
+            REPORTER_ID,
+            TARGET_ID,
+            REPORT_REASON,
+            REPORT_DATE,
+            STATUS
+        FROM REPORTS
+        WHERE REPORT_ID = #{reportId}
+    </select>
+
+    <!-- 신고 상태 변경 -->
+    <update id="updateReportStatus">
+        UPDATE REPORTS
+        SET STATUS = #{status}
+        WHERE REPORT_ID = #{reportId}
+    </update>
 
 </mapper>
