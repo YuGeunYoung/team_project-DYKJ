@@ -1,4 +1,4 @@
-﻿package com.project.dykj.kis.service;
+package com.project.dykj.kis.service;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -141,8 +141,7 @@ public class NaverIndexChartService {
                             .toList();
                 }
             }
-            return List.of(objectMapper.convertValue(map, new TypeReference<Map<String, Object>>() {
-            }));
+            return List.of(objectMapper.convertValue(map, new TypeReference<Map<String, Object>>() {}));
         }
         return List.of();
     }
