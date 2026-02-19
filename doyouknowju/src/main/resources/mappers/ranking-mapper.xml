@@ -138,6 +138,7 @@
                             GROUP BY USER_ID) T
             ON M.USER_ID = T.USER_ID
             WHERE M.STATUS = 'Y'
+            AND M.USER_ROLE = 'MEMBER'
         ) T
         ON ((S.SEASON_PERIOD = 'WEEKLY' AND S.SEASON_NO = (SELECT LAST_NUMBER - 1 FROM USER_SEQUENCES WHERE SEQUENCE_NAME='SEQ_WEEKLY_SEASON_NO')
             OR S.SEASON_PERIOD = 'MONTHLY' AND S.SEASON_NO = (SELECT LAST_NUMBER - 1 FROM USER_SEQUENCES WHERE SEQUENCE_NAME='SEQ_MONTHLY_SEASON_NO')
@@ -186,6 +187,7 @@
                 SELECT *
                 FROM MEMBERS
                 WHERE STATUS = 'Y'
+                AND USER_ROLE = 'MEMBER'
                 AND USER_ID NOT IN (SELECT USER_ID FROM SEASON_RANKINGS WHERE SEASON_PERIOD = #{seasonPeriod} AND SEASON_NO = (
                     <choose>
                         <when test="seasonPeriod == 'WEEKLY'">
@@ -248,6 +250,7 @@
                             GROUP BY USER_ID) T
             ON M.USER_ID = T.USER_ID
             WHERE M.STATUS = 'Y'
+            AND M.USER_ROLE = 'MEMBER'
         ) T
     </insert>
 
