@@ -15,7 +15,7 @@ public class HolidayScheduler {
 
     private final HolidayService holidayService;
     
-    @Scheduled(cron = "53 48 11 * * *")
+    @Scheduled(cron = "0 15 0 * * *")
     public void updateHolidays() {
         log.info("Updating holidays");
         holidayService.updateHolidays();

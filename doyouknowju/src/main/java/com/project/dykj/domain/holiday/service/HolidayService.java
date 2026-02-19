@@ -6,10 +6,12 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import com.project.dykj.domain.holiday.dto.res.HolidayRes;
+import com.project.dykj.domain.holiday.mapper.HolidayMapper;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -21,7 +23,9 @@ import tools.jackson.dataformat.xml.XmlMapper;
 public class HolidayService {
 
     private final RestTemplate restTemplate;
+    private final HolidayMapper holidayMapper;
     
+    @Transactional
     public void updateHolidays() {
 
         LocalDateTime now = LocalDateTime.now();
@@ -53,6 +57,9 @@ public class HolidayService {
                     .map(HolidayRes.Item::getLocdate)
                     .collect(Collectors.toList());
 
+                holidayMapper.deleteHolidays(year + month);
+                holidayMapper.insertHolidays(holidays);
+
                 log.info("Holidays: {}", holidays);
             }
 
@@ -60,5 +67,13 @@ public class HolidayService {
         } catch (Exception e) {
             log.error("Error fetching holidays", e);
         }
+    }
+
+
+    public int getIsHoliday() {
+        LocalDateTime now = LocalDateTime.now();
+        String day = String.format("%04d%02d%02d", now.getYear(), now.getMonthValue(), now.getDayOfMonth());
+        int result = holidayMapper.getIsHoliday(day);
+        return result;
     }
 }
