@@ -38,6 +38,40 @@
 	    ORDER BY REPORT_DATE DESC
     </select>
     
+    <select id="selectReportListPaged" resultType="com.project.dykj.domain.report.vo.ReportVo">
+        SELECT * FROM (
+            SELECT ROWNUM AS RN, A.* FROM (
+                SELECT
+                    REPORT_ID,
+                    REPORT_TYPE,
+                    CONTENT_ID,
+                    REPORTER_ID,
+                    TARGET_ID,
+                    REPORT_REASON,
+                    REPORT_DATE,
+                    STATUS
+                FROM REPORTS
+                <where>
+                    <if test="status != null and status != ''">
+                        AND STATUS = #{status}
+                    </if>
+                </where>
+                ORDER BY REPORT_DATE DESC
+            ) A
+            WHERE ROWNUM &lt;= #{offset} + #{size}
+        )
+        WHERE RN &gt; #{offset}
+    </select>
+
+    <select id="selectTotalReportCount" resultType="_int">
+        SELECT COUNT(*) FROM REPORTS
+        <where>
+            <if test="status != null and status != ''">
+                AND STATUS = #{status}
+            </if>
+        </where>
+    </select>
+    
     <!-- 단건 신고 조회 -->
     <select id="selectReportById" resultType="com.project.dykj.domain.report.vo.ReportVo">
         SELECT
