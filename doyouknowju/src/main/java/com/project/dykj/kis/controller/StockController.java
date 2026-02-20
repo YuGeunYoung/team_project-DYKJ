@@ -49,25 +49,25 @@ public class StockController {
         this.naverIndexChartService = naverIndexChartService;
     }
 
-    /** 嫄곕옒??TOP10 議고쉶 */
+    /** 椰꾧퀡???TOP10 鈺곌퀬??*/
     @GetMapping("/top10")
     public List<VolumeRankItem> volumeTop10() {
         return marketRankingService.getVolumeTop10();
     }
 
-    /** ?ㅼ씠踰?嫄곕옒?湲?TOP10 議고쉶 */
+    /** ??쇱뵠甕?椰꾧퀡???疫?TOP10 鈺곌퀬??*/
     @GetMapping("/top10/trade-value/naver")
     public List<NaverTradeValueRankItem> naverTradeValueTop10() {
         return naverRankingService.getTradeValueTop10();
     }
 
-    /** ?쒓?珥앹븸 TOP10 議고쉶 */
+    /** ????μ빘釉?TOP10 鈺곌퀬??*/
     @GetMapping("/top10/market-cap")
     public List<MarketCapRankItem> marketCapTop10() {
         return marketRankingService.getMarketCapTop10();
     }
 
-    /** ?먮룞?꾩꽦 紐⑸줉 議고쉶 */
+    /** ?癒?짗?袁⑷쉐 筌뤴뫖以?鈺곌퀬??*/
     @GetMapping("/suggest")
     public List<StockSuggestItem> suggest(
             @RequestParam String q,
@@ -76,15 +76,15 @@ public class StockController {
         return stockService.suggest(q, limit);
     }
 
-    /** 寃??寃곌낵 紐⑸줉 議고쉶 */
+    /** 野꺜??野껉퀗??筌뤴뫖以?鈺곌퀬??*/
     @GetMapping("/search")
     public List<StockSearchItem> search(
             @RequestParam String q,
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "30") int size,
-            HttpSession session //[taek] : 濡쒓렇???뺣낫 遺덈윭??session 異붽?
+            HttpSession session //[taek] : 嚥≪뮄????類ｋ궖 ?븍뜄???session ?곕떽?
     ) {
-    	//[taek] : ?좎? ?꾩씠??遺덈윭?ㅻ뒗 肄붾뱶 異붽?
+    	//[taek] : ?醫? ?袁⑹뵠???븍뜄???삳뮉 ?꾨뗀諭??곕떽?
     	String userId = null;
     	Member loginUser = (Member)session.getAttribute("loginUser");
     	
@@ -94,7 +94,7 @@ public class StockController {
         return stockService.search(q, page, size, userId);
     }
 
-    /** 由ъ뒪???붾㈃??蹂듭닔 ?꾩옱媛 議고쉶 */
+    /** ?귐딅뮞???遺얇늺??癰귣벊???袁⑹삺揶쎛 鈺곌퀬??*/
     @PostMapping("/prices")
     public Map<String, Object> getMultiplePrices(@RequestBody(required = false) Object body) {
         List<String> ids = extractStockIds(body);
@@ -125,7 +125,7 @@ public class StockController {
                 .toList();
     }
 
-    /** 醫낅ぉ 留덉뒪??DB) ?④굔 議고쉶 */
+    /** ?ル굝??筌띾뜆???DB) ??ｊ탷 鈺곌퀬??*/
     @GetMapping("/{stockId}/master")
     public ResponseEntity<StockUpsertRequest> getMaster(@PathVariable String stockId) {
         StockUpsertRequest master = stockService.findById(stockId);
@@ -135,13 +135,13 @@ public class StockController {
         return ResponseEntity.ok(master);
     }
 
-    /** ?ㅼ떆媛??꾩옱媛 議고쉶 */
+    /** ??쇰뻻揶??袁⑹삺揶쎛 鈺곌퀬??*/
     @GetMapping("/{stockId}/price")
     public Map<?, ?> getPrice(@PathVariable String stockId) {
         return stockService.getCurrentPrice(stockId);
     }
 
-    /** ??二???李⑦듃 議고쉶 */
+    /** ??雅???筌△뫂??鈺곌퀬??*/
     @GetMapping("/{stockId}/chart/daily")
     public KisDailyChartResponse getDailyChart(
             @PathVariable String stockId,
@@ -152,25 +152,33 @@ public class StockController {
         return stockService.getDailyChart(stockId, start, end, period);
     }
 
-    /** 醫낅ぉ ?곸꽭 臾띠쓬 議고쉶 (master + price + chart) */
-    /** 肄붿뒪??吏??李⑦듃 議고쉶 (0001) */
+    /** ?ル굝???怨멸쉭 ?얜씈??鈺곌퀬??(master + price + chart) */
+    /** ?꾨뗄???筌왖??筌△뫂??鈺곌퀬??(0001) */
     @GetMapping("/index/kospi/chart")
-    public Map<?, ?> getKospiChart() {
-        Map<String, Object> naver = naverIndexChartService.getKospiChart();
+    public Map<?, ?> getKospiChart(
+            @RequestParam(required = false) String range,
+            @RequestParam(required = false) String startDateTime,
+            @RequestParam(required = false) String endDateTime
+    ) {
+        Map<String, Object> naver = naverIndexChartService.getKospiChart(range, startDateTime, endDateTime);
         if (naver != null && !naver.isEmpty()) {
             return naver;
         }
-        return Map.of("rt_cd", "1", "msg_cd", "NO_DATA", "msg1", "肄붿뒪??李⑦듃 ?곗씠?곌? ?놁뒿?덈떎.", "output", List.of());
+        return Map.of("rt_cd", "1", "msg_cd", "NO_DATA", "msg1", "?꾨뗄???筌△뫂???怨쀬뵠?怨? ??곷뮸??덈뼄.", "output", List.of());
     }
 
-    /** 肄붿뒪??吏??李⑦듃 議고쉶 (1001) */
+    /** ?꾨뗄???筌왖??筌△뫂??鈺곌퀬??(1001) */
     @GetMapping("/index/kosdaq/chart")
-    public Map<?, ?> getKosdaqChart() {
-        Map<String, Object> naver = naverIndexChartService.getKosdaqChart();
+    public Map<?, ?> getKosdaqChart(
+            @RequestParam(required = false) String range,
+            @RequestParam(required = false) String startDateTime,
+            @RequestParam(required = false) String endDateTime
+    ) {
+        Map<String, Object> naver = naverIndexChartService.getKosdaqChart(range, startDateTime, endDateTime);
         if (naver != null && !naver.isEmpty()) {
             return naver;
         }
-        return Map.of("rt_cd", "1", "msg_cd", "NO_DATA", "msg1", "肄붿뒪??李⑦듃 ?곗씠?곌? ?놁뒿?덈떎.", "output", List.of());
+        return Map.of("rt_cd", "1", "msg_cd", "NO_DATA", "msg1", "?꾨뗄???筌△뫂???怨쀬뵠?怨? ??곷뮸??덈뼄.", "output", List.of());
     }
 
     @GetMapping("/{stockId}/detail")
@@ -190,13 +198,13 @@ public class StockController {
         );
     }
 
-    /** ?깅씫瑜??곸듅 TOP10 議고쉶 */
+    /** ?源낆뵭???怨몃뱟 TOP10 鈺곌퀬??*/
     @GetMapping("/top10/rise-rate")
     public List<RiseFallRankItem> riseRateTop10() {
         return marketRankingService.getRiseRateTop10();
     }
 
-    /** ?깅씫瑜??섎씫 TOP10 議고쉶 */
+    /** ?源낆뵭????롮뵭 TOP10 鈺곌퀬??*/
     @GetMapping("/top10/fall-rate")
     public List<RiseFallRankItem> fallRateTop10() {
         return marketRankingService.getFallRateTop10();
