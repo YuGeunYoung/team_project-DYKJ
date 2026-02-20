@@ -5,7 +5,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.regex.Pattern;
 
 import org.mybatis.spring.SqlSessionTemplate;
 import org.springframework.stereotype.Service;
@@ -16,23 +15,22 @@ import com.project.dykj.kis.model.vo.KisDailyChartResponse;
 import com.project.dykj.kis.model.vo.StockSearchItem;
 import com.project.dykj.kis.model.vo.StockSuggestItem;
 import com.project.dykj.kis.model.vo.StockUpsertRequest;
+import com.project.dykj.kis.util.KisValueUtils;
 
 @Service
 public class StockService {
 
 	/**
-	 * STOCKS(DB)? KIS API瑜??곌껐?섎뒗 ?쒕퉬?ㅼ엯?덈떎.
-	 * - ?먮룞?꾩꽦/寃??留덉뒪??議고쉶
-	 * - ?④굔 ?꾩옱媛/?쇰큺 李⑦듃 議고쉶
-	 * - 蹂듭닔 ?꾩옱媛 議고쉶(由ъ뒪???붾㈃ 理쒖쟻??
+	 * STOCKS(DB)와 KIS API를 연결하는 서비스입니다.
+	 * - 자동완성/검색/마스터 조회
+	 * - 단건 현재가/일봉 차트 조회
+	 * - 복수 현재가 조회(리스트 화면 최적화)
 	 */
-	private static final Pattern STOCK_CODE_PATTERN = Pattern.compile("^(?:A)?\\d{6}$");
-
 	private static final String NS_STOCK = "stockMapper.";
 
 	private final SqlSessionTemplate sqlSession;
 	private final KisService kisService;
-	private final GameService gameService; //[taek]: ?꾩쟾怨쇱젣 ?ъ꽦 ?뺤씤??
+	private final GameService gameService; // [taek]: 이전과제 생성 확인용
 
 	public StockService(SqlSessionTemplate sqlSession, KisService kisService, GameService gameService) {
 		this.sqlSession = sqlSession;
@@ -68,7 +66,7 @@ public class StockService {
 	}
 
 	/**
-	 * 由ъ뒪???붾㈃??蹂듭닔 ?꾩옱媛 議고쉶
+	 * 리스트 화면용 복수 현재가 조회
 	 */
 	@Transactional(readOnly = true)
 	public Map<String, Object> getMultiplePrices(List<String> stockIds) {
@@ -108,7 +106,7 @@ public class StockService {
 
 		Map<String, Object> byId = new HashMap<>();
 		for (Map<?, ?> item : outputItems) {
-			String stockId = firstNonBlank(
+			String stockId = KisValueUtils.firstNonBlank(
 					item.get("inter_shrn_iscd"),
 					item.get("stck_shrn_iscd"),
 					item.get("mksc_shrn_iscd"),
@@ -119,10 +117,10 @@ public class StockService {
 			);
 
 			Map<String, Object> priceInfo = new HashMap<>();
-			priceInfo.put("stck_prpr", firstNonBlank(item.get("stck_prpr"), item.get("inter2_prpr")));
-			priceInfo.put("prdy_vrss", firstNonBlank(item.get("prdy_vrss"), item.get("inter2_prdy_vrss")));
-			priceInfo.put("prdy_ctrt", firstNonBlank(item.get("prdy_ctrt")));
-			priceInfo.put("prdy_vrss_sign", firstNonBlank(item.get("prdy_vrss_sign")));
+			priceInfo.put("stck_prpr", KisValueUtils.firstNonBlank(item.get("stck_prpr"), item.get("inter2_prpr")));
+			priceInfo.put("prdy_vrss", KisValueUtils.firstNonBlank(item.get("prdy_vrss"), item.get("inter2_prdy_vrss")));
+			priceInfo.put("prdy_ctrt", KisValueUtils.firstNonBlank(item.get("prdy_ctrt")));
+			priceInfo.put("prdy_vrss_sign", KisValueUtils.firstNonBlank(item.get("prdy_vrss_sign")));
 			byId.put(stockId, priceInfo);
 		}
 		return byId;
@@ -169,24 +167,8 @@ public class StockService {
 		}
 	}
 
-	private static String firstNonBlank(Object... candidates) {
-		if (candidates == null) {
-			return null;
-		}
-		for (Object c : candidates) {
-			if (c == null) {
-				continue;
-			}
-			String s = String.valueOf(c).trim();
-			if (!s.isEmpty()) {
-				return s;
-			}
-		}
-		return null;
-	}
-
 	/**
-	 * ?먮룞?꾩꽦(prefix 寃??
+	 * 자동완성(prefix 검색)
 	 */
 	@Transactional(readOnly = true)
 	public List<StockSuggestItem> suggest(String q, int limit) {
@@ -202,11 +184,11 @@ public class StockService {
 	}
 
 	/**
-	 * 寃??寃곌낵(contains 寃??
+	 * 검색 결과(contains 검색)
 	 */
 	@Transactional(readOnly = true)
 	public List<StockSearchItem> search(String q, int page, int size, String userId) {
-		// 寃?됯껐怨??섏씠吏: contains 寃??+ ?섏씠吏?ㅼ씠??
+		// 검색결과 페이지: contains 검색 + 페이지네이션
 		String query = q == null ? "" : q.trim();
 		if (query.isEmpty()) {
 			return List.of();

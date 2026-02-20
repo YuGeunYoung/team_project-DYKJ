@@ -24,6 +24,7 @@ public class KisProperties {
 	private RiseFallRank riseFallRank = new RiseFallRank();
 	private MarketCapRank marketCapRank = new MarketCapRank();
 	private Top10WebSocket top10WebSocket = new Top10WebSocket();
+	private NaverIndexChart naverIndexChart = new NaverIndexChart();
 
 	@Data
 	public static class VolumeRank {
@@ -58,10 +59,10 @@ public class KisProperties {
 	public static class DailyChart {
 		private String path;
 		private String trId;
-		/** D: ?? W: 二? M: ??*/
+		/** D: 일봉, W: 주봉, M: 월봉 */
 		private String periodDivCode = "D";
-	/** 0: ?섏젙二쇨? 諛섏쁺, 1: ?섏젙二쇨? 誘몃컲??*/
-	private String orgAdjPrc = "0";
+		/** 0: 수정주가 반영, 1: 수정주가 미반영 */
+		private String orgAdjPrc = "0";
 	}
 
 	@Data
@@ -74,11 +75,11 @@ public class KisProperties {
 	public static class RiseFallRank {
 		private String path;
 		private String trId;
-		/** 議곌굔 ?붾㈃ 遺꾨쪟 肄붾뱶 (湲곕낯 20170) */
+		/** 조건 화면 분류 코드 (기본 20170) */
 		private String condScrDivCode = "20170";
-		/** 議곌굔 ?쒖옣 遺꾨쪟 肄붾뱶 (J: KRX, NX: NXT) */
+		/** 조건 시장 분류 코드 (J: KRX, NX: NXT) */
 		private String condMrktDivCode = "J";
-		/** ?낅젰 醫낅ぉ肄붾뱶 (0000: ?꾩껜, 0001: 肄붿뒪?? 1001: 肄붿뒪?? */
+		/** 입력 종목코드 (0000: 전체, 0001: 코스피, 1001: 코스닥) */
 		private String inputIscd = "0000";
 	}
 
@@ -86,28 +87,38 @@ public class KisProperties {
 	public static class MarketCapRank {
 		private String path;
 		private String trId;
-		/** 議곌굔 ?붾㈃ 遺꾨쪟 肄붾뱶 (湲곕낯 20174) */
+		/** 조건 화면 분류 코드 (기본 20174) */
 		private String condScrDivCode = "20174";
-		/** 議곌굔 ?쒖옣 遺꾨쪟 肄붾뱶 (J: KRX, NX: NXT) */
+		/** 조건 시장 분류 코드 (J: KRX, NX: NXT) */
 		private String condMrktDivCode = "J";
-		/** ?낅젰 醫낅ぉ肄붾뱶 (0000: ?꾩껜, 0001: 肄붿뒪?? 1001: 肄붿뒪?? */
+		/** 입력 종목코드 (0000: 전체, 0001: 코스피, 1001: 코스닥) */
 		private String inputIscd = "0000";
 	}
 
 	@Data
 	public static class Top10WebSocket {
-		/** WebSocket Top10 ?ъ슜 ?щ? */
+		/** WebSocket Top10 사용 여부 */
 		private boolean enabled = false;
-		/** Approval key 諛쒓툒 寃쎈줈 */
+		/** Approval key 발급 경로 */
 		private String approvalPath = "/oauth2/Approval";
 		/** KIS WebSocket URL (wss://...) */
 		private String wsUrl;
-		/** ?묒냽 ???꾩넚??援щ룆 ?꾨Ц 硫붿떆吏(JSON 臾몄옄?? */
+		/** 접속 직후 전송할 구독 전문 메시지(JSON 문자열) */
 		private String subscribeMessage;
-		/** ?ъ뿰寃?吏??珥? */
+		/** 재연결 지연 초 */
 		private long reconnectDelaySeconds = 3;
-		/** stale 湲곗? ?쒓컙(珥?: ?대떦 ?쒓컙 ?숈븞 誘몄닔????stale濡?媛꾩＜ */
+		/** stale 기준 시간(초): 해당 시간 동안 미수신이면 stale로 간주 */
 		private long staleAfterSeconds = 20;
+	}
+
+	@Data
+	public static class NaverIndexChart {
+		private String apiBaseUrl = "https://api.stock.naver.com/chart/domestic/index";
+		private String defaultRange = "day";
+		private String kospiUrl;
+		private String kosdaqUrl;
+		private Duration timeout = Duration.ofSeconds(5);
+		private Duration cacheTtl = Duration.ofSeconds(20);
 	}
 }
 
