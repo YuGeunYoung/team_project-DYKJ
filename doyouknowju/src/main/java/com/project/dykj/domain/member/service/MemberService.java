@@ -1,7 +1,6 @@
 package com.project.dykj.domain.member.service;
 
 import java.util.Calendar;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -38,8 +37,10 @@ public class MemberService {
 		
 		// 제재 기한 자동 해제
 		if(member.getBanLimitDate() != null) {
-			Date now = new Date();
-			if(member.getBanLimitDate().before(now)) {
+			java.time.LocalDate today = java.time.LocalDate.now();
+			java.time.LocalDate limitDate = member.getBanLimitDate().toLocalDate();
+			
+			if (today.isAfter(limitDate)) {
 				memberMapper.updateBanLimitDate(member.getUserId(), null);
 				member.setBanLimitDate(null);
 			}
@@ -90,22 +91,21 @@ public class MemberService {
 			return result;
 		}
 
-		// 관리자 제재 처리
-		@Transactional
-		public boolean banMember(String userId, int banDays) {
-			Date banLimitDate = null;
-			if (banDays > 0) {
-				Calendar cal = Calendar.getInstance();
-				cal.add(Calendar.DAY_OF_YEAR, banDays);
-				// 시간은 23:59:59로 설정하거나 단순 날짜로 처리
-				banLimitDate = cal.getTime();
-			} else if (banDays >= 9999) {
-				// 영구 정지
-				Calendar cal = Calendar.getInstance();
-				cal.set(9999, Calendar.DECEMBER, 31);
-				banLimitDate = cal.getTime();
-			}
-			// banDays == 0 이면 null이 전달되어 해제됨
-			return memberMapper.updateBanLimitDate(userId, banLimitDate) > 0;
+	// 관리자 제재 처리
+	@Transactional
+	public boolean banMember(String userId, int banDays) {
+		java.sql.Date banLimitDate = null;
+		if (banDays > 0) {
+			Calendar cal = Calendar.getInstance();
+			cal.add(Calendar.DAY_OF_YEAR, banDays);
+			banLimitDate = new java.sql.Date(cal.getTimeInMillis());
+		} else if (banDays >= 9999) {
+			// 영구 정지
+			Calendar cal = Calendar.getInstance();
+			cal.set(9999, Calendar.DECEMBER, 31);
+			banLimitDate = new java.sql.Date(cal.getTimeInMillis());
 		}
+		// banDays == 0 이면 null이 전달되어 해제됨
+		return memberMapper.updateBanLimitDate(userId, banLimitDate) > 0;
+	}
 }
