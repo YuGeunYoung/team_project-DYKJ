@@ -18,6 +18,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.project.dykj.kis.model.vo.NaverStockListItem;
 import com.project.dykj.kis.model.vo.NaverTradeValueRankItem;
+import com.project.dykj.kis.util.KisValueUtils;
 
 /**
  * 네이버 증권(stock.naver.com) JSON API를 호출해 거래대금 TOP10을 계산하는 서비스입니다.
@@ -103,10 +104,10 @@ public class NaverRankingService {
 					.map(it -> new NaverTradeValueRankItem(
 							it.getItemCode(),
 							it.getItemName(),
-							parseLongOrNull(it.getAccAmount()),
-							parseLongOrNull(it.getNowVal()),
-							parseLongOrNull(it.getChangeVal()),
-							parseDoubleOrNull(it.getChangeRate())
+							KisValueUtils.parseLongOrNull(it.getAccAmount()),
+							KisValueUtils.parseLongOrNull(it.getNowVal()),
+							KisValueUtils.parseLongOrNull(it.getChangeVal()),
+							KisValueUtils.parseDoubleOrNull(it.getChangeRate())
 					))
 					.toList();
 		} catch (WebClientResponseException e) {
@@ -123,38 +124,8 @@ public class NaverRankingService {
 	}
 
 	private static long parseLongOrMin(String raw) {
-		Long v = parseLongOrNull(raw);
+		Long v = KisValueUtils.parseLongOrNull(raw);
 		return v == null ? Long.MIN_VALUE : v;
-	}
-
-	private static Long parseLongOrNull(String raw) {
-		if (raw == null) {
-			return null;
-		}
-		String cleaned = raw.trim().replaceAll("[^0-9\\-]", "");
-		if (cleaned.isBlank() || "-".equals(cleaned)) {
-			return null;
-		}
-		try {
-			return Long.parseLong(cleaned);
-		} catch (Exception e) {
-			return null;
-		}
-	}
-
-	private static Double parseDoubleOrNull(String raw) {
-		if (raw == null) {
-			return null;
-		}
-		String cleaned = raw.trim().replaceAll("[^0-9\\-\\.]", "");
-		if (cleaned.isBlank() || "-".equals(cleaned)) {
-			return null;
-		}
-		try {
-			return Double.parseDouble(cleaned);
-		} catch (Exception e) {
-			return null;
-		}
 	}
 
 	private record Cache(List<NaverTradeValueRankItem> tradeValueTop10, Instant expiresAt) {

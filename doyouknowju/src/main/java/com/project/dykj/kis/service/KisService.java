@@ -159,7 +159,11 @@ public class KisService {
 	// KIS 거래량 순위 API 원본 응답 조회
 	private KisVolumeRankResponse fetchVolumeRank() {
 		requireBasicConfig();
-		requireVolumeRankConfig();
+		requireApiConfig(
+				"kis.volume-rank",
+				properties.getVolumeRank() == null ? null : properties.getVolumeRank().getPath(),
+				properties.getVolumeRank() == null ? null : properties.getVolumeRank().getTrId()
+		);
 
 		String token = requireValidAccessToken();
 
@@ -242,7 +246,11 @@ public class KisService {
 	/** 상승/하락 공통 랭킹 조회 */
 	private List<RiseFallRankItem> fetchRiseFallTop10(String rankSortClsCode, String prcClsCode) {
 		requireBasicConfig();
-		requireRiseFallRankConfig();
+		requireApiConfig(
+				"kis.rise-fall-rank",
+				properties.getRiseFallRank() == null ? null : properties.getRiseFallRank().getPath(),
+				properties.getRiseFallRank() == null ? null : properties.getRiseFallRank().getTrId()
+		);
 
 		String token = requireValidAccessToken();
 
@@ -338,7 +346,11 @@ public class KisService {
 	// KIS 시가총액 순위 API 조회 후 Top10 반환
 	private List<MarketCapRankItem> fetchMarketCapTop10() {
 		requireBasicConfig();
-		requireMarketCapRankConfig();
+		requireApiConfig(
+				"kis.market-cap-rank",
+				properties.getMarketCapRank() == null ? null : properties.getMarketCapRank().getPath(),
+				properties.getMarketCapRank() == null ? null : properties.getMarketCapRank().getTrId()
+		);
 
 		String token = requireValidAccessToken();
 
@@ -458,7 +470,11 @@ public class KisService {
 	/** 일봉 차트 조회 (start/end: YYYYMMDD) */
 	public KisDailyChartResponse fetchDailyChart(String stockId, String start, String end, String periodDivCode) {
 		requireBasicConfig();
-		requireDailyChartConfig();
+		requireApiConfig(
+				"kis.daily-chart",
+				properties.getDailyChart() == null ? null : properties.getDailyChart().getPath(),
+				properties.getDailyChart() == null ? null : properties.getDailyChart().getTrId()
+		);
 
 		if (stockId == null || stockId.isBlank()) {
 			throw new IllegalArgumentException("stockId is required");
@@ -503,7 +519,11 @@ public class KisService {
 	/** 복수 종목 현재가 조회 */
 	public Map<?, ?> fetchMultiplePrices(List<String> stockIds) {
 		requireBasicConfig();
-		requireMultiPriceConfig();
+		requireApiConfig(
+				"kis.multi-price",
+				properties.getMultiPrice() == null ? null : properties.getMultiPrice().getPath(),
+				properties.getMultiPrice() == null ? null : properties.getMultiPrice().getTrId()
+		);
 
 		if (stockIds == null || stockIds.isEmpty()) {
 			throw new IllegalArgumentException("stockIds are required");
@@ -586,68 +606,12 @@ public class KisService {
 		}
 	}
 
-	// 거래량 랭킹 API 설정 검증
-	private void requireVolumeRankConfig() {
-		if (properties.getVolumeRank() == null) {
-			throw new IllegalStateException("kis.volume-rank is required");
+	private void requireApiConfig(String configName, String path, String trId) {
+		if (path == null || path.isBlank()) {
+			throw new IllegalStateException(configName + ".path is required");
 		}
-		if (properties.getVolumeRank().getPath() == null || properties.getVolumeRank().getPath().isBlank()) {
-			throw new IllegalStateException("kis.volume-rank.path is required");
-		}
-		if (properties.getVolumeRank().getTrId() == null || properties.getVolumeRank().getTrId().isBlank()) {
-			throw new IllegalStateException("kis.volume-rank.tr-id is required");
-		}
-	}
-
-	// 일봉 차트 API 설정 검증
-	private void requireDailyChartConfig() {
-		if (properties.getDailyChart() == null) {
-			throw new IllegalStateException("kis.daily-chart is required");
-		}
-		if (properties.getDailyChart().getPath() == null || properties.getDailyChart().getPath().isBlank()) {
-			throw new IllegalStateException("kis.daily-chart.path is required");
-		}
-		if (properties.getDailyChart().getTrId() == null || properties.getDailyChart().getTrId().isBlank()) {
-			throw new IllegalStateException("kis.daily-chart.tr-id is required");
-		}
-	}
-
-	// 다중 현재가 API 설정 검증
-	private void requireMultiPriceConfig() {
-		if (properties.getMultiPrice() == null) {
-			throw new IllegalStateException("kis.multi-price is required");
-		}
-		if (properties.getMultiPrice().getPath() == null || properties.getMultiPrice().getPath().isBlank()) {
-			throw new IllegalStateException("kis.multi-price.path is required");
-		}
-		if (properties.getMultiPrice().getTrId() == null || properties.getMultiPrice().getTrId().isBlank()) {
-			throw new IllegalStateException("kis.multi-price.tr-id is required");
-		}
-	}
-
-	// 등락률 랭킹 API 설정 검증
-	private void requireRiseFallRankConfig() {
-		if (properties.getRiseFallRank() == null) {
-			throw new IllegalStateException("kis.rise-fall-rank is required");
-		}
-		if (properties.getRiseFallRank().getPath() == null || properties.getRiseFallRank().getPath().isBlank()) {
-			throw new IllegalStateException("kis.rise-fall-rank.path is required");
-		}
-		if (properties.getRiseFallRank().getTrId() == null || properties.getRiseFallRank().getTrId().isBlank()) {
-			throw new IllegalStateException("kis.rise-fall-rank.tr-id is required");
-		}
-	}
-
-	// 시가총액 랭킹 API 설정 검증
-	private void requireMarketCapRankConfig() {
-		if (properties.getMarketCapRank() == null) {
-			throw new IllegalStateException("kis.market-cap-rank is required");
-		}
-		if (properties.getMarketCapRank().getPath() == null || properties.getMarketCapRank().getPath().isBlank()) {
-			throw new IllegalStateException("kis.market-cap-rank.path is required");
-		}
-		if (properties.getMarketCapRank().getTrId() == null || properties.getMarketCapRank().getTrId().isBlank()) {
-			throw new IllegalStateException("kis.market-cap-rank.tr-id is required");
+		if (trId == null || trId.isBlank()) {
+			throw new IllegalStateException(configName + ".tr-id is required");
 		}
 	}
 
@@ -721,5 +685,4 @@ public class KisService {
 		}
 	}
 }
-
 

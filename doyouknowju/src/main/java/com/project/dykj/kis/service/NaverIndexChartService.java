@@ -4,7 +4,9 @@ import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Comparator;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -23,7 +25,7 @@ import org.springframework.web.reactive.function.client.WebClientResponseExcepti
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.project.dykj.kis.NaverIndexChartProperties;
+import com.project.dykj.kis.KisProperties;
 
 @Service
 public class NaverIndexChartService {
@@ -31,14 +33,15 @@ public class NaverIndexChartService {
     private static final Logger log = LoggerFactory.getLogger(NaverIndexChartService.class);
     private static final int MIN_INITIAL_POINTS = 120;
     private static final int MAX_BACKFILL_PAGES = 8;
+    private static final int ONE_HOUR_LOOKBACK_DAYS = 3;
 
-    private final NaverIndexChartProperties properties;
+    private final KisProperties.NaverIndexChart properties;
     private final WebClient webClient;
     private final ObjectMapper objectMapper;
     private final ConcurrentMap<String, Cache> cacheByKey = new ConcurrentHashMap<>();
 
-    public NaverIndexChartService(NaverIndexChartProperties properties) {
-        this.properties = properties;
+    public NaverIndexChartService(KisProperties kisProperties) {
+        this.properties = kisProperties.getNaverIndexChart();
         this.webClient = WebClient.builder()
                 .defaultHeader(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON_VALUE)
                 .defaultHeader(HttpHeaders.USER_AGENT, "Mozilla/5.0")
@@ -70,14 +73,6 @@ public class NaverIndexChartService {
         return getOrFetch("KOSDAQ", normalizeRange(range), normalizeDateTime(startDateTime), normalizeDateTime(endDateTime));
     }
 
-    public boolean isKospiConfigured() {
-        return isConfigured(properties.getApiBaseUrl()) || isConfigured(properties.getKospiUrl());
-    }
-
-    public boolean isKosdaqConfigured() {
-        return isConfigured(properties.getApiBaseUrl()) || isConfigured(properties.getKosdaqUrl());
-    }
-
     @SuppressWarnings("unchecked")
     private Map<String, Object> getOrFetch(String market, String range, String startDateTime, String endDateTime) {
         String cacheKey = market + ":" + range + ":" + nullToEmpty(startDateTime) + ":" + nullToEmpty(endDateTime);
@@ -98,7 +93,11 @@ public class NaverIndexChartService {
             }
 
             try {
-                List<Map<String, Object>> points = fetchPointsWithBackfill(requestUrl);
+                List<Map<String, Object>> points = fetchPointsWithBackfill(requestUrl, range);
+                if (points.isEmpty()) {
+                    return null;
+                }
+                points = normalizePointsByRange(range, points);
                 if (points.isEmpty()) {
                     return null;
                 }
@@ -125,7 +124,34 @@ public class NaverIndexChartService {
         }
     }
 
-    private List<Map<String, Object>> fetchPointsWithBackfill(String requestUrl) throws Exception {
+    private List<Map<String, Object>> fetchPointsWithBackfill(String requestUrl, String range) throws Exception {
+        if ("1h".equals(range) && isTimeApiUrl(requestUrl)) {
+            return fetchOneHourMultiDayPoints(requestUrl);
+        }
+        return fetchSingleRequestPoints(requestUrl);
+    }
+
+    private List<Map<String, Object>> fetchOneHourMultiDayPoints(String requestUrl) throws Exception {
+        Map<String, Map<String, Object>> merged = new LinkedHashMap<>();
+        LocalDate today = LocalDate.now();
+        for (int offset = 0; offset < ONE_HOUR_LOOKBACK_DAYS; offset++) {
+            LocalDate target = today.minusDays(offset);
+            String dayUrl = upsertQueryParam(
+                    requestUrl,
+                    "thistime",
+                    target.format(DateTimeFormatter.BASIC_ISO_DATE)
+            );
+            List<Map<String, Object>> dayPoints = fetchSingleRequestPoints(dayUrl);
+            if (!dayPoints.isEmpty()) {
+                mergePoints(merged, dayPoints);
+            }
+        }
+        List<Map<String, Object>> result = new ArrayList<>(merged.values());
+        result.sort(Comparator.comparing(this::extractSortableTime));
+        return result;
+    }
+
+    private List<Map<String, Object>> fetchSingleRequestPoints(String requestUrl) throws Exception {
         String firstJson = fetchJson(requestUrl);
         if (firstJson == null || firstJson.isBlank()) {
             return List.of();
@@ -173,7 +199,9 @@ public class NaverIndexChartService {
             }
         }
 
-        return new ArrayList<>(merged.values());
+        List<Map<String, Object>> result = new ArrayList<>(merged.values());
+        result.sort(Comparator.comparing(this::extractSortableTime));
+        return result;
     }
 
     private String fetchJson(String url) {
@@ -229,6 +257,10 @@ public class NaverIndexChartService {
     }
 
     private String buildRequestUrl(String market, String range, String startDateTime, String endDateTime) {
+        if ("1h".equals(range)) {
+            String fallback = "KOSDAQ".equals(market) ? properties.getKosdaqUrl() : properties.getKospiUrl();
+            return normalizeDateParam(fallback);
+        }
         if (isConfigured(properties.getApiBaseUrl())) {
             String base = properties.getApiBaseUrl() + "/" + market + "/" + toPathRange(range);
             String withEnd = upsertQueryParam(base, "endDateTime", endDateTime == null ? nowDateTime() : endDateTime);
@@ -242,16 +274,98 @@ public class NaverIndexChartService {
         return normalizeDateParam(fallback);
     }
 
+    private List<Map<String, Object>> normalizePointsByRange(String range, List<Map<String, Object>> points) {
+        if (!"1h".equals(range)) {
+            return points;
+        }
+        LocalDate today = LocalDate.now();
+        LocalDate startDate = today.minusDays(ONE_HOUR_LOOKBACK_DAYS - 1);
+        LocalTime close = LocalTime.of(15, 30, 0);
+        LocalTime now = LocalTime.now();
+        List<Map<String, Object>> filtered = points.stream()
+                .filter(point -> {
+                    LocalDateTime dateTime = parsePointDateTime(point);
+                    if (dateTime == null) {
+                        return false;
+                    }
+                    LocalDate date = dateTime.toLocalDate();
+                    LocalTime time = dateTime.toLocalTime();
+                    if (date.isBefore(startDate) || date.isAfter(today)) {
+                        return false;
+                    }
+                    if (time.isBefore(LocalTime.of(9, 0)) || time.isAfter(close)) {
+                        return false;
+                    }
+                    if (date.equals(today) && time.isAfter(now)) {
+                        return false;
+                    }
+                    return true;
+                })
+                .toList();
+        return compressToHourlyPoints(filtered);
+    }
+
+    private List<Map<String, Object>> compressToHourlyPoints(List<Map<String, Object>> points) {
+        if (points == null || points.isEmpty()) {
+            return List.of();
+        }
+
+        Map<String, Map<String, Object>> latestPointByHour = new LinkedHashMap<>();
+        for (Map<String, Object> point : points) {
+            LocalDateTime dateTime = parsePointDateTime(point);
+            if (dateTime == null) {
+                continue;
+            }
+            String hourKey = dateTime.format(DateTimeFormatter.ofPattern("yyyyMMddHH"));
+            latestPointByHour.put(hourKey, point);
+        }
+
+        List<Map<String, Object>> result = new ArrayList<>(latestPointByHour.size());
+        for (Map.Entry<String, Map<String, Object>> entry : latestPointByHour.entrySet()) {
+            Map<String, Object> normalized = new LinkedHashMap<>(entry.getValue());
+            normalized.put("thistime", entry.getKey() + "0000");
+            result.add(normalized);
+        }
+        return result;
+    }
+
+    private String extractSortableTime(Map<String, Object> point) {
+        LocalDateTime dateTime = parsePointDateTime(point);
+        return dateTime == null ? "00000000000000" : dateTime.format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
+    }
+
+    private LocalDateTime parsePointDateTime(Map<String, Object> point) {
+        if (point == null) {
+            return null;
+        }
+        Object raw = point.get("thistime");
+        if (raw == null) {
+            return null;
+        }
+        String digits = String.valueOf(raw).replaceAll("[^0-9]", "");
+        try {
+            if (digits.length() >= 14) {
+                return LocalDateTime.parse(digits.substring(0, 14), DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
+            }
+            if (digits.length() == 12) {
+                return LocalDateTime.parse(digits, DateTimeFormatter.ofPattern("yyyyMMddHHmm"));
+            }
+        } catch (Exception ignore) {
+            return null;
+        }
+        return null;
+    }
+
     private String defaultStartDateTime(String range) {
         LocalDate now = LocalDate.now();
         if ("1h".equals(range)) {
             return now.format(DateTimeFormatter.BASIC_ISO_DATE) + "0900";
         }
         LocalDate from = switch (range) {
-            case "week" -> now.minusYears(1);
-            case "month" -> now.minusYears(5);
-            case "year" -> now.minusYears(10);
-            default -> now.minusMonths(3);
+            case "week" -> now.minusYears(2);
+            case "month" -> now.minusYears(10);
+            case "year" -> now.minusYears(20);
+            default -> now.minusMonths(6);
         };
         return from.format(DateTimeFormatter.BASIC_ISO_DATE) + "0000";
     }
