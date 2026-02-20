@@ -4,7 +4,6 @@ import com.project.dykj.domain.report.service.ReportService;
 import com.project.dykj.domain.report.vo.ReportVo;
 import lombok.RequiredArgsConstructor;
 
-import java.util.List;
 import java.util.Map;
 
 import org.springframework.http.ResponseEntity;
@@ -16,7 +15,7 @@ import org.springframework.web.bind.annotation.*;
 public class ReportController {
     private final ReportService reportService;
     
-    //리액트와 통신할 API
+    // 리액트와 통신할 API
     @PostMapping("/insert")
     public String insertReport(@RequestBody ReportVo reportVo) {
         boolean success = reportService.registReport(reportVo);
@@ -25,8 +24,11 @@ public class ReportController {
     
     // [taek] 신고 내역 조회
     @GetMapping("/list")
-    public List<ReportVo> getReportList() {
-    	return reportService.getReportList();
+    public ResponseEntity<?> getReportList(
+    		@RequestParam(defaultValue = "1") int page,
+    		@RequestParam(defaultValue = "10") int size,
+    		@RequestParam(required = false) String status) {
+    	return ResponseEntity.ok(reportService.getReportListPaged(page, size, status));
     }
     
     // 신고 단건 조회

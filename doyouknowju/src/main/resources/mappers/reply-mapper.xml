@@ -83,6 +83,18 @@
      WHERE REPLY_ID = #{replyId}
        AND DELETE_DATE IS NULL
   </update>
+  
+  <!-- [taek] 신고 내역 조회용 -->
+  <select id="selectReplyById" resultType="Reply">
+    SELECT
+      REPLY_ID      AS replyId,
+      REPLY_CONTENT AS replyContent,
+      CREATE_DATE   AS createDate,
+      BOARD_ID      AS boardId,
+      USER_ID       AS userId
+    FROM REPLY
+    WHERE REPLY_ID = #{replyId}
+  </select>
 
 </mapper>
 

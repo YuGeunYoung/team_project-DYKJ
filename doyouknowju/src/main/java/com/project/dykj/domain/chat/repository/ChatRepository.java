@@ -15,6 +15,9 @@ import com.project.dykj.domain.chat.dto.ChatMessageVO;
 	    List<ChatMessageVO> selectChatList(); // 전체 채팅 내역 조회
 	 // 페이징 조회 추가: lastChatId(기준 ID), limit(가져올 개수)를 담은 Map 전달
 	    List<ChatMessageVO> selectChatListPaged(Map<String, Object> params);
+	    
+	    // [taek] 신고 내역 조회용
+	    ChatMessageVO selectChatMessageById(long chatId);
 	}
 	
 	

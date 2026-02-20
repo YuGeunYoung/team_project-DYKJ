@@ -50,5 +50,16 @@
             AND CHAT_ID &lt; #{lastChatId}  </if>
         ORDER BY CHAT_ID DESC  )
     WHERE ROWNUM &lt;= #{limit}  </select>
+    
+    <!-- [taek] 신고 내역 조회용 -->
+    <select id="selectChatMessageById" resultType="com.project.dykj.domain.chat.dto.ChatMessageVO">
+        SELECT 
+            CHAT_ID,
+            USER_ID,
+            CHAT_CONTENT,
+            SEND_TIME
+        FROM CHAT_MESSAGES
+        WHERE CHAT_ID = #{chatId}
+    </select>
 
 </mapper>

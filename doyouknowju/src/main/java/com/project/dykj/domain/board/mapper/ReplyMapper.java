@@ -23,4 +23,7 @@ public interface ReplyMapper {
 	int updateReply(Reply reply);
 
 	int softDeleteReply(@Param("replyId") long replyId);
+	
+	// [taek] 신고 내역 조회용
+	Reply selectReplyById(@Param("replyId") long replyId);
 }
