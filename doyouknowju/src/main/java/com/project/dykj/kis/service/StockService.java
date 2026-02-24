@@ -14,7 +14,6 @@ import com.project.dykj.domain.game.service.GameService;
 import com.project.dykj.kis.model.vo.KisDailyChartResponse;
 import com.project.dykj.kis.model.vo.StockSearchItem;
 import com.project.dykj.kis.model.vo.StockSuggestItem;
-import com.project.dykj.kis.model.vo.StockUpsertRequest;
 import com.project.dykj.kis.util.KisValueUtils;
 
 @Service
@@ -36,15 +35,6 @@ public class StockService {
 		this.sqlSession = sqlSession;
 		this.kisService = kisService;
 		this.gameService = gameService;
-	}
-
-	@Transactional(readOnly = true)
-	public StockUpsertRequest findById(String stockId) {
-		String id = stockId == null ? "" : stockId.trim();
-		if (id.isEmpty()) {
-			throw new IllegalArgumentException("stockId is required");
-		}
-		return sqlSession.selectOne(NS_STOCK + "selectById", Map.of("stockId", id));
 	}
 
 	@Transactional(readOnly = true)

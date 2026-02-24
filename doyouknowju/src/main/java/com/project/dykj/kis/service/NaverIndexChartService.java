@@ -40,6 +40,7 @@ public class NaverIndexChartService {
     private final ObjectMapper objectMapper;
     private final ConcurrentMap<String, Cache> cacheByKey = new ConcurrentHashMap<>();
 
+    /** 네이버 지수 차트 API 호출용 클라이언트 초기화 */
     public NaverIndexChartService(KisProperties kisProperties) {
         this.properties = kisProperties.getNaverIndexChart();
         this.webClient = WebClient.builder()
@@ -73,6 +74,10 @@ public class NaverIndexChartService {
         return getOrFetch("KOSDAQ", normalizeRange(range), normalizeDateTime(startDateTime), normalizeDateTime(endDateTime));
     }
 
+    /**
+     * 시장/범위/기간 조합별 캐시를 우선 사용하고,
+     * 캐시 미스 시 네이버 API를 호출해 표준 응답 형태로 반환한다.
+     */
     @SuppressWarnings("unchecked")
     private Map<String, Object> getOrFetch(String market, String range, String startDateTime, String endDateTime) {
         String cacheKey = market + ":" + range + ":" + nullToEmpty(startDateTime) + ":" + nullToEmpty(endDateTime);
@@ -124,6 +129,7 @@ public class NaverIndexChartService {
         }
     }
 
+    /** 1h 범위는 시간 API에 대해 멀티데이 백필을 수행하고, 그 외는 단일 호출 처리 */
     private List<Map<String, Object>> fetchPointsWithBackfill(String requestUrl, String range) throws Exception {
         if ("1h".equals(range) && isTimeApiUrl(requestUrl)) {
             return fetchOneHourMultiDayPoints(requestUrl);
@@ -131,6 +137,7 @@ public class NaverIndexChartService {
         return fetchSingleRequestPoints(requestUrl);
     }
 
+    /** 시간 API에서 최근 N일 데이터를 합쳐 1분 시계열을 확보한다. */
     private List<Map<String, Object>> fetchOneHourMultiDayPoints(String requestUrl) throws Exception {
         Map<String, Map<String, Object>> merged = new LinkedHashMap<>();
         LocalDate today = LocalDate.now();
@@ -151,6 +158,7 @@ public class NaverIndexChartService {
         return result;
     }
 
+    /** 단일 URL 응답을 파싱하고, 필요하면 page 기반으로 추가 백필한다. */
     private List<Map<String, Object>> fetchSingleRequestPoints(String requestUrl) throws Exception {
         String firstJson = fetchJson(requestUrl);
         if (firstJson == null || firstJson.isBlank()) {
@@ -244,6 +252,7 @@ public class NaverIndexChartService {
         return url + separator + name + "=" + value;
     }
 
+    /** thistime 기준으로 중복 포인트를 제거하면서 첫 등장 포인트를 유지한다. */
     private void mergePoints(Map<String, Map<String, Object>> merged, List<Map<String, Object>> points) {
         for (int index = 0; index < points.size(); index++) {
             Map<String, Object> point = points.get(index);
@@ -256,11 +265,8 @@ public class NaverIndexChartService {
         }
     }
 
+    /** range/시장에 맞는 네이버 요청 URL을 동적으로 생성한다. */
     private String buildRequestUrl(String market, String range, String startDateTime, String endDateTime) {
-        if ("1h".equals(range)) {
-            String fallback = "KOSDAQ".equals(market) ? properties.getKosdaqUrl() : properties.getKospiUrl();
-            return normalizeDateParam(fallback);
-        }
         if (isConfigured(properties.getApiBaseUrl())) {
             String base = properties.getApiBaseUrl() + "/" + market + "/" + toPathRange(range);
             String withEnd = upsertQueryParam(base, "endDateTime", endDateTime == null ? nowDateTime() : endDateTime);
@@ -271,9 +277,10 @@ public class NaverIndexChartService {
         }
 
         String fallback = "KOSDAQ".equals(market) ? properties.getKosdaqUrl() : properties.getKospiUrl();
-        return normalizeDateParam(fallback);
+        return ensureTodayForTimeApi(fallback);
     }
 
+    /** 1h 범위는 장중(09:00~15:30)과 시간 범위를 필터링해 노이즈를 제거한다. */
     private List<Map<String, Object>> normalizePointsByRange(String range, List<Map<String, Object>> points) {
         if (!"1h".equals(range)) {
             return points;
@@ -282,7 +289,7 @@ public class NaverIndexChartService {
         LocalDate startDate = today.minusDays(ONE_HOUR_LOOKBACK_DAYS - 1);
         LocalTime close = LocalTime.of(15, 30, 0);
         LocalTime now = LocalTime.now();
-        List<Map<String, Object>> filtered = points.stream()
+        return points.stream()
                 .filter(point -> {
                     LocalDateTime dateTime = parsePointDateTime(point);
                     if (dateTime == null) {
@@ -302,31 +309,6 @@ public class NaverIndexChartService {
                     return true;
                 })
                 .toList();
-        return compressToHourlyPoints(filtered);
-    }
-
-    private List<Map<String, Object>> compressToHourlyPoints(List<Map<String, Object>> points) {
-        if (points == null || points.isEmpty()) {
-            return List.of();
-        }
-
-        Map<String, Map<String, Object>> latestPointByHour = new LinkedHashMap<>();
-        for (Map<String, Object> point : points) {
-            LocalDateTime dateTime = parsePointDateTime(point);
-            if (dateTime == null) {
-                continue;
-            }
-            String hourKey = dateTime.format(DateTimeFormatter.ofPattern("yyyyMMddHH"));
-            latestPointByHour.put(hourKey, point);
-        }
-
-        List<Map<String, Object>> result = new ArrayList<>(latestPointByHour.size());
-        for (Map.Entry<String, Map<String, Object>> entry : latestPointByHour.entrySet()) {
-            Map<String, Object> normalized = new LinkedHashMap<>(entry.getValue());
-            normalized.put("thistime", entry.getKey() + "0000");
-            result.add(normalized);
-        }
-        return result;
     }
 
     private String extractSortableTime(Map<String, Object> point) {
@@ -340,9 +322,35 @@ public class NaverIndexChartService {
         }
         Object raw = point.get("thistime");
         if (raw == null) {
+            raw = point.get("dateTime");
+        }
+        if (raw == null) {
+            raw = point.get("localDateTime");
+        }
+        if (raw == null) {
+            raw = point.get("localTradedAt");
+        }
+        if (raw == null) {
             return null;
         }
-        String digits = String.valueOf(raw).replaceAll("[^0-9]", "");
+        String rawText = String.valueOf(raw).trim();
+        if (rawText.isEmpty()) {
+            return null;
+        }
+        try {
+            return java.time.OffsetDateTime.parse(rawText).toLocalDateTime();
+        } catch (Exception ignore) {
+        }
+        try {
+            return java.time.ZonedDateTime.parse(rawText).toLocalDateTime();
+        } catch (Exception ignore) {
+        }
+        try {
+            return LocalDateTime.parse(rawText);
+        } catch (Exception ignore) {
+        }
+
+        String digits = rawText.replaceAll("[^0-9]", "");
         try {
             if (digits.length() >= 14) {
                 return LocalDateTime.parse(digits.substring(0, 14), DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
@@ -359,7 +367,8 @@ public class NaverIndexChartService {
     private String defaultStartDateTime(String range) {
         LocalDate now = LocalDate.now();
         if ("1h".equals(range)) {
-            return now.format(DateTimeFormatter.BASIC_ISO_DATE) + "0900";
+            LocalDate from = now.minusDays(ONE_HOUR_LOOKBACK_DAYS - 1L);
+            return from.format(DateTimeFormatter.BASIC_ISO_DATE) + "0900";
         }
         LocalDate from = switch (range) {
             case "week" -> now.minusYears(2);
@@ -411,9 +420,10 @@ public class NaverIndexChartService {
         };
     }
 
+    /** 서비스 내부 range 값을 네이버 chart API path 값으로 변환한다. */
     private String toPathRange(String range) {
         return switch (range) {
-            case "1h" -> "day";
+            case "1h" -> "minute10";
             case "week" -> "week";
             case "month" -> "month";
             case "year" -> "year";
@@ -421,14 +431,15 @@ public class NaverIndexChartService {
         };
     }
 
-    private String normalizeDateParam(String url) {
+    private String ensureTodayForTimeApi(String url) {
         if (url == null || url.isBlank()) {
             return url;
         }
         String today = LocalDate.now().format(DateTimeFormatter.BASIC_ISO_DATE);
-        return url.replaceAll("thistime=\\d{8}", "thistime=" + today);
+        return upsertQueryParam(url, "thistime", today);
     }
 
+    /** 네이버 응답 포맷(list/map)을 공통 list-of-map 형태로 정규화한다. */
     @SuppressWarnings("unchecked")
     private List<Map<String, Object>> extractPoints(Object parsed) {
         if (parsed == null) {
