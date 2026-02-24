@@ -6,11 +6,8 @@ import org.apache.ibatis.annotations.Param;
 
 import com.project.dykj.kis.model.vo.StockSearchItem;
 import com.project.dykj.kis.model.vo.StockSuggestItem;
-import com.project.dykj.kis.model.vo.StockUpsertRequest;
 
 public interface StockMapper {
-
-	int mergeStock(@Param("req") StockUpsertRequest req);
 
 	List<StockSuggestItem> suggest(@Param("q") String q, @Param("limit") int limit);
 

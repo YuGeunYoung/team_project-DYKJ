@@ -3,7 +3,6 @@ package com.project.dykj.kis.controller;
 import java.util.List;
 import java.util.Map;
 
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -19,7 +18,6 @@ import com.project.dykj.kis.model.vo.NaverTradeValueRankItem;
 import com.project.dykj.kis.model.vo.RiseFallRankItem;
 import com.project.dykj.kis.model.vo.StockSearchItem;
 import com.project.dykj.kis.model.vo.StockSuggestItem;
-import com.project.dykj.kis.model.vo.StockUpsertRequest;
 import com.project.dykj.kis.model.vo.VolumeRankItem;
 import com.project.dykj.kis.ranking.MarketRankingService;
 import com.project.dykj.kis.service.NaverIndexChartService;
@@ -118,15 +116,6 @@ public class StockController {
                 .toList();
     }
 
-    @GetMapping("/{stockId}/master")
-    public ResponseEntity<StockUpsertRequest> getMaster(@PathVariable String stockId) {
-        StockUpsertRequest master = stockService.findById(stockId);
-        if (master == null) {
-            return ResponseEntity.notFound().build();
-        }
-        return ResponseEntity.ok(master);
-    }
-
     @GetMapping("/{stockId}/price")
     public Map<?, ?> getPrice(@PathVariable String stockId) {
         return stockService.getCurrentPrice(stockId);
@@ -175,23 +164,6 @@ public class StockController {
                 "msg_cd", "NO_DATA",
                 "msg1", label + " 차트 데이터를 찾을 수 없습니다.",
                 "output", List.of()
-        );
-    }
-
-    @GetMapping("/{stockId}/detail")
-    public Map<String, Object> getDetail(
-            @PathVariable String stockId,
-            @RequestParam(required = false) String start,
-            @RequestParam(required = false) String end,
-            @RequestParam(required = false) String period
-    ) {
-        StockUpsertRequest master = stockService.findById(stockId);
-        Map<?, ?> price = stockService.getCurrentPrice(stockId);
-        KisDailyChartResponse chart = stockService.getDailyChart(stockId, start, end, period);
-        return Map.of(
-                "master", master,
-                "price", price,
-                "chart", chart
         );
     }
 

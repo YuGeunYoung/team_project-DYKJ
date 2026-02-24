@@ -4,29 +4,6 @@
   "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="stockMapper">
 
-  <update id="mergeStock">
-    MERGE INTO STOCKS t
-    USING (
-      SELECT
-        #{req.stockId} AS STOCK_ID,
-        #{req.stockName} AS STOCK_NAME,
-        #{req.stockSector} AS STOCK_SECTOR,
-        #{req.stockInfo} AS STOCK_INFO,
-        #{req.isActive} AS IS_ACTIVE
-      FROM DUAL
-    ) s
-    ON (t.STOCK_ID = s.STOCK_ID)
-    WHEN MATCHED THEN
-      UPDATE SET
-        t.STOCK_NAME = s.STOCK_NAME,
-        t.STOCK_SECTOR = NVL(s.STOCK_SECTOR, t.STOCK_SECTOR),
-        t.STOCK_INFO = s.STOCK_INFO,
-        t.IS_ACTIVE = NVL(s.IS_ACTIVE, t.IS_ACTIVE)
-    WHEN NOT MATCHED THEN
-      INSERT (STOCK_ID, STOCK_NAME, STOCK_SECTOR, STOCK_INFO, IS_ACTIVE)
-      VALUES (s.STOCK_ID, s.STOCK_NAME, s.STOCK_SECTOR, s.STOCK_INFO, NVL(s.IS_ACTIVE, 'Y'))
-  </update>
-
   <select id="suggest" resultType="StockSuggestItem">
     SELECT
       STOCK_ID AS stockId,
@@ -41,17 +18,6 @@
       CASE WHEN UPPER(STOCK_NAME) LIKE UPPER(#{q}) || '%' THEN 0 ELSE 1 END,
       STOCK_NAME
     FETCH FIRST #{limit} ROWS ONLY
-  </select>
-
-  <select id="selectById" resultType="StockUpsertRequest">
-    SELECT
-      STOCK_ID AS stockId,
-      STOCK_NAME AS stockName,
-      STOCK_SECTOR AS stockSector,
-      STOCK_INFO AS stockInfo,
-      IS_ACTIVE AS isActive
-    FROM STOCKS
-    WHERE STOCK_ID = #{stockId}
   </select>
 
   <select id="search" resultType="StockSearchItem">
