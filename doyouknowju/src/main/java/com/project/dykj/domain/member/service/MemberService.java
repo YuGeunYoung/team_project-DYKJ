@@ -95,14 +95,14 @@ public class MemberService {
 	@Transactional
 	public boolean banMember(String userId, int banDays) {
 		java.sql.Date banLimitDate = null;
-		if (banDays > 0) {
-			Calendar cal = Calendar.getInstance();
-			cal.add(Calendar.DAY_OF_YEAR, banDays);
-			banLimitDate = new java.sql.Date(cal.getTimeInMillis());
-		} else if (banDays >= 9999) {
+		if (banDays >= 9999) {
 			// 영구 정지
 			Calendar cal = Calendar.getInstance();
 			cal.set(9999, Calendar.DECEMBER, 31);
+			banLimitDate = new java.sql.Date(cal.getTimeInMillis());
+		} else if (banDays > 0) {
+			Calendar cal = Calendar.getInstance();
+			cal.add(Calendar.DAY_OF_YEAR, banDays);
 			banLimitDate = new java.sql.Date(cal.getTimeInMillis());
 		}
 		// banDays == 0 이면 null이 전달되어 해제됨
