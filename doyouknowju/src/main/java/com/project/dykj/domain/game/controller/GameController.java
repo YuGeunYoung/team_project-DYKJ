@@ -15,6 +15,7 @@ import com.project.dykj.domain.game.dto.AttendanceDTO;
 import com.project.dykj.domain.game.dto.ExpResultDTO;
 import com.project.dykj.domain.game.dto.QuizDTO;
 import com.project.dykj.domain.game.dto.TitleDTO;
+import com.project.dykj.domain.game.entity.LevelPolicy;
 import com.project.dykj.domain.game.service.GameService;
 import com.project.dykj.domain.member.entity.Member;
 
@@ -220,6 +221,16 @@ public class GameController {
 		}catch(Exception e) {
 			log.error("착용한 칭호 목록 조회 중 오류 발생: ", e);
 			return ResponseEntity.status(500).body(Map.of("message", "칭호 정보를 불러오는 데 실패했습니다.", "success", false));
+		}
+	}
+	
+	@GetMapping("/levels")
+	public ResponseEntity<?> getLevelPolicies() {
+		try {
+			List<LevelPolicy> policies = gameService.getAllPolicies();
+			return ResponseEntity.ok(policies);
+		}catch(Exception e) {
+			return ResponseEntity.status(500).body(Map.of("message", "레벨 정책 정보를 불러오는 데 실패했습니다.", "success", false));
 		}
 	}
 }

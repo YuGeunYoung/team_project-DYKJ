@@ -400,4 +400,8 @@ public class GameService {
 		recordAchievement(userId, ACHIEV_FIRST_TRADE);
 	}
 
+	public List<LevelPolicy> getAllPolicies() {
+		return gameMapper.selectLevelPolicies();
+	}
+
 }
