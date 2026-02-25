@@ -59,7 +59,18 @@ public class ReportService {
 	}
 
 	@Transactional
-	public boolean updateReportStatus(long reportId, String status) {
+	public boolean updateReportStatus(long reportId, String status, boolean shouldHide) {
+		// 상태가 'PROCESSED'로 변경되고 shouldHide가 true일 때만, 대상 콘텐츠(BOARD, REPLY)를 자동으로 숨깁니다.
+		if ("PROCESSED".equals(status) && shouldHide) {
+			ReportVo report = reportMapper.selectReportById(reportId);
+			if (report != null) {
+				if ("BOARD".equals(report.getReportType())) {
+					boardMapper.softDeletePost(report.getContentId());
+				} else if ("REPLY".equals(report.getReportType())) {
+					replyMapper.softDeleteReply(report.getContentId());
+				}
+			}
+		}
 		return reportMapper.updateReportStatus(reportId, status) > 0;
 	}
 
