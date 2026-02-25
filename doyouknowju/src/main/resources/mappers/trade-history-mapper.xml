@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.project.dykj.domain.trade_history.mapper.TradeHistoryMapper">
+
+    <!-- 나의 거래 내역 조회 -->
+    <select id="selectTradeHistory" resultType="com.project.dykj.domain.trade_history.dto.res.TradeHistoryRes">
+        SELECT T.STOCK_ID,
+                S.STOCK_NAME,
+                T.TRADE_CATEGORY,
+                T.TOTAL_TRADE_PRICE,
+                T.TRADE_COUNT,
+                T.STOCK_PRICE,
+                T.AFTER_BALANCE,
+                T.TRADE_DATE
+        FROM (SELECT USER_ID, STOCK_ID, TRADE_CATEGORY, TOTAL_TRADE_PRICE, TRADE_COUNT, STOCK_PRICE, AFTER_BALANCE, TRADE_DATE, RANK() OVER (ORDER BY TRADE_DATE DESC) AS "RANK"
+            FROM TRADE_HISTORIES
+            WHERE USER_ID = #{userId}
+            ORDER BY TRADE_DATE DESC) T
+        JOIN STOCKS S ON T.STOCK_ID = S.STOCK_ID
+        WHERE T."RANK" BETWEEN #{pageReq.start} AND #{pageReq.end}
+        ORDER BY T.TRADE_DATE DESC
+    </select>
+
+    <select id="selectTradeHistoryCount" parameterType="String" resultType="int">
+        SELECT COUNT(*)
+        FROM TRADE_HISTORIES
+        WHERE USER_ID = #{userId}
+    </select>
+</mapper>
