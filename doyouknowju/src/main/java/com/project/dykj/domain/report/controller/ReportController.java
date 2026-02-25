@@ -45,9 +45,13 @@ public class ReportController {
     @PutMapping("/{reportId}/status")
     public ResponseEntity<?> updateReportStatus(
             @PathVariable long reportId,
-            @RequestBody Map<String, String> body) {
-        String status = body.get("status");
-        boolean result = reportService.updateReportStatus(reportId, status);
+            @RequestBody Map<String, Object> body) {
+        String status = (String) body.get("status");
+        Boolean shouldHide = (Boolean) body.get("shouldHide");
+        if (shouldHide == null)
+            shouldHide = false;
+
+        boolean result = reportService.updateReportStatus(reportId, status, shouldHide);
         return result ? ResponseEntity.ok("STATUS_UPDATED") : ResponseEntity.badRequest().body("FAIL");
     }
 }
