@@ -20,4 +20,5 @@ public class ReportVo {
     private Date reportDate; // 신고 일시
     private String status; // 처리 상태 (PENDING, DONE, REJECT)
     private String content; // 신고된 실제 내용 (게시글 본문, 댓글 내용 등)
+    private String boardTitle; //신고된 게시글 제목
 }
