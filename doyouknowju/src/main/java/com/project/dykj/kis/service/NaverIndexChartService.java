@@ -67,11 +67,13 @@ public class NaverIndexChartService {
     }
 
     public Map<String, Object> getKospiChart(String range, String startDateTime, String endDateTime) {
-        return getOrFetch("KOSPI", normalizeRange(range), normalizeDateTime(startDateTime), normalizeDateTime(endDateTime));
+        return getOrFetch("KOSPI", normalizeRange(range), normalizeDateTime(startDateTime),
+                normalizeDateTime(endDateTime));
     }
 
     public Map<String, Object> getKosdaqChart(String range, String startDateTime, String endDateTime) {
-        return getOrFetch("KOSDAQ", normalizeRange(range), normalizeDateTime(startDateTime), normalizeDateTime(endDateTime));
+        return getOrFetch("KOSDAQ", normalizeRange(range), normalizeDateTime(startDateTime),
+                normalizeDateTime(endDateTime));
     }
 
     /**
@@ -112,8 +114,7 @@ public class NaverIndexChartService {
                         "msg_cd", "MCA00000",
                         "msg1", "정상처리 되었습니다.",
                         "range", range,
-                        "output", points
-                );
+                        "output", points);
 
                 cacheByKey.put(cacheKey, new Cache(normalized, Instant.now().plus(cacheTtl())));
                 return normalized;
@@ -146,8 +147,7 @@ public class NaverIndexChartService {
             String dayUrl = upsertQueryParam(
                     requestUrl,
                     "thistime",
-                    target.format(DateTimeFormatter.BASIC_ISO_DATE)
-            );
+                    target.format(DateTimeFormatter.BASIC_ISO_DATE));
             List<Map<String, Object>> dayPoints = fetchSingleRequestPoints(dayUrl);
             if (!dayPoints.isEmpty()) {
                 mergePoints(merged, dayPoints);
@@ -267,17 +267,12 @@ public class NaverIndexChartService {
 
     /** range/시장에 맞는 네이버 요청 URL을 동적으로 생성한다. */
     private String buildRequestUrl(String market, String range, String startDateTime, String endDateTime) {
-        if (isConfigured(properties.getApiBaseUrl())) {
-            String base = properties.getApiBaseUrl() + "/" + market + "/" + toPathRange(range);
-            String withEnd = upsertQueryParam(base, "endDateTime", endDateTime == null ? nowDateTime() : endDateTime);
-            if (startDateTime != null) {
-                return upsertQueryParam(withEnd, "startDateTime", startDateTime);
-            }
-            return upsertQueryParam(withEnd, "startDateTime", defaultStartDateTime(range));
+        String base = properties.getApiBaseUrl() + "/" + market + "/" + toPathRange(range);
+        String withEnd = upsertQueryParam(base, "endDateTime", endDateTime == null ? nowDateTime() : endDateTime);
+        if (startDateTime != null) {
+            return upsertQueryParam(withEnd, "startDateTime", startDateTime);
         }
-
-        String fallback = "KOSDAQ".equals(market) ? properties.getKosdaqUrl() : properties.getKospiUrl();
-        return ensureTodayForTimeApi(fallback);
+        return upsertQueryParam(withEnd, "startDateTime", defaultStartDateTime(range));
     }
 
     /** 1h 범위는 장중(09:00~15:30)과 시간 범위를 필터링해 노이즈를 제거한다. */
@@ -461,7 +456,8 @@ public class NaverIndexChartService {
                             .toList();
                 }
             }
-            return List.of(objectMapper.convertValue(map, new TypeReference<Map<String, Object>>() {}));
+            return List.of(objectMapper.convertValue(map, new TypeReference<Map<String, Object>>() {
+            }));
         }
         return List.of();
     }
