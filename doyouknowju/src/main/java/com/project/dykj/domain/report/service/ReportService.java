@@ -24,7 +24,7 @@ public class ReportService {
     private final ReplyMapper replyMapper;
     private final ChatRepository chatRepository;
     
-    //비즈니스로직 처리
+    // 비즈니스로직 처리
     @Transactional
     public boolean registReport(ReportVo reportVo) {
         return reportMapper.insertReport(reportVo) > 0;
@@ -41,8 +41,10 @@ public class ReportService {
 			// [taek] 신고된 실제 내용 조회
 			if ("BOARD".equals(report.getReportType())) {
 				Board board = boardMapper.selectPostDetail(report.getContentId());
-				if (board != null)
+				if (board != null) {
 					report.setContent(board.getBoardContent());
+					report.setBoardTitle(board.getBoardTitle());
+				}
 			} else if ("REPLY".equals(report.getReportType())) {
 				Reply reply = replyMapper.selectReplyById(report.getContentId());
 				if (reply != null)
