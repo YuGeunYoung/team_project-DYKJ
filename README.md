@@ -55,37 +55,37 @@
 ## 기능 시연 (Screenshots)
 
 ### 종목토론방: 종목 검색 + 실시간 인기 종목
-![종목토론방 - 검색/인기종목](docs/images/image (5).png)
+![종목토론방 - 검색/인기종목](docs/images/image(5).png)
 
 ### 게시판 목록
-![게시판 목록](docs/images/image (4).png)
+![게시판 목록](docs/images/image(4).png)
 
 ### 종목토론방: 종목 필터 적용
-![종목토론방 - 종목 필터](docs/images/image (6).png)
+![종목토론방 - 종목 필터](docs/images/image(6).png)
 
 ### 지수 차트: 코스닥
-![지수 차트 - 코스닥](docs/images/image (2).png)
+![지수 차트 - 코스닥](docs/images/image(2).png)
 
 ### 지수 차트: 코스피
-![지수 차트 - 코스피](docs/images/image (3).png)
+![지수 차트 - 코스피](docs/images/image(3).png)
 
 ### 실시간 Top10: 거래량
-![Top10 - 거래량](docs/images/image (1).png)
+![Top10 - 거래량](docs/images/image(1).png)
 
 ### 실시간 Top10: 거래대금
 ![Top10 - 거래대금](docs/images/image.png)
 
 ### 검색: 자동완성
-![검색 자동완성](docs/images/image (9).png)
+![검색 자동완성](docs/images/image(9).png)
 
 ### 검색: 결과 화면
-![검색 결과](docs/images/image (10).png)
+![검색 결과](docs/images/image(10).png)
 
 ### 마이페이지: 작성 글/댓글
-![마이페이지 - 작성 글/댓글](docs/images/image (7).png)
+![마이페이지 - 작성 글/댓글](docs/images/image(7).png)
 
 ### 인기글(실시간/주간)
-![인기글 영역](docs/images/image (8).png)
+![인기글 영역](docs/images/image(8).png)
 
 ---
 
