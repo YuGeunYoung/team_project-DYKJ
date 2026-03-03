@@ -107,10 +107,4 @@
 - Realtime: WebSocket
 - External: KIS OpenAPI, Naver 데이터 연동
 
----
 
-## 실행 방법 (템플릿)
-> 실제 실행을 위해서는 DB 설정 및 외부 API Key 세팅이 필요합니다.
-
-```bash
-./mvnw spring-boot:run
