@@ -64,10 +64,10 @@
 ![종목토론방 - 종목 필터](docs/images/image(6).png)
 
 ### 지수 차트: 코스닥
-![지수 차트 - 코스닥](docs/images/image(2).png)
+![지수 차트 - 코스닥](docs/images/image(3).png)
 
 ### 지수 차트: 코스피
-![지수 차트 - 코스피](docs/images/image(3).png)
+![지수 차트 - 코스피](docs/images/image(2).png)
 
 ### 실시간 Top10: 거래량
 ![Top10 - 거래량](docs/images/image(1).png)
