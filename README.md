@@ -6,7 +6,7 @@
 
 - Team: 김동건 / 민경찬 / **유근영(본인)** / 임유택
 - Original Repository: [팀장 레포 URL(선택)]
-- Final Presentation: `docs/[발표자료파일명].pdf` (있으면 추가)
+- Final Presentation: docs/[DOYOUKNOWJU FINAL PROJECT PRESENTATION].pdf
 
 ---
 
