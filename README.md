@@ -5,7 +5,9 @@
 **커뮤니티(게시판/채팅)** 기능을 결합해 “학습 + 재미 + 참여”를 강화한 서비스입니다.
 
 - Team: 김동건 / 민경찬 / **유근영(본인)** / 임유택
-- Original Repository: [팀장 레포 URL(선택)]
+- Original Repositories:
+  - Backend: https://github.com/firework72/doyouknowJU-backend
+  - Frontend: https://github.com/firework72/doyouknowJU-frontend
 - Final Presentation: [docs/FinalProject.pdf](docs/FinalProject.pdf)
 
 ---
@@ -102,9 +104,33 @@
 ---
 
 ## Tech Stack
-- Backend: Java, Spring Boot
-- DB/ORM: [Oracle XE 등] + MyBatis(XML Mapper)
-- Realtime: WebSocket
-- External: KIS OpenAPI, Naver 데이터 연동
 
+### Frontend
+- React 19, Vite 7
+- react-router-dom 7
+- HTTP: axios
+- Charts: lightweight-charts, Chart.js (react-chartjs-2)
+- Styling: CSS / CSS Modules (+ 일부 styled-components)
+- Editor: react-quill-new (Rich Text Editor)
+- Realtime: WebSocket (browser native)
+- State: React Context(AuthContext) + Hooks
+- Quality: ESLint 9
+
+### Backend
+- Java / Spring Boot
+- MyBatis (XML Mapper)
+- WebSocket
+- Scheduler
+
+### Data / External
+- KIS OpenAPI
+- Public web data (학습 목적의 비공식 수집: 지수/뉴스 보조 데이터)
+
+### Database
+- Oracle XE
+
+### Tools
+- Git / GitHub
+
+> Note: 일부 보조 데이터는 학습/시연 목적의 비공식 수집 방식으로 구성되어 있으며, 상용/배포 환경에서는 정식 라이선스/공식 API로 대체가 필요합니다.
 
