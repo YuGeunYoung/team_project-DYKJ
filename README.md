@@ -50,10 +50,3 @@
 ## Docs
 - `docs/FINAL_PROJECT.pdf` : 최종 발표 자료(전체 기능/시연/코드리뷰 포함)
 
----
-
-## 실행 방법(요약)
-> 환경/DB/API키 세팅은 프로젝트 설정에 맞게 작성하세요.
-
-```bash
-./mvnw spring-boot:run
